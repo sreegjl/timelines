@@ -1,0 +1,125 @@
+:root {
+  --dark-bg: #6C5F55;
+  --element-bg: #A6977E;
+  --active-bg: #D4CAB8;
+  --secondary-bg: #EDE6DA;
+  --tertiary-bg: #F3EDE3;
+  --primary-bg: #FFFAF4;
+
+  /* Grays */
+  --gray-1: #918C85;
+  --gray-2: #807C76;
+  --gray-3: #211F1E;
+  --gray-4: #141414;
+  --gray-5: #151515;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Timeline */
+.timeline-scroll {
+  height: 100vh;
+  overflow-x: auto;
+  background-color: var(--primary-bg);
+}
+
+.timeline {
+  position: relative;
+  height: 260px;
+  margin-top: calc(50vh - 130px);
+
+  background-image: radial-gradient(var(--active-bg) 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+  background-color: var(--primary-bg);
+
+  background-attachment: local;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--dark-bg);
+}
+
+
+.tick {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.tick-line {
+  width: 2px;
+  height: 14px;
+  background: var(--dark-bg);
+  margin: 0 auto;
+}
+
+.tick-label {
+  margin-top: 2px;
+  font-size: 9px;
+  color: var(--dark-bg);
+}
+
+/* Spans */
+.spans-layer,
+.events-layer {
+  position: absolute;
+  inset: 0;
+
+}
+
+.span-item {
+  position: absolute;
+  height: 20px;
+  transform: translateX(0);
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-bottom: 10px; 
+}
+
+.span-title {
+  margin-left: 5px;
+  color: var(--active-bg);
+} 
+
+.span-years {
+  margin-left: 7px;
+  color: var(--element-bg);
+}
+
+/* Events */
+.event {
+  position: absolute;
+  height: 25px;
+  width: 150px;
+  background: var(--secondary-bg);
+  border: 1.5px solid var(--element-bg);
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: var(--dark-bg);
+  transform: translateX(-50%);
+}
+
+.event-title {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.event-date {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--gray-1);
+}
+
+
+
