@@ -22,12 +22,14 @@ function App() {
 
   const events = elements.filter((e) => e.type === "event");
   const spans = elements.filter((e) => e.type === "span");
+  const eras = elements.filter((e) => e.type === "era"); 
 
   const PX_PER_YEAR = file?.maxZoom ?? 10;
 
   const eventYears = events.map((e) => e.date);
   const spanYears = spans.flatMap((s) => [s.start, s.end]);
-  const allYears = [...eventYears, ...spanYears];
+  const eraYears = eras.flatMap((e) => [e.start, e.end]);
+  const allYears = [...eventYears, ...spanYears, ...eraYears];
 
   const rawMin = Math.min(...allYears);
   const rawMax = Math.max(...allYears);
@@ -43,11 +45,11 @@ function App() {
 
   const BASE_LINE_Y = 120;
 
-  // SPANS
+  // SPANS 
   const SPAN_HEIGHT = 23;
-  const SPAN_OFFSET = 14;        
+  const SPAN_OFFSET = 14;
   const SPAN_GAP = 6;
-  const SPAN_VERTICAL_GAP = 0;    
+  const SPAN_VERTICAL_GAP = 0;
 
   const spanLaneEnds = [];
   const finalSpans = [...spans]
@@ -96,7 +98,7 @@ function App() {
   const EVENT_WIDTH = 150;
   const EVENT_GAP = 6;
   const LANE_SPACING = 37;
-  const BOX_OFFSET = 50; 
+  const BOX_OFFSET = 50;
 
   const laidOutEvents = [...events]
     .sort((a, b) => a.date - b.date)
@@ -106,7 +108,7 @@ function App() {
 
   const finalEvents = laidOutEvents.map((event, idx) => {
     const x = event._x;
-    const preferredLane = idx % 2; // 0 or 1
+    const preferredLane = idx % 2;
 
     function fitsInLane(lane) {
       const end = laneEnds[lane];
@@ -129,21 +131,49 @@ function App() {
 
     laneEnds[laneToUse] = x + EVENT_WIDTH;
 
-    const top = BASE_LINE_Y - spanBandHeight - BOX_OFFSET - laneToUse * LANE_SPACING;
+    const top =
+      BASE_LINE_Y - spanBandHeight - BOX_OFFSET - laneToUse * LANE_SPACING;
+
     return {
       ...event,
       top,
     };
   });
 
-  // TIMELINE: TICKS
+  // ERAS
+  const ERA_OFFSET = 30; 
+
+  const finalEras = eras.map((era) => {
+    const left = yearToPx(era.start);
+    const width = (era.end - era.start) * PX_PER_YEAR;
+    const top = BASE_LINE_Y + ERA_OFFSET; 
+    return {
+      ...era,
+      left,
+      width,
+      top,
+    };
+  });
+
+  // TICKS
   const ticks = [];
   const startTick = Math.floor(minYear / step) * step;
   for (let y = startTick; y <= maxYear; y += step) {
     ticks.push(y);
   }
 
-  const gridSize = 20 * (PX_PER_YEAR / 10);
+  // BG DOTS
+  function updateBackgroundForDPI() {
+    const dpi = window.devicePixelRatio * 96;
+    const el = document.querySelector(".timeline-scroll");
+    if (!el) return;
+
+    const size = Math.max(0.5, 1.3 - (dpi - 96) / 400);
+    el.style.backgroundImage = `radial-gradient(var(--active-bg) ${size}px, transparent 0.4px)`;
+  }
+
+  updateBackgroundForDPI();
+  window.addEventListener("resize", updateBackgroundForDPI);
 
   return (
     <div className="timeline-scroll">
@@ -151,13 +181,39 @@ function App() {
         className="timeline"
         style={{
           width: `${timelineWidth}px`,
-          "--grid-size": `${gridSize}px`,
         }}
       >
         <div
           className="timeline-line"
           style={{ top: `${BASE_LINE_Y}px` }}
         />
+
+        <div className="eras-layer">
+          {finalEras.map((era) => (
+            <div
+              key={era.id}
+              className="era-item"
+              style={{
+                left: `${era.left}px`,
+                width: `${era.width}px`,
+                top: `${era.top}px`,
+                background: `linear-gradient(
+                  rgba(255,255,255,0.6),
+                  rgba(255,255,255,0.6)
+                ), ${era.color || 'var(--tertiary-bg)'}`
+              }}
+            >
+              <span
+                className="era-title"
+                style={{
+                  color: era.color ? era.color : "var(--dark-bg)",
+                }}
+              >
+                {era.title}
+              </span>
+            </div>
+          ))}
+        </div>
 
         <div className="spans-layer">
           {finalSpans.map((span) => (
@@ -178,7 +234,6 @@ function App() {
             </div>
           ))}
         </div>
-
 
         <div className="events-layer">
           {finalEvents.map((event) => (

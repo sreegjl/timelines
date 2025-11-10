@@ -15,8 +15,8 @@ export const sampleData = {
       "type": "era",
       "title": "Post-Quantum Era",
       "start": 4870,
-      "end": 5107,
-      "color": "#F3EDE3",
+      "end": 4940,
+      "color": "#BF7000",
       "tags": ["era", "post-quantum"]
     },
     {
@@ -25,7 +25,7 @@ export const sampleData = {
       "title": "Epherian Era",
       "start": 4940,
       "end": 5107,
-      "color": "#EDE6DA",
+      "color": "#F4D05A",
       "tags": ["era", "epherian"]
     },
 
