@@ -36,6 +36,8 @@ export const sampleData = {
       "start": 4870,
       "end": 5033,
       "color": "#6C5F55",
+      "branches": ["span-hu-fui-alliance"],
+      "forks": ["span-costa-empire", "span-hu-naria-empire"],
       "tags": ["dynasty"]
     },
     {
@@ -80,7 +82,7 @@ export const sampleData = {
       "type": "event",
       "title": "Epherians Colonize Oryfn",
       "date": 4892,
-      "parents": ["span-zokya-dynasty"],
+      "parents": ["span-epherian-dynasty"],
       "importance": 4,
       "color": "#C9D9E8",
       "tags": ["colonization"]
@@ -90,7 +92,7 @@ export const sampleData = {
       "type": "event",
       "title": "Eltusese Supernova",
       "date": 4921,
-      "parents": ["span-zokya-dynasty"],
+      "parents": [],
       "importance": 3,
       "color": "#EDE6DA",
       "tags": ["astronomy"]
@@ -110,7 +112,7 @@ export const sampleData = {
       "type": "event",
       "title": "Laina Peace Treaty",
       "date": 4962,
-      "parents": ["span-hu-fui-alliance"],
+      "parents": ["span-epherian-dynasty"],
       "importance": 3,
       "color": "#D4CAB8",
       "tags": ["diplomacy"]
@@ -150,7 +152,7 @@ export const sampleData = {
       "type": "event",
       "title": "Fall of Inria",
       "date": 5070,
-      "parents": ["span-hu-naria-empire"],
+      "parents": ["span-epherian-dynasty"],
       "importance": 4,
       "color": "#EDE6DA",
       "tags": ["conflict"]
