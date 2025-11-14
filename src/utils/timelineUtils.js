@@ -64,7 +64,6 @@ export function layoutSpans({
   const spanLaneById = {};
 
   const finalSpans = [...spans]
-    // sort: earlier first, and if same start, longer first
     .sort((a, b) => {
       if (a.start === b.start) {
         return (b.end - b.start) - (a.end - a.start);

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { sampleData } from "../data/sampleData";
-import "../index.css";
+import { useTimelineData } from "../utils/useTimelineData";
 import {
   pickStep,
   buildSpanChildPlacement,
@@ -8,16 +7,14 @@ import {
   layoutSpans,
   layoutEvents,
 } from "../utils/timelineUtils";
+import "../styles/04-timeline.css";
 
-function TimelineView() {
-  const { file, elements } = sampleData;
-
+function TimelineView({ selectedId, onSelect }) {
   const scrollRef = useRef(null);
   const timelineRef = useRef(null);
+  const scaleRef = useRef(1); 
 
-  const events = elements.filter((e) => e.type === "event");
-  const spans = elements.filter((e) => e.type === "span");
-  const eras = elements.filter((e) => e.type === "era");
+  const { file, events, spans, eras } = useTimelineData();
 
   const PX_PER_YEAR = file?.maxZoom ?? 10;
 
@@ -41,6 +38,7 @@ function TimelineView() {
 
   const BASE_LINE_Y = 120;
 
+  // spans
   const SPAN_HEIGHT = 23;
   const SPAN_OFFSET = 14;
   const SPAN_GAP = 6;
@@ -67,6 +65,7 @@ function TimelineView() {
     SPAN_VERTICAL_GAP
   );
 
+  // events
   const EVENT_WIDTH = 150;
   const EVENT_GAP = 6;
   const LANE_SPACING = 37;
@@ -104,74 +103,100 @@ function TimelineView() {
     ticks.push(y);
   }
 
-  // effects: DPI + zoom
-useEffect(() => {
-  const scrollEl = scrollRef.current;
-  const timelineEl = timelineRef.current;
-  if (!scrollEl || !timelineEl) return;
+  // DPI + zoom effect
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    const timelineEl = timelineRef.current;
+    if (!scrollEl || !timelineEl) return;
 
-  // background DPI
-  const updateBackgroundForDPI = () => {
-    const dpi = window.devicePixelRatio * 96;
-    const size = Math.max(0.5, 1.3 - (dpi - 96) / 400);
-    scrollEl.style.backgroundImage = `radial-gradient(var(--active-bg) ${size}px, transparent 0.4px)`;
-  };
-  updateBackgroundForDPI();
-  window.addEventListener("resize", updateBackgroundForDPI);
+    const updateBackgroundForDPI = () => {
+      const dpi = window.devicePixelRatio * 96;
+      const size = Math.max(0.5, 1.3 - (dpi - 96) / 400);
+      scrollEl.style.backgroundImage = `radial-gradient(var(--active-bg) ${size}px, transparent 0.4px)`;
+    };
+    updateBackgroundForDPI();
+    window.addEventListener("resize", updateBackgroundForDPI);
 
-  let scale = 1;
+    let scale = scaleRef.current;
 
-  const handleWheel = (e) => {
-    if (!e.ctrlKey && !e.metaKey) return;
+    const handleWheel = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
 
-    e.preventDefault();
+      e.preventDefault();
+
+      const scrollRect = scrollEl.getBoundingClientRect();
+      const mouseXInScroll = e.clientX - scrollRect.left;
+
+      const prevScrollLeft = scrollEl.scrollLeft;
+      const prevScale = scale;
+
+      const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+      const newScale = Math.min(Math.max(prevScale * zoomFactor, 0.25), 5);
+
+      timelineEl.style.transformOrigin = "top left";
+      timelineEl.style.transform = `scale(${newScale})`;
+
+      const baseWidth = timelineEl.offsetWidth;
+      const scaledWidth = baseWidth * newScale;
+      const viewportWidth = scrollEl.clientWidth;
+
+      if (scaledWidth > viewportWidth) {
+        const worldX = (prevScrollLeft + mouseXInScroll) / prevScale;
+        const newScrollLeft = worldX * newScale - mouseXInScroll;
+        scrollEl.scrollLeft = newScrollLeft;
+      } else {
+        scrollEl.scrollLeft = 0;
+        timelineEl.style.marginLeft = `${(viewportWidth - scaledWidth) / 2}px`;
+      }
+
+      if (scaledWidth > viewportWidth) {
+        timelineEl.style.marginLeft = "0px";
+      }
+
+      scale = newScale;
+      scaleRef.current = newScale; 
+    };
+
+    scrollEl.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener("resize", updateBackgroundForDPI);
+      scrollEl.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
+  // auto-scroll to selected item
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const scrollEl = scrollRef.current;
+    const timelineEl = timelineRef.current;
+    if (!scrollEl || !timelineEl) return;
+
+    const dom = timelineEl.querySelector(`[data-id="${selectedId}"]`);
+    if (!dom) return;
+
+    const rect = dom.getBoundingClientRect();
+    const targetX = rect.left + rect.width / 2;
 
     const scrollRect = scrollEl.getBoundingClientRect();
-    const mouseXInScroll = e.clientX - scrollRect.left;
+    const viewportCenterX = scrollRect.left + scrollRect.width / 2;
 
-    const prevScrollLeft = scrollEl.scrollLeft;
-    const prevScale = scale;
+    const scale = scaleRef.current || 1;
+    const deltaX = (targetX - viewportCenterX) / scale;
 
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newScale = Math.min(Math.max(prevScale * zoomFactor, 0.25), 5);
-
-    timelineEl.style.transformOrigin = "top left";
-    timelineEl.style.transform = `scale(${newScale})`;
-
-    const baseWidth = timelineEl.offsetWidth; // unscaled width
-    const scaledWidth = baseWidth * newScale;
-    const viewportWidth = scrollEl.clientWidth;
-
-    if (scaledWidth > viewportWidth) {
-      const worldX = (prevScrollLeft + mouseXInScroll) / prevScale;
-      const newScrollLeft = worldX * newScale - mouseXInScroll;
-      scrollEl.scrollLeft = newScrollLeft;
-    } else {
-      // center if scaled content is smaller than viewport
-      scrollEl.scrollLeft = 0;
-      timelineEl.style.marginLeft = `${(viewportWidth - scaledWidth) / 2}px`;
-    }
-
-    // if content becomes wider again, remove the extra margin
-    if (scaledWidth > viewportWidth) {
-      timelineEl.style.marginLeft = "0px";
-    }
-
-    scale = newScale;
-  };
-
-  scrollEl.addEventListener("wheel", handleWheel, { passive: false });
-
-  return () => {
-    window.removeEventListener("resize", updateBackgroundForDPI);
-    scrollEl.removeEventListener("wheel", handleWheel);
-  };
-}, []);
-
-
+    scrollEl.scrollTo({
+      left: scrollEl.scrollLeft + deltaX,
+      behavior: "smooth",
+    });
+  }, [selectedId]);
 
   return (
-    <div ref={scrollRef} className="timeline-scroll">
+    <div
+      ref={scrollRef}
+      className="timeline-scroll"
+      onClick={() => onSelect?.(null)} // clear selection on background click
+    >
       <div
         ref={timelineRef}
         className="timeline"
@@ -180,30 +205,38 @@ useEffect(() => {
         <div className="timeline-line" style={{ top: `${BASE_LINE_Y}px` }} />
 
         <div className="eras-layer">
-          {finalEras.map((era) => (
-            <div
-              key={era.id}
-              className="era-item"
-              style={{
-                left: `${era.left}px`,
-                width: `${era.width}px`,
-                top: `${era.top}px`,
-                background: `linear-gradient(
-                  rgba(255,255,255,0.6),
-                  rgba(255,255,255,0.6)
-                ), ${era.color || "var(--tertiary-bg)"}`,
-              }}
-            >
-              <span
-                className="era-title"
+          {finalEras.map((era) => {
+            const isSelected = selectedId === era.id;
+            return (
+              <div
+                key={era.id}
+                data-id={era.id}
+                className={`era-item ${isSelected ? "is-selected" : ""}`}
                 style={{
-                  color: era.color ? era.color : "var(--dark-bg)",
+                  left: `${era.left}px`,
+                  width: `${era.width}px`,
+                  top: `${era.top}px`,
+                  background: `linear-gradient(
+                    rgba(255,255,255,0.6),
+                    rgba(255,255,255,0.6)
+                  ), ${era.color || "var(--tertiary-bg)"}`,
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect?.(era.id);
                 }}
               >
-                {era.title}
-              </span>
-            </div>
-          ))}
+                <span
+                  className="era-title"
+                  style={{
+                    color: era.color ? era.color : "var(--dark-bg)",
+                  }}
+                >
+                  {era.title}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         <div className="spans-layer">
@@ -212,16 +245,22 @@ useEffect(() => {
             const isChild = !!placement;
             const isTopChild = isChild && placement.offset === 1;
             const isBottomChild = isChild && placement.offset === -1;
+            const isSelected = selectedId === span.id;
 
             return (
               <div
                 key={span.id}
-                className="span-item"
+                data-id={span.id}
+                className={`span-item ${isSelected ? "is-selected" : ""}`}
                 style={{
                   left: `${span.left}px`,
                   width: `${span.width}px`,
                   top: `${span.top}px`,
                   background: span.color || "var(--element-bg)",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect?.(span.id);
                 }}
               >
                 {isTopChild && (
@@ -252,30 +291,26 @@ useEffect(() => {
 
         <div className="events-layer">
           {finalEvents.map((event) => {
-            // check for parent span
             const parentId = event.parents?.[0];
             const parentSpan = parentId
               ? finalSpans.find((span) => span.id === parentId)
               : null;
 
-            // if no parent, go to center timeline
             const fallbackTargetY = BASE_LINE_Y;
-
-            // if parent, connect to top of that span
             const targetY = parentSpan ? parentSpan.top : fallbackTargetY;
 
-            // event bottom = event.top + css height (25ish)
             const EVENT_BOX_HEIGHT = 29;
             const eventBottom = event.top + EVENT_BOX_HEIGHT;
 
             const lineHeight = Math.abs(eventBottom - targetY);
-
             const parentColor = parentSpan?.color;
+            const isSelected = selectedId === event.id;
 
             return (
               <div
                 key={event.id}
-                className="event"
+                data-id={event.id}
+                className={`event ${isSelected ? "is-selected" : ""}`}
                 style={{
                   left: `${event._x}px`,
                   top: `${event.top}px`,
@@ -285,6 +320,10 @@ useEffect(() => {
                   border: parentColor
                     ? `2px solid ${parentColor}`
                     : "2px solid var(--element-bg)",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect?.(event.id);
                 }}
               >
                 <div className="event-title">{event.title}</div>

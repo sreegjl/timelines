@@ -2,9 +2,9 @@ export const sampleData = {
   "file": {
     "id": "planet-trek-timeline",
     "type": "timeline",
-    "title": "Planet Trek Timeline",
-    "start": 4850,
-    "end": 5150,
+    "title": "Planet Trek",
+    "start": 4700,
+    "end": 5300,
     "maxZoom": 5,
     "negID": "B.C.S.",
     "posID": "A.C.S."

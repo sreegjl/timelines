@@ -1,0 +1,16 @@
+:root {
+  --dark-bg: #6C5F55;
+  --element-bg: #A6977E;
+  --active-bg: #D4CAB8;
+  --secondary-bg: #EDE6DA;
+  --tertiary-bg: #F3EDE3;
+  --primary-bg: #FFFAF4;
+
+  --gray-1: #918C85;
+  --gray-2: #807C76;
+  --gray-3: #211F1E;
+  --gray-4: #141414;
+  --gray-5: #151515;
+
+  --info-bg: #87C6FA;
+}

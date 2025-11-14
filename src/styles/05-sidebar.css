@@ -1,0 +1,175 @@
+.sidebar-root {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--secondary-bg);
+  color: var(--dark-bg);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: var(--secondary-bg);
+  padding-left: 14px;
+  margin-top: 15px;
+}
+
+.sidebar-info {
+  padding-left: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--active-bg);
+}
+
+.timeline-title {
+  margin: 0;       
+  margin-right: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark-bg);
+  text-align: center;
+  text-decoration: underline;
+}
+
+.sidebar-menu {
+  margin-top: 3px;
+  margin-right: 8px;
+  border-radius: 20%;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: 8px;
+  width: 30px;
+  height: 25px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary-bg);
+  border: 0px solid var(--element-bg);
+  border-radius: 10%;
+  cursor: pointer;
+  z-index: 40;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-toggle:hover,
+.sidebar-menu:hover {
+  background: var(--active-bg);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0 16px 0;
+}
+
+/* (eras, spans, events) */
+.sb-section {
+  margin-bottom: 5px;
+}
+
+.sb-section-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  color: var(--element-bg);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.sidebar-info-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-1);
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sb-caret {
+  transition: transform 0.15s ease;
+  transform: rotate(-90deg);
+}
+
+.sb-caret.open {
+  transform: rotate(0deg);
+}
+
+.sb-section-label {
+  color: var(--element-bg);
+}
+
+.sb-section-body{
+  border-left: 0.5px solid var(--active-bg);
+  margin-left: 18px;
+
+}
+
+.sb-row {
+  width: 95%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 15px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--dark-bg);
+  font-family: inherit;
+  cursor: pointer;
+  max-height: 25px;
+  letter-spacing: 0.0 em;
+}
+
+.sb-row:hover {
+  background: color-mix(in srgb, var(--active-bg), black 4%);
+}
+
+.sb-row.is-selected {
+  background: color-mix(in srgb, var(--active-bg), black 9%);
+}
+
+.sb-row-title {
+  font-size: 13px;
+  font-weight: 440;
+  color: var(--dark-bg);
+  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-row-right {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--element-bg);
+
+  white-space: nowrap;
+}
+
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background-color: var(--active-bg);
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-root {
+  container-type: inline-size;
+}

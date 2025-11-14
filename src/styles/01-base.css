@@ -1,0 +1,10 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body.dragging {
+  user-select: none;
+  cursor: col-resize;
+}

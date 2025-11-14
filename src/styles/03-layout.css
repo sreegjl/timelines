@@ -1,0 +1,56 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: auto 1fr auto; 
+  height: 100vh;
+  position: relative;
+}
+
+.app-content {
+  background: var(--primary-bg);
+  overflow: hidden;
+}
+
+.app-right {
+  border-left: 1px solid var(--element-bg);
+}
+
+.overlay-sidebar,
+.overlay-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--secondary-bg);
+  z-index: 20;
+  overflow: auto;
+}
+
+.overlay-sidebar {
+  left: 0;
+  border-right: 1px solid var(--active-bg);
+}
+
+.overlay-right {
+  right: 0;
+  border-left: 1px solid var(--active-bg);
+}
+
+.overlay-resizer {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 30;
+}
+
+.app-content,
+.timeline-scroll {
+  position: relative;
+  z-index: 0;
+}
+
+
+
+
+
