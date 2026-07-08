@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
-import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, FolderPlus, FolderOpen, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, Share2, History, Link2, ExternalLink } from "lucide-react";
+import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, Share2, History, Link2, ExternalLink } from "lucide-react";
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
@@ -157,6 +157,7 @@ function buildSyncTree(files) {
   sortNode(root);
   return root;
 }
+
 import NewTimelineModal from "./NewTimelineModal";
 import "../styles/02-homepage.css";
 import "../styles/07-modals-menus.css";
@@ -164,6 +165,29 @@ import themeConfig from "../config/theme.json";
 import { loadThemeConfig } from "../utils/themeLoader";
 import { DEFAULT_KEYBINDS, cloneDefaultKeybinds, saveKeybinds } from "../utils/keybinds";
 import MarketplaceModal from "./MarketplaceModal";
+
+const RECENT_TIMELINES_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+// Sidebar resize bounds mirror the timeline-view left panel (App.jsx)
+const HOME_SIDEBAR_MIN = 220;
+const HOME_SIDEBAR_HARD_MIN = 160;
+const HOME_SIDEBAR_MAX = 600;
+const HOME_SIDEBAR_DEFAULT = 350;
+const HOME_MAIN_MIN = 320;
+const getHomeShellWidth = (node) => node?.getBoundingClientRect?.().width ?? NaN;
+const getHomeSidebarBounds = (shellWidth) => {
+  if (!Number.isFinite(shellWidth) || shellWidth <= 0) {
+    return { min: HOME_SIDEBAR_MIN, max: HOME_SIDEBAR_MAX };
+  }
+  const max = Math.min(
+    HOME_SIDEBAR_MAX,
+    Math.max(HOME_SIDEBAR_HARD_MIN, shellWidth - HOME_MAIN_MIN)
+  );
+  return { min: Math.min(HOME_SIDEBAR_MIN, max), max };
+};
+const clampHomeSidebar = (w, shellWidth = NaN) => {
+  const { min, max } = getHomeSidebarBounds(shellWidth);
+  return Math.min(Math.max(w, min), max);
+};
 
 export default function HomePage({
   settingsOnly = false,
@@ -214,7 +238,7 @@ export default function HomePage({
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("list");
   const [sortMode, setSortMode] = useState("date");
-  useEffect(() => { getAppSettings().then(s => { if (s.homeSortMode) setSortMode(s.homeSortMode); }); }, []);
+  const [librarySection, setLibrarySection] = useState("home");
   const [currentFolder, setCurrentFolder] = useState("");
   const [allFolders, setAllFolders] = useState([]);
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
@@ -227,7 +251,6 @@ export default function HomePage({
   const [folderContextMenu, setFolderContextMenu] = useState(null);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
   const [moveFolderTarget, setMoveFolderTarget] = useState(null);
-  const [showAllFolders, setShowAllFolders] = useState(false);
   const [isMarketplaceOpen, setIsMarketplaceOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [deleteDialogFile, setDeleteDialogFile] = useState(null);
@@ -248,6 +271,10 @@ export default function HomePage({
   const [gitSyncShareDialog, setGitSyncShareDialog] = useState(null);
   const [gitSyncHistoryDialog, setGitSyncHistoryDialog] = useState(null);
   const [gitSyncMirrorBytes, setGitSyncMirrorBytes] = useState(null);
+  const [showSyncedConfirm, setShowSyncedConfirm] = useState(false);
+  const [homeSidebarWidth, setHomeSidebarWidth] = useState(HOME_SIDEBAR_DEFAULT);
+  const isDraggingSidebar = useRef(false);
+  const homeShellRef = useRef(null);
   const [recordingKey, setRecordingKey] = useState(null);
   const recordingKeyRef = useRef(null);
   const renameInputRef = useRef(null);
@@ -259,6 +286,56 @@ export default function HomePage({
     () => new Set(Object.keys(bundledThemes || {}).map((key) => key.toLowerCase())),
     [bundledThemes]
   );
+
+  useEffect(() => {
+    getAppSettings().then((settings) => {
+      if (settings?.homeSortMode) setSortMode(settings.homeSortMode);
+      const w = Number(settings?.homeSidebarWidth);
+      const shellWidth = getHomeShellWidth(homeShellRef.current);
+      if (Number.isFinite(w)) {
+        setHomeSidebarWidth(clampHomeSidebar(w, shellWidth));
+      } else {
+        setHomeSidebarWidth((current) => clampHomeSidebar(current, shellWidth));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (settingsOnly) return undefined;
+    const syncSidebarWidth = () => {
+      const shellWidth = getHomeShellWidth(homeShellRef.current);
+      if (!Number.isFinite(shellWidth)) return;
+      setHomeSidebarWidth((current) => clampHomeSidebar(current, shellWidth));
+    };
+    syncSidebarWidth();
+    window.addEventListener("resize", syncSidebarWidth);
+    return () => window.removeEventListener("resize", syncSidebarWidth);
+  }, [settingsOnly]);
+
+  // Manual sidebar resize, mirroring the timeline-view left panel drag
+  useEffect(() => {
+    if (settingsOnly) return undefined;
+    const onMove = (e) => {
+      if (!isDraggingSidebar.current) return;
+      const shell = homeShellRef.current;
+      const shellRect = shell?.getBoundingClientRect?.();
+      if (!shellRect) return;
+      e.preventDefault();
+      setHomeSidebarWidth(clampHomeSidebar(e.clientX - shellRect.left, shellRect.width));
+    };
+    const onUp = () => {
+      if (!isDraggingSidebar.current) return;
+      isDraggingSidebar.current = false;
+      document.body.classList.remove("dragging");
+      setHomeSidebarWidth((w) => { saveAppSettings({ homeSidebarWidth: w }); return w; });
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [settingsOnly]);
 
   const appThemes = useMemo(() => {
     const entries = Object.entries(themes || {}).filter(([key]) =>
@@ -452,6 +529,17 @@ export default function HomePage({
     }
   }, [settingsOnly]);
 
+  // Show "Synced" for a few seconds after a sync settles, then revert the button to "Sync"
+  useEffect(() => {
+    if (gitSyncStatus?.state !== "idle") {
+      setShowSyncedConfirm(false);
+      return undefined;
+    }
+    setShowSyncedConfirm(true);
+    const timer = setTimeout(() => setShowSyncedConfirm(false), 3000);
+    return () => clearTimeout(timer);
+  }, [gitSyncStatus?.state, gitSyncStatus?.lastSyncedAt]);
+
   const restoreRenameFocus = () => {
     window.setTimeout(() => {
       renameInputRef.current?.focus();
@@ -527,7 +615,6 @@ export default function HomePage({
 
     loadTimelineList();
     setCurrentFolder("");
-    setShowAllFolders(false);
   }, [timelineStorageDir]);
 
   // Close context menus when clicking outside
@@ -606,6 +693,26 @@ export default function HomePage({
 
   const handleOpenMarketplace = () => {
     setIsMarketplaceOpen(true);
+  };
+
+  const handleSelectLibrarySection = (section) => {
+    setLibrarySection(section);
+    setCurrentFolder("");
+  };
+
+  const handleSelectFolder = (folderPath) => {
+    setLibrarySection("folder");
+    setCurrentFolder(folderPath);
+  };
+
+  const handleOpenSyncSettings = () => {
+    setSettingsSection("sync");
+    setView("settings");
+  };
+
+  const handleOpenGeneralSettings = () => {
+    setSettingsSection("general");
+    setView("settings");
   };
 
   const handleMigrateOldThemes = async () => {
@@ -991,40 +1098,83 @@ export default function HomePage({
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const allTimelines = timelineFiles;
+  const rootTimelines = useMemo(
+    () => allTimelines.filter((file) => !(file.folder ?? "")),
+    [allTimelines]
+  );
+  const recentTimelines = useMemo(() => {
+    const cutoff = Date.now() - RECENT_TIMELINES_WINDOW_MS;
+    return allTimelines.filter((file) => Number.isFinite(file.modifiedAt) && file.modifiedAt >= cutoff);
+  }, [allTimelines]);
 
-  const visibleSubfolders = useMemo(() => {
-    if (normalizedQuery) return [];
-    const depth = currentFolder ? currentFolder.split('/').length : 0;
-    return allFolders
-      .filter(f => {
-        if (!f) return false;
-        const parts = f.split('/');
-        if (parts.length !== depth + 1) return false;
-        if (currentFolder && !f.startsWith(currentFolder + '/')) return false;
-        if (!currentFolder && parts.length !== 1) return false;
-        return true;
+  const visibleFolders = useMemo(() => (
+    allFolders
+      .filter((folderPath) => folderPath && !folderPath.split("/").some((part) => part.startsWith(".") || part.endsWith(".assets")))
+      .sort((a, b) => a.localeCompare(b))
+  ), [allFolders]);
+
+  const folderStats = useMemo(() => {
+    const counts = new Map();
+    visibleFolders.forEach((folderPath) => counts.set(folderPath, 0));
+    allTimelines.forEach((file) => {
+      const fileFolder = file.folder ?? "";
+      visibleFolders.forEach((folderPath) => {
+        if (fileFolder === folderPath || fileFolder.startsWith(`${folderPath}/`)) {
+          counts.set(folderPath, (counts.get(folderPath) || 0) + 1);
+        }
+      });
+    });
+    return counts;
+  }, [allTimelines, visibleFolders]);
+
+  const activeBaseTimelines = useMemo(() => {
+    if (currentFolder) {
+      return allTimelines.filter((file) => {
+        const fileFolder = file.folder ?? "";
+        return fileFolder === currentFolder || fileFolder.startsWith(`${currentFolder}/`);
+      });
+    }
+    if (librarySection === "recent") return recentTimelines;
+    return rootTimelines;
+  }, [allTimelines, currentFolder, librarySection, recentTimelines, rootTimelines]);
+
+  const filteredTimelines = useMemo(() => (
+    activeBaseTimelines
+      .filter((file) => {
+        if (!normalizedQuery) return true;
+        const folderLabel = file.folder ?? "";
+        return (
+          file.name.toLowerCase().includes(normalizedQuery) ||
+          folderLabel.toLowerCase().includes(normalizedQuery)
+        );
       })
-      .map(f => f.split('/').pop())
-      .filter(name => !name.startsWith('.') && !name.endsWith('.assets'))
-      .sort((a, b) => a.localeCompare(b));
-  }, [allFolders, currentFolder, normalizedQuery]);
+      .sort((a, b) => (
+        sortMode === "name" ? a.name.localeCompare(b.name)
+          : sortMode === "name-desc" ? b.name.localeCompare(a.name)
+            : (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0)
+      ))
+  ), [activeBaseTimelines, normalizedQuery, sortMode]);
 
-  const filteredTimelines = allTimelines
-    .filter((file) => {
-      const matchesSearch = !normalizedQuery || file.name.toLowerCase().includes(normalizedQuery);
-      const fileFolder = file.folder ?? '';
-      const matchesFolder = currentFolder
-        ? fileFolder === currentFolder || fileFolder.startsWith(currentFolder + '/')
-        : normalizedQuery
-          ? true
-          : fileFolder === '';
-      return matchesSearch && matchesFolder;
-    })
-    .sort((a, b) =>
-      sortMode === "name" ? a.name.localeCompare(b.name)
-      : sortMode === "name-desc" ? b.name.localeCompare(a.name)
-      : (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0)
-    );
+  const activeScopeLabel = currentFolder
+    ? currentFolder.split("/").pop()
+    : librarySection === "recent"
+        ? "Recent"
+        : "Home";
+  const activeScopeLastModified = filteredTimelines.reduce(
+    (latest, file) => Math.max(latest, file.modifiedAt ?? 0),
+    0
+  );
+  const lastSyncedMs = gitSyncStatus?.repo && gitSyncStatus?.lastSyncedAt
+    ? Date.parse(gitSyncStatus.lastSyncedAt)
+    : NaN;
+  const emptyTimelineMessage = normalizedQuery
+    ? "No timelines match this search."
+    : currentFolder
+      ? "This folder does not contain any timelines yet."
+      : librarySection === "recent"
+          ? "Nothing has been edited in the last 7 days."
+          : "No root-level timelines found yet.";
+  const showFolderMeta = Boolean(normalizedQuery) || Boolean(currentFolder) || librarySection === "recent";
 
   const gitSyncExcluded = gitSyncStatus?.excludedPaths || [];
   const gitSyncExcludedSet = new Set(gitSyncExcluded);
@@ -1199,268 +1349,335 @@ export default function HomePage({
       )}
       {!settingsOnly && (
         <>
-          <div className="homepage-container">
-        <div className="homepage-header">
-          <div className="homepage-header-left">
-            <h1 className="homepage-title">timelines</h1>
-            <svg
-              className="homepage-logo"
-              width="67"
-              height="25"
-              viewBox="0 0 67 25"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <rect y="8.89844" width="29.2656" height="6.80469" fill="currentColor" />
-              <rect x="34.0703" width="32.9297" height="7.32812" fill="currentColor" />
-              <rect x="34.0703" y="16.75" width="32.9297" height="7.32812" fill="currentColor" />
-              <path d="M28.2656 5C28.2656 2.23858 30.5042 0 33.2656 0H35.0703V24.0781H33.2656C30.5042 24.0781 28.2656 21.8395 28.2656 19.0781V5Z" fill="currentColor" />
-            </svg>
-          </div>
-          <div className="homepage-header-right">
-            <div className="homepage-search-wrap">
-              <Search size={14} className="homepage-search-icon" />
-              <input
-                className="homepage-search"
-                type="text"
-                placeholder="Search timelines..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search timelines"
-              />
-            </div>
-            {gitSyncStatus?.repo && (
-              <button
-                className={`git-sync-chip ${gitSyncChip.className}`}
-                onClick={handleGitSyncNow}
-                title={gitSyncStatus?.error || formatSyncTime(gitSyncStatus?.lastSyncedAt)}
-                aria-label="Git sync status"
-              >
-                <gitSyncChip.icon size={15} className={gitSyncChip.className === "is-syncing" ? "git-sync-chip-spin" : ""} />
-                <span>{gitSyncChip.label}</span>
-              </button>
-            )}
-            <button
-              className="homepage-settings-icon"
-              onClick={handleOpenMarketplace}
-              aria-label="Marketplace"
-            >
-              <Store size={19} />
-            </button>
-            <button
-              className="homepage-settings-icon"
-              onClick={() => setView("settings")}
-              aria-label="App Settings"
-            >
-              <Settings size={19} />
-            </button>
-          </div>
-        </div>
-
-        <div className="timeline-view-toolbar">
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button className="timeline-new-btn toolbar-btn-equal" onClick={handleNewTimeline}>
-              <FilePlus size={14} strokeWidth={2.5} />
-              New Timeline
-            </button>
-            <button className="timeline-new-btn timeline-new-btn-secondary toolbar-btn-equal" onClick={() => { setNewFolderName(""); setNewFolderDialogOpen(true); }}>
-              <FolderPlus size={14} strokeWidth={2.5} />
-              New Folder
-            </button>
-            <button
-              className="timeline-new-btn timeline-new-btn-secondary toolbar-btn-equal"
-              onClick={() => onImportTimeline?.()}
-              title="Import a .timeline or .json file into your library"
-            >
-              <Import size={14} strokeWidth={2.5} />
-              Import
-            </button>
-          </div>
-          <div className="timeline-toolbar-right">
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <button
-                className="timeline-view-toggle timeline-sort-btn"
-                onClick={() => setSortMode(s => { const next = s === "date" ? "name" : s === "name" ? "name-desc" : "date"; saveAppSettings({ homeSortMode: next }); return next; })}
-                aria-label="Toggle sort"
-                title={sortMode === "date" ? "Sort: Date modified" : sortMode === "name" ? "Sort: A–Z" : "Sort: Z–A"}
-              >
-                {sortMode === "date" ? <Clock size={15} /> : sortMode === "name" ? <ArrowDownAZ size={15} /> : <ArrowUpAZ size={15} />}
-                <span>{sortMode === "date" ? "Date" : sortMode === "name" ? "A–Z" : "Z–A"}</span>
-              </button>
-              <div className="view-mode-pill">
-                <button
-                  className={`view-mode-pill-btn${viewMode === "list" ? " is-active" : ""}`}
-                  onClick={() => setViewMode("list")}
-                  aria-label="List view"
-                  title="List"
-                >
-                  <List size={15} />
-                </button>
-                <button
-                  className={`view-mode-pill-btn${viewMode === "grid" ? " is-active" : ""}`}
-                  onClick={() => setViewMode("grid")}
-                  aria-label="Grid view"
-                  title="Grid"
-                >
-                  <LayoutGrid size={15} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {currentFolder && (
-          <div className="timeline-breadcrumb">
-            <button className="timeline-breadcrumb-item" onClick={() => setCurrentFolder("")}>Home</button>
-            {currentFolder.split('/').map((part, i, arr) => {
-              const path = arr.slice(0, i + 1).join('/');
-              return (
-                <span key={path} className="timeline-breadcrumb-sep-wrap">
-                  <ChevronRight size={12} className="timeline-breadcrumb-sep" />
-                  <button className="timeline-breadcrumb-item" onClick={() => setCurrentFolder(path)}>{part}</button>
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {currentFolder && (() => {
-          const folderName = currentFolder.split('/').pop();
-          const timelineCount = timelineFiles.filter(f => f.folder === currentFolder).length;
-          const subfolderCount = visibleSubfolders.length;
-          const lastModified = timelineFiles
-            .filter(f => f.folder === currentFolder && f.modifiedAt)
-            .reduce((max, f) => Math.max(max, f.modifiedAt), 0);
-          return (
-            <div className="folder-hero">
-              <h2 className="folder-hero-title"><FolderOpen size={30} className="folder-hero-icon" />{folderName}</h2>
-              <p className="folder-hero-meta">
-                {timelineCount} {timelineCount === 1 ? 'timeline' : 'timelines'}
-                {subfolderCount > 0 && <> · {subfolderCount} {subfolderCount === 1 ? 'folder' : 'folders'}</>}
-                {lastModified > 0 && <> · Updated {relativeTime(lastModified)}</>}
-              </p>
-            </div>
-          );
-        })()}
-
-        {visibleSubfolders.length > 0 && (
-          <div className="homepage-section">
-            <span className="homepage-section-label">Folders</span>
-            <div className="timeline-folders-row">
-              {(showAllFolders ? visibleSubfolders : visibleSubfolders.slice(0, 9)).map((folderName) => {
-                const fullPath = currentFolder ? `${currentFolder}/${folderName}` : folderName;
-                const count = timelineFiles.filter(f => (f.folder ?? '').startsWith(fullPath) && (f.folder === fullPath || f.folder.startsWith(fullPath + '/'))).length;
-                return (
-                  <div key={fullPath} className="timeline-folder-chip-wrap">
-                    <div className="timeline-folder-chip" onClick={() => setCurrentFolder(fullPath)}>
-                      <div className="timeline-folder-chip-icon"><FolderOpen size={16} /></div>
-                      <div className="timeline-folder-chip-body">
-                        <span className="timeline-folder-chip-name">{folderName}</span>
-                        <span className={`timeline-folder-chip-meta${count === 0 ? ' is-empty' : ''}`}>{count === 0 ? 'Empty' : `${count} ${count === 1 ? 'timeline' : 'timelines'}`}</span>
-                      </div>
-                      <button
-                        className="timeline-folder-chip-dots"
-                        onClick={(e) => { e.stopPropagation(); setFolderContextMenu({ x: e.clientX, y: e.clientY, nearRight: e.clientX > window.innerWidth / 2, folderPath: fullPath, folderName }); }}
-                        aria-label="More options"
-                      >
-                        <MoreVertical size={13} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {visibleSubfolders.length > 9 && (
-              <button className="folders-show-more" onClick={() => setShowAllFolders(v => !v)}>
-                {showAllFolders ? 'Show less' : `Show ${visibleSubfolders.length - 9} more`}
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="homepage-section">
-          <span className="homepage-section-label">
-            {normalizedQuery ? 'Results' : 'Timelines'}
-            <span className="homepage-section-count">{filteredTimelines.length}</span>
-          </span>
-        {viewMode === "list" ? (
-          <div className="timeline-list">
-            {filteredTimelines.map((file) => (
-              <div
-                key={file.id}
-                className="timeline-item"
-                onClick={() => openTimelineFile(file)}
-                onContextMenu={(e) => handleContextMenu(e, file)}
-              >
-                <div className="timeline-item-body">
-                  <span className="timeline-item-title">{file.name}</span>
-                  {file.isPackage && (
-                    <span className="timeline-item-folder" title="Packaged timeline; opening it imports it into your library">Package</span>
-                  )}
-                  {isConflictCopyId(file.id) && (
-                    <span className="timeline-item-folder timeline-item-conflict">Conflict</span>
-                  )}
-                  {normalizedQuery && file.folder && (
-                    <span className="timeline-item-folder">{file.folder}</span>
-                  )}
-                </div>
-                <div className="timeline-item-right">
-                  {file.modifiedAt && (
-                    <span className="timeline-item-meta">{relativeTime(file.modifiedAt)}</span>
-                  )}
-                  <button
-                    className="timeline-item-dots"
-                    onClick={(e) => { e.stopPropagation(); handleContextMenu(e, file); }}
-                    aria-label="More options"
+          <div
+            className="homepage-container home-shell"
+            ref={homeShellRef}
+            style={{ gridTemplateColumns: `${homeSidebarWidth}px minmax(0, 1fr)` }}
+          >
+            <div
+              className="home-sidebar-resizer"
+              style={{ left: `${homeSidebarWidth - 3}px` }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                isDraggingSidebar.current = true;
+                document.body.classList.add("dragging");
+              }}
+            />
+            <aside className="home-sidebar">
+              <div className="home-sidebar-top">
+                <div className="home-brand" aria-label="Timelines">
+                  <span className="home-brand-wordmark">timelines</span>
+                  <svg
+                    className="home-brand-logo"
+                    width="67"
+                    height="25"
+                    viewBox="0 0 67 25"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
                   >
-                    <MoreVertical size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="timeline-grid">
-            {filteredTimelines.map((file) => (
-              <div
-                key={file.id}
-                className="timeline-card"
-                onClick={() => openTimelineFile(file)}
-                onContextMenu={(e) => handleContextMenu(e, file)}
-              >
-                <div className="timeline-item-icon">
-                  <svg width="20" height="8" viewBox="0 0 67 25" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                     <rect y="8.89844" width="29.2656" height="6.80469" fill="currentColor" />
                     <rect x="34.0703" width="32.9297" height="7.32812" fill="currentColor" />
                     <rect x="34.0703" y="16.75" width="32.9297" height="7.32812" fill="currentColor" />
                     <path d="M28.2656 5C28.2656 2.23858 30.5042 0 33.2656 0H35.0703V24.0781H33.2656C30.5042 24.0781 28.2656 21.8395 28.2656 19.0781V5Z" fill="currentColor" />
                   </svg>
                 </div>
-                <div className="timeline-card-body">
-                  <span className="timeline-item-title">{file.name}</span>
-                  {file.isPackage && (
-                    <span className="timeline-item-folder" title="Packaged timeline; opening it imports it into your library">Package</span>
-                  )}
-                  {isConflictCopyId(file.id) && (
-                    <span className="timeline-item-folder timeline-item-conflict">Conflict</span>
-                  )}
-                  {normalizedQuery && file.folder && (
-                    <span className="timeline-item-folder">{file.folder}</span>
-                  )}
-                  <span className="timeline-item-meta">{file.modifiedAt ? `Edited ${relativeTime(file.modifiedAt)}` : ""}</span>
+
+                <button className="home-primary-btn" type="button" onClick={handleNewTimeline}>
+                  <FilePlus size={14} strokeWidth={2.5} />
+                  <span>New timeline</span>
+                </button>
+
+                <button
+                  className="home-secondary-btn"
+                  type="button"
+                  onClick={() => onImportTimeline?.()}
+                  title="Import a .timeline or .json file into your library"
+                >
+                  <Import size={14} strokeWidth={2.5} />
+                  <span>Import</span>
+                </button>
+
+                <div className="home-sidebar-section">
+                  <button
+                    className={`home-nav-item${!currentFolder && librarySection === "home" ? " is-active" : ""}`}
+                    type="button"
+                    onClick={() => handleSelectLibrarySection("home")}
+                  >
+                    <span className="home-nav-item-main">
+                      <List size={14} />
+                      <span>Home</span>
+                    </span>
+                    <span className="home-nav-count">{rootTimelines.length}</span>
+                  </button>
+                  <button
+                    className={`home-nav-item${!currentFolder && librarySection === "recent" ? " is-active" : ""}`}
+                    type="button"
+                    onClick={() => handleSelectLibrarySection("recent")}
+                  >
+                    <span className="home-nav-item-main">
+                      <History size={14} />
+                      <span>Recent</span>
+                    </span>
+                    <span className="home-nav-count">{recentTimelines.length}</span>
+                  </button>
+                </div>
+
+                <div className="home-sidebar-section home-sidebar-section-folders">
+                  <div className="home-sidebar-heading">
+                    <span>Folders</span>
+                    <button
+                      className="home-sidebar-icon-btn"
+                      type="button"
+                      onClick={() => {
+                        setNewFolderName("");
+                        setNewFolderDialogOpen(true);
+                      }}
+                      aria-label="Create folder"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  <div className="home-sidebar-folder-list">
+                    {visibleFolders.length === 0 ? (
+                      <div className="home-sidebar-empty">No folders yet</div>
+                    ) : (
+                      visibleFolders.map((folderPath) => {
+                        const folderName = folderPath.split("/").pop();
+                        const depth = folderPath.split("/").length - 1;
+                        const count = folderStats.get(folderPath) || 0;
+                        return (
+                          <button
+                            key={folderPath}
+                            className={`home-folder-item${currentFolder === folderPath ? " is-active" : ""}`}
+                            type="button"
+                            style={{ paddingLeft: `${14 + depth * 14}px` }}
+                            onClick={() => handleSelectFolder(folderPath)}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              setFolderContextMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                nearRight: e.clientX > window.innerWidth / 2,
+                                folderPath,
+                                folderName,
+                              });
+                            }}
+                          >
+                            <span className="home-folder-item-main">
+                              <Folder size={13} />
+                              <span>{folderName}</span>
+                            </span>
+                            <span className="home-nav-count">{count}</span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {filteredTimelines.length === 0 && (
-          <div className="no-timelines">
-            <p>No timelines found. Create a new one to get started.</p>
-          </div>
-        )}
-        </div>
+              <div className="home-sidebar-footer">
+                {gitSyncStatus?.repo ? (
+                  <button
+                    className={`home-footer-link home-footer-sync ${gitSyncChip.className}`}
+                    type="button"
+                    onClick={handleGitSyncNow}
+                    onContextMenu={(e) => { e.preventDefault(); handleOpenSyncSettings(); }}
+                    title={gitSyncStatus?.error || formatSyncTime(gitSyncStatus?.lastSyncedAt)}
+                  >
+                    <gitSyncChip.icon size={14} className={gitSyncChip.className === "is-syncing" ? "git-sync-chip-spin" : ""} />
+                    <span>{gitSyncChip.className === "is-ok" ? (showSyncedConfirm ? "Synced" : "Sync") : gitSyncChip.label}</span>
+                  </button>
+                ) : (
+                  <button className="home-footer-link" type="button" onClick={handleOpenSyncSettings}>
+                    <Cloud size={14} />
+                    <span>Backup</span>
+                  </button>
+                )}
+                <button className="home-footer-link" type="button" onClick={handleOpenMarketplace}>
+                  <Store size={14} />
+                  <span>Marketplace</span>
+                </button>
+                <button className="home-footer-link" type="button" onClick={handleOpenGeneralSettings}>
+                  <Settings size={14} />
+                  <span>Settings</span>
+                </button>
+              </div>
+            </aside>
+
+            <main className="home-main">
+              <div className="home-toolbar">
+                <div className="home-search-field">
+                  <Search size={15} className="home-search-icon" />
+                  <input
+                    className="home-search-input"
+                    type="text"
+                    placeholder="Search timelines..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Search timelines"
+                  />
+                  {searchQuery && (
+                    <button
+                      className="home-search-clear"
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      aria-label="Clear search"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="home-toolbar-actions">
+                  <button
+                    className="home-sort-btn"
+                    type="button"
+                    onClick={() => setSortMode((state) => {
+                      const next = state === "date" ? "name" : state === "name" ? "name-desc" : "date";
+                      saveAppSettings({ homeSortMode: next });
+                      return next;
+                    })}
+                    aria-label="Toggle sort"
+                    title={sortMode === "date" ? "Sort: Date modified" : sortMode === "name" ? "Sort: A-Z" : "Sort: Z-A"}
+                  >
+                    {sortMode === "date" ? <Clock size={15} /> : sortMode === "name" ? <ArrowDownAZ size={15} /> : <ArrowUpAZ size={15} />}
+                    <span>{sortMode === "date" ? "Recent" : sortMode === "name" ? "A-Z" : "Z-A"}</span>
+                  </button>
+
+                  <div className="view-mode-pill">
+                    <button
+                      className={`view-mode-pill-btn${viewMode === "list" ? " is-active" : ""}`}
+                      onClick={() => setViewMode("list")}
+                      aria-label="List view"
+                      title="List"
+                    >
+                      <List size={15} />
+                    </button>
+                    <button
+                      className={`view-mode-pill-btn${viewMode === "grid" ? " is-active" : ""}`}
+                      onClick={() => setViewMode("grid")}
+                      aria-label="Grid view"
+                      title="Grid"
+                    >
+                      <LayoutGrid size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="home-content-panel">
+                <div className="home-content-header">
+                  <div>
+                    <h1 className="home-content-title">{normalizedQuery ? "Search results" : activeScopeLabel}</h1>
+                  </div>
+                  <div className="home-content-meta">
+                    {filteredTimelines.length} total
+                    {activeScopeLastModified > 0 && ` · last edit ${relativeTime(activeScopeLastModified)}`}
+                    {Number.isFinite(lastSyncedMs) && ` · last synced ${relativeTime(lastSyncedMs)}`}
+                  </div>
+                </div>
+
+                {viewMode === "list" ? (
+                  <div className="home-list">
+                    {filteredTimelines.map((file) => {
+                      const badges = [
+                        file.isPackage ? "Package" : null,
+                        isConflictCopyId(file.id) ? "Conflict" : null,
+                      ].filter(Boolean);
+                      return (
+                        <div
+                          key={file.id}
+                          className="home-row"
+                          onClick={() => openTimelineFile(file)}
+                          onContextMenu={(e) => handleContextMenu(e, file)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openTimelineFile(file);
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className="home-row-main home-row-main-full">
+                            <div className="home-row-title-line">
+                              <span className="home-row-title">{file.name}</span>
+                              {badges.length > 0 && (
+                                <span className="home-row-badges">
+                                  {badges.map((badge) => (
+                                    <span key={badge} className="home-row-badge">{badge}</span>
+                                  ))}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="home-row-meta">
+                            {showFolderMeta && (
+                              <span className="home-row-folder">{file.folder || "Home"}</span>
+                            )}
+                            <span className="home-row-time">{file.modifiedAt ? relativeTime(file.modifiedAt) : "no edits yet"}</span>
+                            <button
+                              className="timeline-item-dots"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleContextMenu(e, file);
+                              }}
+                              aria-label="More options"
+                            >
+                              <MoreVertical size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="home-grid">
+                    {filteredTimelines.map((file) => {
+                      return (
+                        <div
+                          key={file.id}
+                          className="home-grid-card"
+                          onClick={() => openTimelineFile(file)}
+                          onContextMenu={(e) => handleContextMenu(e, file)}
+                        >
+                          <div className="home-grid-card-top">
+                            <div className="timeline-item-icon">
+                              <File size={18} />
+                            </div>
+                            <button
+                              className="timeline-item-dots"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleContextMenu(e, file);
+                              }}
+                              aria-label="More options"
+                            >
+                              <MoreVertical size={14} />
+                            </button>
+                          </div>
+                          <div className="timeline-card-body">
+                            <span className="timeline-item-title">{file.name}</span>
+                            {showFolderMeta && <span className="home-row-folder">{file.folder || "Home"}</span>}
+                            <span className="timeline-item-meta">{file.modifiedAt ? `Edited ${relativeTime(file.modifiedAt)}` : "No edits yet"}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {filteredTimelines.length === 0 && (
+                  <div className="no-timelines">
+                    <p>{emptyTimelineMessage}</p>
+                  </div>
+                )}
+              </div>
+            </main>
           </div>
 
           <NewTimelineModal
