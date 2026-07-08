@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('electron', {
   moveTimeline: (payload) => ipcRenderer.invoke('move-timeline', payload),
   renameFolder: (payload) => ipcRenderer.invoke('rename-folder', payload),
   updateTimelineTitle: (payload) => ipcRenderer.invoke('update-timeline-title', payload),
+  setTimelineNeverSync: (payload) => ipcRenderer.invoke('set-timeline-never-sync', payload),
   deleteFolder: (payload) => ipcRenderer.invoke('delete-folder', payload),
   moveFolder: (payload) => ipcRenderer.invoke('move-folder', payload),
   getAppSettings: () => ipcRenderer.invoke('get-app-settings'),
@@ -53,6 +54,27 @@ contextBridge.exposeInMainWorld('electron', {
   fetchWikipedia: (payload) => ipcRenderer.invoke('fetch-wikipedia', payload),
   openExternal: (payload) => ipcRenderer.invoke('open-external', payload),
   captureScreenshot: () => ipcRenderer.invoke('capture-screenshot'),
+  gitSyncConnect: (payload) => ipcRenderer.invoke('git-sync-connect', payload),
+  gitSyncUpdateCredentials: (payload) => ipcRenderer.invoke('git-sync-update-credentials', payload),
+  gitSyncNow: () => ipcRenderer.invoke('git-sync-now'),
+  gitSyncStatus: () => ipcRenderer.invoke('git-sync-status'),
+  gitSyncUpdateSettings: (payload) => ipcRenderer.invoke('git-sync-update-settings', payload),
+  gitSyncDisconnect: (payload) => ipcRenderer.invoke('git-sync-disconnect', payload),
+  gitSyncRebuild: () => ipcRenderer.invoke('git-sync-rebuild'),
+  gitSyncMirrorSize: () => ipcRenderer.invoke('git-sync-mirror-size'),
+  gitSyncShareInfo: (payload) => ipcRenderer.invoke('git-sync-share-info', payload),
+  gitSyncFileHistory: (payload) => ipcRenderer.invoke('git-sync-file-history', payload),
+  gitSyncRestoreVersion: (payload) => ipcRenderer.invoke('git-sync-restore-version', payload),
+  onGitSyncState: (callback) => {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on('git-sync-state-changed', listener);
+    return () => ipcRenderer.removeListener('git-sync-state-changed', listener);
+  },
+  onGitSyncApplied: (callback) => {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on('git-sync-applied', listener);
+    return () => ipcRenderer.removeListener('git-sync-applied', listener);
+  },
   // Window controls
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),

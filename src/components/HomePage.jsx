@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
-import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, FolderPlus, FolderOpen, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import } from "lucide-react";
+import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, FolderPlus, FolderOpen, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, Share2, History, Link2, ExternalLink } from "lucide-react";
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
@@ -82,6 +82,81 @@ function relativeTime(ms) {
   if (days < 14) return "1 week ago";
   return `${Math.floor(days / 7)} weeks ago`;
 }
+
+const isConflictCopyId = (value) => /-conflict-\d{8}-[\w.-]+(?:-\d+)?$/i.test(String(value || ""));
+
+function formatSyncTime(value) {
+  if (!value) return "Not synced yet";
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) return "Not synced yet";
+  return `Synced ${relativeTime(ms)}`;
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) return "";
+  return new Date(ms).toLocaleString();
+}
+
+function formatMirrorBytes(n) {
+  if (n == null) return "";
+  const kb = 1024;
+  const mb = kb * 1024;
+  const gb = mb * 1024;
+  if (n >= gb) return `${(n / gb).toFixed(1)} GB`;
+  if (n >= mb) return `${(n / mb).toFixed(1)} MB`;
+  if (n >= kb) return `${(n / kb).toFixed(1)} KB`;
+  return `${n} B`;
+}
+
+function buildSyncTree(files) {
+  const root = { type: "folder", id: "", label: "Library", children: [], sortKey: "" };
+  const folderMap = new Map([["", root]]);
+  const sorted = [...files]
+    .filter((file) => !file.isPackage)
+    .sort((a, b) => a.id.localeCompare(b.id));
+
+  for (const file of sorted) {
+    const parts = String(file.id || "").split("/");
+    let parentId = "";
+    for (let i = 0; i < parts.length - 1; i += 1) {
+      const folderId = parts.slice(0, i + 1).join("/");
+      if (!folderMap.has(folderId)) {
+        const folderNode = {
+          type: "folder",
+          id: folderId,
+          label: parts[i],
+          children: [],
+          sortKey: folderId,
+        };
+        folderMap.set(folderId, folderNode);
+        folderMap.get(parentId).children.push(folderNode);
+      }
+      parentId = folderId;
+    }
+    folderMap.get(parentId).children.push({
+      type: "timeline",
+      id: file.id,
+      label: file.name,
+      sortKey: file.id,
+      conflict: isConflictCopyId(file.id),
+      neverSync: Boolean(file.neverSync),
+    });
+  }
+
+  const sortNode = (node) => {
+    node.children.sort((a, b) => {
+      if (a.type !== b.type) return a.type === "folder" ? -1 : 1;
+      return a.sortKey.localeCompare(b.sortKey);
+    });
+    node.children.forEach((child) => {
+      if (child.type === "folder") sortNode(child);
+    });
+  };
+  sortNode(root);
+  return root;
+}
 import NewTimelineModal from "./NewTimelineModal";
 import "../styles/02-homepage.css";
 import "../styles/07-modals-menus.css";
@@ -161,6 +236,18 @@ export default function HomePage({
   const [settingsSection, setSettingsSection] = useState("general");
   const [updateStatus, setUpdateStatus] = useState(null); // null | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error' | 'dev'
   const [themeMigrationStatus, setThemeMigrationStatus] = useState(null); // null | 'migrating' | { count }
+  const [gitSyncStatus, setGitSyncStatus] = useState(null);
+  const [gitSyncRemoteUrl, setGitSyncRemoteUrl] = useState("");
+  const [gitSyncPat, setGitSyncPat] = useState("");
+  const [gitSyncBranch, setGitSyncBranch] = useState("main");
+  const [gitSyncAuto, setGitSyncAuto] = useState(true);
+  const [gitSyncIntervalMinutes, setGitSyncIntervalMinutes] = useState(5);
+  const [gitSyncMachineLabel, setGitSyncMachineLabel] = useState("");
+  const [gitSyncBusy, setGitSyncBusy] = useState("");
+  const [gitSyncError, setGitSyncError] = useState("");
+  const [gitSyncShareDialog, setGitSyncShareDialog] = useState(null);
+  const [gitSyncHistoryDialog, setGitSyncHistoryDialog] = useState(null);
+  const [gitSyncMirrorBytes, setGitSyncMirrorBytes] = useState(null);
   const [recordingKey, setRecordingKey] = useState(null);
   const recordingKeyRef = useRef(null);
   const renameInputRef = useRef(null);
@@ -259,6 +346,48 @@ export default function HomePage({
   const timelinePathIssue = getPathIssue(timelineStorageDir);
   const notesPathIssue = getPathIssue(notesStorageDir);
 
+  const applyGitSyncStatus = (status) => {
+    setGitSyncStatus(status);
+    if (status?.machineLabel) setGitSyncMachineLabel(status.machineLabel);
+    if (typeof status?.autoSync === "boolean") setGitSyncAuto(status.autoSync);
+    if (Number.isFinite(status?.debounceMs)) {
+      setGitSyncIntervalMinutes(Math.max(1, Math.round(status.debounceMs / 60000)));
+    }
+    if (status?.repo) {
+      setGitSyncRemoteUrl(status.repo.url || "");
+      setGitSyncBranch(status.repo.branch || "main");
+    }
+  };
+
+  const loadGitSyncStatus = async () => {
+    if (!window.electron?.gitSyncStatus) return;
+    const result = await window.electron.gitSyncStatus();
+    if (result?.success) {
+      applyGitSyncStatus(result.status);
+      setGitSyncError("");
+    } else if (result?.error) {
+      setGitSyncError(result.error);
+    }
+  };
+
+  const saveGitSyncSettings = async (partial = {}) => {
+    if (!window.electron?.gitSyncUpdateSettings) return;
+    const payload = {
+      autoSync: partial.autoSync ?? gitSyncAuto,
+      intervalMinutes: partial.intervalMinutes ?? gitSyncIntervalMinutes,
+      machineLabel: partial.machineLabel ?? gitSyncMachineLabel,
+      excludedPaths: partial.excludedPaths,
+      writeReadme: partial.writeReadme,
+    };
+    const result = await window.electron.gitSyncUpdateSettings(payload);
+    if (result?.success) {
+      applyGitSyncStatus(result.status);
+      setGitSyncError("");
+    } else if (result?.error) {
+      setGitSyncError(result.error);
+    }
+  };
+
   useEffect(() => {
     if (openSettingsSignal > 0) {
       setView("settings");
@@ -267,11 +396,53 @@ export default function HomePage({
   }, [openSettingsSignal]);
 
   useEffect(() => {
+    if (settingsSection === "sync" && gitSyncStatus?.repo) loadGitSyncMirrorSize();
+  }, [settingsSection, gitSyncStatus?.repo]);
+
+  useEffect(() => {
     if (!window.electron?.onUpdaterStatus) return;
     window.electron.onUpdaterStatus((data) => {
       setUpdateStatus(data.status);
     });
     return () => window.electron.offUpdaterStatus?.();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSyncPrefs = async () => {
+      const settings = await getAppSettings();
+      if (cancelled) return;
+      setGitSyncAuto(settings?.gitSyncAutoSync !== false);
+      setGitSyncIntervalMinutes(Math.max(1, Number(settings?.gitSyncIntervalMinutes) || 5));
+      setGitSyncMachineLabel(settings?.gitSyncMachineLabel || "");
+      if (window.electron?.gitSyncStatus) {
+        const result = await window.electron.gitSyncStatus();
+        if (!cancelled && result?.success) {
+          applyGitSyncStatus(result.status);
+          setGitSyncError("");
+        } else if (!cancelled && result?.error) {
+          setGitSyncError(result.error);
+        }
+      }
+    };
+    loadSyncPrefs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!window.electron?.onGitSyncState) return;
+    const offState = window.electron.onGitSyncState((status) => {
+      applyGitSyncStatus(status);
+    });
+    const offApplied = window.electron.onGitSyncApplied(() => {
+      refreshLocal().catch(() => {});
+    });
+    return () => {
+      offState?.();
+      offApplied?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -503,6 +674,217 @@ export default function HomePage({
     }
   };
 
+  const handleConnectGitSyncRepo = async () => {
+    if (!window.electron?.gitSyncConnect || !gitSyncRemoteUrl.trim() || !gitSyncPat.trim()) return;
+    setGitSyncBusy("connect");
+    setGitSyncError("");
+    await saveGitSyncSettings({
+      autoSync: gitSyncAuto,
+      intervalMinutes: gitSyncIntervalMinutes,
+      machineLabel: gitSyncMachineLabel,
+    });
+    const result = await window.electron.gitSyncConnect({
+      remoteUrl: gitSyncRemoteUrl.trim(),
+      branch: gitSyncBranch.trim() || "main",
+      token: gitSyncPat.trim(),
+    });
+    setGitSyncBusy("");
+    if (!result?.success) {
+      setGitSyncError(result?.error || "Could not connect the repository.");
+      return;
+    }
+    applyGitSyncStatus(result.status);
+    setGitSyncPat("");
+    await refreshLocal();
+  };
+
+  const handleGitSyncUpdateCredentials = async () => {
+    if (!window.electron?.gitSyncUpdateCredentials || !gitSyncPat.trim()) return;
+    setGitSyncBusy("update-token");
+    setGitSyncError("");
+    const result = await window.electron.gitSyncUpdateCredentials({
+      token: gitSyncPat.trim(),
+    });
+    setGitSyncBusy("");
+    if (!result?.success) {
+      setGitSyncError(result?.error || "Could not update the personal access token.");
+      return;
+    }
+    applyGitSyncStatus(result.status);
+    setGitSyncPat("");
+  };
+
+  const handleGitSyncNow = async () => {
+    if (!window.electron?.gitSyncNow) return;
+    setGitSyncBusy("sync-now");
+    const result = await window.electron.gitSyncNow();
+    setGitSyncBusy("");
+    if (result?.success) {
+      applyGitSyncStatus(result.status);
+      setGitSyncError("");
+      await refreshLocal();
+    } else {
+      setGitSyncError(result?.error || "Sync failed.");
+    }
+  };
+
+  const loadGitSyncMirrorSize = async () => {
+    if (!window.electron?.gitSyncMirrorSize) return;
+    const result = await window.electron.gitSyncMirrorSize();
+    if (result?.success) setGitSyncMirrorBytes(result.bytes);
+  };
+
+  const handleGitSyncRebuild = async () => {
+    if (!window.electron?.gitSyncRebuild) return;
+    if (!window.confirm("Rebuild the local mirror? This deletes the mirror clone and re-exports your library. Your timelines are not affected.")) return;
+    setGitSyncBusy("rebuild");
+    setGitSyncError("");
+    const result = await window.electron.gitSyncRebuild();
+    setGitSyncBusy("");
+    if (result?.success) {
+      applyGitSyncStatus(result.status);
+      await loadGitSyncMirrorSize();
+      await refreshLocal();
+    } else if (result?.error) {
+      setGitSyncError(result.error);
+    }
+  };
+
+  const handleGitSyncDisconnect = async () => {
+    if (!window.confirm("Disconnect git sync from this device?")) return;
+    const deleteMirror = window.confirm("Delete the local mirror clone too? Press OK to delete it, or Cancel to keep it.");
+    setGitSyncBusy("disconnect");
+    const result = await window.electron?.gitSyncDisconnect?.({ deleteMirror });
+    setGitSyncBusy("");
+    if (result?.success) {
+      setGitSyncPat("");
+      await loadGitSyncStatus();
+    } else if (result?.error) {
+      setGitSyncError(result.error);
+    }
+  };
+
+  const loadGitSyncShareInfo = async (file) => {
+    if (!window.electron?.gitSyncShareInfo || !file?.uid) {
+      throw new Error("Share links are only available for synced local timelines.");
+    }
+    const result = await window.electron.gitSyncShareInfo({ uid: file.uid });
+    if (!result?.success) {
+      throw new Error(result?.error || "Could not load share info.");
+    }
+    return result.info;
+  };
+
+  const loadGitSyncHistory = async (file) => {
+    if (!window.electron?.gitSyncFileHistory || !file?.uid) {
+      throw new Error("Timeline history is only available for synced local timelines.");
+    }
+    const result = await window.electron.gitSyncFileHistory({ uid: file.uid });
+    if (!result?.success) {
+      throw new Error(result?.error || "Could not load timeline history.");
+    }
+    return result.history;
+  };
+
+  const copyText = async (text) => {
+    if (!text) throw new Error("Nothing to copy.");
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard access is unavailable in this build.");
+    }
+    await navigator.clipboard.writeText(text);
+  };
+
+  const handleOpenGitSyncShare = async (file) => {
+    setGitSyncShareDialog({ file, info: null, loading: true, error: "", copied: "" });
+    try {
+      const info = await loadGitSyncShareInfo(file);
+      setGitSyncShareDialog({ file, info, loading: false, error: "", copied: "" });
+    } catch (error) {
+      setGitSyncShareDialog({ file, info: null, loading: false, error: error.message, copied: "" });
+    }
+  };
+
+  const handleCopyGitSyncLink = async (kind) => {
+    const url = gitSyncShareDialog?.info?.[kind];
+    try {
+      await copyText(url);
+      setGitSyncShareDialog((current) => current ? { ...current, copied: kind } : current);
+    } catch (error) {
+      setGitSyncShareDialog((current) => current ? { ...current, error: error.message } : current);
+    }
+  };
+
+  const handleSyncAndCopyGitSyncLink = async (kind) => {
+    const file = gitSyncShareDialog?.file;
+    if (!file) return;
+    setGitSyncShareDialog((current) => current ? { ...current, loading: true, error: "", copied: "" } : current);
+    const syncResult = await window.electron?.gitSyncNow?.();
+    if (!syncResult?.success) {
+      setGitSyncShareDialog((current) => current ? {
+        ...current,
+        loading: false,
+        error: syncResult?.error || "Sync failed before copying the link.",
+      } : current);
+      return;
+    }
+    applyGitSyncStatus(syncResult.status);
+    await refreshLocal();
+    try {
+      const info = await loadGitSyncShareInfo(file);
+      await copyText(info?.[kind]);
+      setGitSyncShareDialog({ file, info, loading: false, error: "", copied: kind });
+    } catch (error) {
+      setGitSyncShareDialog((current) => current ? {
+        ...current,
+        loading: false,
+        error: error.message,
+      } : current);
+    }
+  };
+
+  const handleToggleNeverSync = async (file) => {
+    if (!file || file.isPackage) return;
+    const next = !file.neverSync;
+    if (next && !window.confirm(
+      "Stop syncing this timeline to GitHub?\n\nFuture changes won't be pushed. Anything already pushed stays in the repo and its history; use \"Remove from repo\" to take it down."
+    )) return;
+    const result = await window.electron?.setTimelineNeverSync?.({ id: file.id, neverSync: next });
+    if (result?.success) {
+      await refreshLocal();
+      await loadGitSyncStatus();
+    } else if (result?.error) {
+      setGitSyncError(result.error);
+    }
+  };
+
+  const handleOpenGitSyncHistory = async (file) => {
+    setGitSyncHistoryDialog({ file, history: null, loading: true, error: "", restoringOid: "" });
+    try {
+      const history = await loadGitSyncHistory(file);
+      setGitSyncHistoryDialog({ file, history, loading: false, error: "", restoringOid: "" });
+    } catch (error) {
+      setGitSyncHistoryDialog({ file, history: null, loading: false, error: error.message, restoringOid: "" });
+    }
+  };
+
+  const handleRestoreGitSyncVersion = async (oid) => {
+    const file = gitSyncHistoryDialog?.file;
+    if (!file || !oid) return;
+    if (!window.confirm("Restore this version as a copy in your library?")) return;
+    setGitSyncHistoryDialog((current) => current ? { ...current, restoringOid: oid, error: "" } : current);
+    const result = await window.electron?.gitSyncRestoreVersion?.({ uid: file.uid, commitOid: oid });
+    if (!result?.success) {
+      setGitSyncHistoryDialog((current) => current ? {
+        ...current,
+        restoringOid: "",
+        error: result?.error || "Could not restore this version.",
+      } : current);
+      return;
+    }
+    await refreshLocal();
+    setGitSyncHistoryDialog(null);
+  };
+
   const handleCreateFolder = async () => {
     const name = newFolderName.trim();
     if (!name) return;
@@ -644,6 +1026,91 @@ export default function HomePage({
       : (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0)
     );
 
+  const gitSyncExcluded = gitSyncStatus?.excludedPaths || [];
+  const gitSyncExcludedSet = new Set(gitSyncExcluded);
+  const isGitSyncExcluded = (id) => {
+    const rel = String(id || "");
+    return gitSyncExcluded.some((e) => (e.endsWith("/") ? rel.startsWith(e) : rel === e));
+  };
+  const isExcludedByAncestorFolder = (id) => {
+    const rel = String(id || "");
+    return gitSyncExcluded.some((e) => e.endsWith("/") && rel.startsWith(e));
+  };
+  const gitSyncTree = useMemo(() => buildSyncTree(timelineFiles), [timelineFiles]);
+  const gitSyncChip = useMemo(() => {
+    const state = gitSyncStatus?.state || "disconnected";
+    if (state === "syncing" || gitSyncBusy === "sync-now") {
+      return { label: "Syncing", icon: RefreshCw, className: "is-syncing" };
+    }
+    if (state === "idle") {
+      return { label: "Synced", icon: CheckCircle2, className: "is-ok" };
+    }
+    if (state === "dirty") {
+      return { label: "Pending", icon: Cloud, className: "is-dirty" };
+    }
+    if (state === "offline") {
+      return { label: "Offline", icon: CloudOff, className: "is-warn" };
+    }
+    if (state === "auth-expired") {
+      return { label: "Token Needed", icon: AlertTriangle, className: "is-error" };
+    }
+    if (state === "error") {
+      return { label: "Sync Error", icon: AlertTriangle, className: "is-error" };
+    }
+    return { label: "Git Sync", icon: Cloud, className: "" };
+  }, [gitSyncStatus?.state, gitSyncBusy]);
+
+  const gitSyncRemoteOpenUrl = useMemo(() => {
+    const remoteUrl = String(gitSyncStatus?.repo?.url || gitSyncRemoteUrl || "").trim();
+    if (!remoteUrl) return "";
+    if (/^https?:\/\//i.test(remoteUrl)) return remoteUrl.replace(/\.git$/i, "");
+    if (/^git@github\.com:/i.test(remoteUrl)) {
+      return `https://github.com/${remoteUrl.slice("git@github.com:".length).replace(/\.git$/i, "")}`;
+    }
+    return remoteUrl;
+  }, [gitSyncStatus?.repo?.url, gitSyncRemoteUrl]);
+  const gitSyncConnected = Boolean(gitSyncStatus?.repo);
+  const gitSyncStatusDetail = useMemo(() => {
+    if (gitSyncStatus?.error) return gitSyncStatus.error;
+    const state = gitSyncStatus?.state || "disconnected";
+    if (state === "syncing" || gitSyncBusy === "sync-now") {
+      return "A sync is currently running. Local and remote changes will reconcile automatically.";
+    }
+    if (state === "idle") return formatSyncTime(gitSyncStatus?.lastSyncedAt);
+    if (state === "dirty") {
+      return "Local changes are queued for the next sync pass.";
+    }
+    if (state === "offline") {
+      return "The remote is unreachable right now. Changes stay local until the connection returns.";
+    }
+    if (state === "auth-expired") {
+      return "The saved token no longer works. Paste a replacement token below to resume syncing.";
+    }
+    if (state === "error") {
+      return "The last sync attempt failed. Review the error below and try again.";
+    }
+    if (!gitSyncConnected) {
+      return "Connect a Git repository to keep this library synced across devices.";
+    }
+    return formatSyncTime(gitSyncStatus?.lastSyncedAt);
+  }, [gitSyncBusy, gitSyncConnected, gitSyncStatus?.error, gitSyncStatus?.lastSyncedAt, gitSyncStatus?.state]);
+
+  const handleGitSyncExcludeChange = async (targetKey, nextChecked) => {
+    const targetId = targetKey.endsWith("/") ? targetKey.slice(0, -1) : targetKey;
+    const next = new Set(gitSyncExcludedSet);
+    if (nextChecked) {
+      next.delete(targetKey);
+      next.delete(targetId);
+    } else {
+      for (const e of [...next]) {
+        const eId = e.endsWith("/") ? e.slice(0, -1) : e;
+        if (eId === targetId || eId.startsWith(`${targetId}/`)) next.delete(e);
+      }
+      next.add(targetKey);
+    }
+    await saveGitSyncSettings({ excludedPaths: [...next].sort() });
+  };
+
   if (loading && !settingsOnly) {
     return (
       <div className="homepage">
@@ -660,6 +1127,67 @@ export default function HomePage({
       return;
     }
     setView("home");
+  };
+
+  const renderGitSyncTreeNode = (node, depth = 0) => {
+    if (!node) return null;
+    if (node.type === "timeline") {
+      const coveredByFolder = isExcludedByAncestorFolder(node.id);
+      const checked = !isGitSyncExcluded(node.id) && !node.neverSync;
+      return (
+        <label
+          key={`t:${node.id}`}
+          className="git-sync-tree-item"
+          style={{ paddingLeft: `${depth * 18}px` }}
+          title={coveredByFolder ? "Excluded by its folder; re-check the folder to edit this timeline." : undefined}
+        >
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={node.neverSync || coveredByFolder}
+            onChange={(e) => handleGitSyncExcludeChange(node.id, e.target.checked)}
+          />
+          <span className="git-sync-tree-label">
+            {node.label}
+            {node.conflict && <span className="git-sync-tree-badge">Conflict</span>}
+            {node.neverSync && <span className="git-sync-tree-badge">Never sync</span>}
+          </span>
+        </label>
+      );
+    }
+
+    const flattenLeaves = (current) => current.children.flatMap((child) => (
+      child.type === "folder" ? flattenLeaves(child) : [child]
+    ));
+    const leaves = flattenLeaves(node);
+    const selectableLeaves = leaves.filter((leaf) => !leaf.neverSync);
+    const checkedCount = selectableLeaves.filter((leaf) => !isGitSyncExcluded(leaf.id)).length;
+    const allChecked = selectableLeaves.length > 0 && checkedCount === selectableLeaves.length;
+    const partiallyChecked = checkedCount > 0 && checkedCount < selectableLeaves.length;
+
+    return (
+      <div key={`f:${node.id || "root"}`} className="git-sync-tree-group">
+        {node.id ? (
+          <label
+            className="git-sync-tree-item"
+            style={{ paddingLeft: `${depth * 18}px` }}
+            title={isExcludedByAncestorFolder(node.id) ? "Excluded by a parent folder; re-check the parent to edit this folder." : undefined}
+          >
+            <input
+              type="checkbox"
+              checked={allChecked}
+              disabled={isExcludedByAncestorFolder(node.id)}
+              ref={(input) => {
+                if (input) input.indeterminate = partiallyChecked;
+              }}
+              onChange={(e) => handleGitSyncExcludeChange(`${node.id}/`, e.target.checked)}
+            />
+            <span className="git-sync-tree-label">{node.label}</span>
+          </label>
+        ) : null}
+        {node.children.map((child) => renderGitSyncTreeNode(child, node.id ? depth + 1 : depth))}
+      </div>
+    );
   };
 
   return (
@@ -702,6 +1230,17 @@ export default function HomePage({
                 aria-label="Search timelines"
               />
             </div>
+            {gitSyncStatus?.repo && (
+              <button
+                className={`git-sync-chip ${gitSyncChip.className}`}
+                onClick={handleGitSyncNow}
+                title={gitSyncStatus?.error || formatSyncTime(gitSyncStatus?.lastSyncedAt)}
+                aria-label="Git sync status"
+              >
+                <gitSyncChip.icon size={15} className={gitSyncChip.className === "is-syncing" ? "git-sync-chip-spin" : ""} />
+                <span>{gitSyncChip.label}</span>
+              </button>
+            )}
             <button
               className="homepage-settings-icon"
               onClick={handleOpenMarketplace}
@@ -859,6 +1398,9 @@ export default function HomePage({
                   {file.isPackage && (
                     <span className="timeline-item-folder" title="Packaged timeline; opening it imports it into your library">Package</span>
                   )}
+                  {isConflictCopyId(file.id) && (
+                    <span className="timeline-item-folder timeline-item-conflict">Conflict</span>
+                  )}
                   {normalizedQuery && file.folder && (
                     <span className="timeline-item-folder">{file.folder}</span>
                   )}
@@ -899,6 +1441,9 @@ export default function HomePage({
                   <span className="timeline-item-title">{file.name}</span>
                   {file.isPackage && (
                     <span className="timeline-item-folder" title="Packaged timeline; opening it imports it into your library">Package</span>
+                  )}
+                  {isConflictCopyId(file.id) && (
+                    <span className="timeline-item-folder timeline-item-conflict">Conflict</span>
                   )}
                   {normalizedQuery && file.folder && (
                     <span className="timeline-item-folder">{file.folder}</span>
@@ -965,6 +1510,13 @@ export default function HomePage({
                   onClick={() => setSettingsSection("hotkeys")}
                 >
                   Hotkeys
+                </button>
+                <button
+                  type="button"
+                  className={`settings-sidebar-item${settingsSection === "sync" ? " is-active" : ""}`}
+                  onClick={() => setSettingsSection("sync")}
+                >
+                  Sync
                 </button>
               </div>
               <div className="settings-content">
@@ -1295,6 +1847,338 @@ export default function HomePage({
                   </>
                 )}
 
+                {settingsSection === "sync" && (
+                  <>
+                    {!window.electron?.gitSyncStatus ? (
+                      <div className="settings-row">
+                        <div className="settings-row-left">
+                          <div className="settings-row-label">Git Sync</div>
+                          <div className="settings-row-description">
+                            Git sync is only available in the desktop app.
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {!gitSyncConnected ? (
+                          <>
+                            <div className="git-sync-intro">
+                              <div className="git-sync-intro-icon">
+                                <Cloud size={20} />
+                              </div>
+                              <div className="git-sync-intro-text">
+                                <div className="git-sync-intro-title">Git Sync</div>
+                                <div className="git-sync-intro-desc">
+                                  Sync this library across devices using your own Git repository. Follow the steps below to connect one.
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="git-sync-step-row">
+                              <div className="git-sync-step-badge">1</div>
+                              <div className="git-sync-step-main">
+                                <div className="git-sync-step-title">Create a repository</div>
+                                <div className="git-sync-step-text">
+                                  Create an empty repository on GitHub or another Git host. This is where your synced library will live.
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="git-sync-step-row">
+                              <div className="git-sync-step-badge">2</div>
+                              <div className="git-sync-step-main">
+                                <div className="git-sync-step-title">Generate an access token</div>
+                                <div className="git-sync-step-text">
+                                  Create a personal access token that can read and write that repo. Fine-grained tokens scoped to the single repo are recommended; it is stored locally with OS encryption when available.
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="git-sync-step-row">
+                              <div className="git-sync-step-badge">3</div>
+                              <div className="git-sync-step-main">
+                                <div className="git-sync-step-title">Connect the remote</div>
+                                <div className="git-sync-step-text">
+                                  Enter the repository's HTTPS clone URL, branch, and token. Connect every device to the same remote to keep libraries aligned.
+                                </div>
+                                <div className="git-sync-step-form">
+                                  <label className="git-sync-step-field">
+                                    <span className="git-sync-step-field-label">Repository URL</span>
+                                    <input
+                                      className="homepage-search git-sync-input git-sync-input-wide"
+                                      value={gitSyncRemoteUrl}
+                                      onChange={(e) => setGitSyncRemoteUrl(e.target.value)}
+                                      placeholder="https://github.com/you/timelines-sync.git"
+                                    />
+                                  </label>
+                                  <label className="git-sync-step-field">
+                                    <span className="git-sync-step-field-label">Branch</span>
+                                    <input
+                                      className="homepage-search git-sync-input"
+                                      value={gitSyncBranch}
+                                      onChange={(e) => setGitSyncBranch(e.target.value)}
+                                      placeholder="main"
+                                    />
+                                  </label>
+                                  <label className="git-sync-step-field">
+                                    <span className="git-sync-step-field-label">Personal Access Token</span>
+                                    <input
+                                      className="homepage-search git-sync-input git-sync-input-wide"
+                                      type="password"
+                                      value={gitSyncPat}
+                                      onChange={(e) => setGitSyncPat(e.target.value)}
+                                      placeholder="github_pat_..."
+                                    />
+                                  </label>
+                                  <div className="git-sync-step-actions">
+                                    <div className="settings-folder-actions">
+                                      <button
+                                        className="settings-folder-button"
+                                        type="button"
+                                        disabled={!gitSyncRemoteUrl.trim() || !gitSyncPat.trim() || gitSyncBusy === "connect"}
+                                        onClick={handleConnectGitSyncRepo}
+                                      >
+                                        {gitSyncBusy === "connect" ? "Connecting..." : "Connect Repo"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="git-sync-intro">
+                              <div className="git-sync-intro-icon">
+                                <Cloud size={20} />
+                              </div>
+                              <div className="git-sync-intro-text">
+                                <div className="git-sync-intro-title">Git Sync</div>
+                                <div className="git-sync-intro-desc">
+                                  {gitSyncStatus.repo.owner && gitSyncStatus.repo.repo
+                                    ? `Connected to ${gitSyncStatus.repo.owner}/${gitSyncStatus.repo.repo}.`
+                                    : "Connected to your remote repository."}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Status</div>
+                                <div className="settings-row-description">{gitSyncStatusDetail}</div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="settings-folder settings-folder-column">
+                                  <div className="settings-folder-actions">
+                                    <button
+                                      className="settings-folder-button"
+                                      type="button"
+                                      disabled={!gitSyncStatus?.repo || gitSyncStatus?.state === "auth-expired" || gitSyncBusy === "sync-now"}
+                                      onClick={handleGitSyncNow}
+                                    >
+                                      {gitSyncBusy === "sync-now" ? "Syncing..." : "Sync Now"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Repository</div>
+                                <div className="settings-row-description">{gitSyncStatus.repo.url} · {gitSyncStatus.repo.branch}</div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="settings-folder settings-folder-column">
+                                  <div className="settings-folder-actions">
+                                    <button
+                                      className="settings-folder-button"
+                                      type="button"
+                                      disabled={!gitSyncRemoteOpenUrl}
+                                      onClick={() => window.electron?.openExternal?.({ url: gitSyncRemoteOpenUrl })}
+                                    >
+                                      Open Remote
+                                    </button>
+                                    <button
+                                      className="settings-folder-button"
+                                      type="button"
+                                      onClick={handleGitSyncDisconnect}
+                                    >
+                                      Disconnect
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Personal Access Token</div>
+                                <div className="settings-row-description">
+                                  {gitSyncStatus?.state === "auth-expired"
+                                    ? "The saved token no longer works. Paste a replacement to resume sync."
+                                    : "Rotate the saved token without reconnecting the repo."}
+                                </div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="settings-folder settings-folder-column">
+                                  <input
+                                    className="homepage-search git-sync-input git-sync-input-wide"
+                                    type="password"
+                                    value={gitSyncPat}
+                                    onChange={(e) => setGitSyncPat(e.target.value)}
+                                    placeholder="github_pat_..."
+                                  />
+                                  <div className="settings-folder-actions">
+                                    <button
+                                      className="settings-folder-button"
+                                      type="button"
+                                      disabled={!gitSyncPat.trim() || gitSyncBusy === "update-token"}
+                                      onClick={handleGitSyncUpdateCredentials}
+                                    >
+                                      {gitSyncBusy === "update-token" ? "Updating..." : "Update Token"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row settings-row-section">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Sync Behavior</div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Machine Label</div>
+                                <div className="settings-row-description">Identifies this device in commit messages and conflict copies.</div>
+                              </div>
+                              <div className="settings-row-right">
+                                <input
+                                  className="homepage-search git-sync-input"
+                                  value={gitSyncMachineLabel}
+                                  onChange={(e) => setGitSyncMachineLabel(e.target.value)}
+                                  onBlur={() => saveGitSyncSettings({ machineLabel: gitSyncMachineLabel })}
+                                  placeholder="machine label"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Auto Sync</div>
+                                <div className="settings-row-description">Sync changes automatically after the selected idle interval.</div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="git-sync-row-controls">
+                                  <label className="settings-toggle">
+                                    <input
+                                      type="checkbox"
+                                      checked={gitSyncAuto}
+                                      onChange={async (e) => {
+                                        const next = e.target.checked;
+                                        setGitSyncAuto(next);
+                                        await saveGitSyncSettings({ autoSync: next });
+                                      }}
+                                    />
+                                    <span className="settings-toggle-slider"></span>
+                                  </label>
+                                  <input
+                                    className="homepage-search git-sync-input git-sync-input-branch"
+                                    type="number"
+                                    min={1}
+                                    value={gitSyncIntervalMinutes}
+                                    onChange={(e) => setGitSyncIntervalMinutes(Math.max(1, Number(e.target.value) || 1))}
+                                    onBlur={() => saveGitSyncSettings({ intervalMinutes: gitSyncIntervalMinutes })}
+                                  />
+                                  <span className="git-sync-inline-label">min</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row git-sync-row-stacked">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Synced Timelines</div>
+                                <div className="settings-row-description">
+                                  Unchecking a timeline or folder adds it to the shared exclusion list stored in this repo. Other devices stop syncing it after they pull the change.
+                                </div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="settings-folder settings-folder-column git-sync-tree-wrap git-sync-tree-panel">
+                                  {gitSyncTree.children.length > 0 ? gitSyncTree.children.map((node) => renderGitSyncTreeNode(node)) : (
+                                    <div className="settings-row-description">No local timelines found.</div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row settings-row-section">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Repository Options</div>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Generate README</div>
+                                <div className="settings-row-description">Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only.</div>
+                              </div>
+                              <div className="settings-row-right">
+                                <label className="settings-toggle">
+                                  <input
+                                    type="checkbox"
+                                    checked={gitSyncStatus?.writeReadme !== false}
+                                    onChange={(e) => saveGitSyncSettings({ writeReadme: e.target.checked })}
+                                  />
+                                  <span className="settings-toggle-slider"></span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="settings-row">
+                              <div className="settings-row-left">
+                                <div className="settings-row-label">Mirror</div>
+                                <div className="settings-row-description">
+                                  Timelines keeps a local clone of the repo{gitSyncMirrorBytes == null ? "" : ` (${formatMirrorBytes(gitSyncMirrorBytes)})`}. Rebuild it if history grows large or the mirror looks out of sync; your library is never touched.
+                                </div>
+                              </div>
+                              <div className="settings-row-right">
+                                <div className="settings-folder settings-folder-column">
+                                  <div className="settings-folder-actions">
+                                    <button
+                                      className="settings-folder-button"
+                                      type="button"
+                                      disabled={gitSyncBusy === "rebuild" || gitSyncStatus?.state === "syncing"}
+                                      onClick={handleGitSyncRebuild}
+                                    >
+                                      {gitSyncBusy === "rebuild" ? "Rebuilding..." : "Rebuild Mirror"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {(gitSyncStatus?.exportErrors?.length > 0 || gitSyncStatus?.importErrors?.length > 0 || gitSyncError) && (
+                          <div className="settings-row">
+                            <div className="settings-row-left">
+                              {gitSyncStatus?.exportErrors?.map((e, i) => (
+                                <div key={`ex:${i}`} className="settings-path-error">{e.error || `${e.path} could not be synced.`}</div>
+                              ))}
+                              {gitSyncStatus?.importErrors?.map((e, i) => (
+                                <div key={`im:${i}`} className="settings-path-error">{`${e.path}: ${e.error || "could not be imported."}`}</div>
+                              ))}
+                              {gitSyncError && <div className="settings-path-error">{gitSyncError}</div>}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+
                 {settingsSection === "files" && (
                   <>
                     <div className="settings-row">
@@ -1502,6 +2386,40 @@ export default function HomePage({
           {!contextMenu.file.isPackage && (
             <button
               className="context-menu-item"
+              onClick={() => handleMenuAction(() => handleOpenGitSyncShare(contextMenu.file))}
+            >
+              <Share2 size={16} />
+              <span>Share Viewer Link</span>
+            </button>
+          )}
+
+          {!contextMenu.file.isPackage && (
+            <button
+              className="context-menu-item"
+              onClick={() => handleMenuAction(() => handleOpenGitSyncHistory(contextMenu.file))}
+            >
+              <History size={16} />
+              <span>Version History</span>
+            </button>
+          )}
+
+          {!contextMenu.file.isPackage && gitSyncConnected && (
+            <button
+              className="context-menu-item"
+              onClick={() => handleMenuAction(() => handleToggleNeverSync(contextMenu.file))}
+            >
+              <CloudOff size={16} />
+              <span>{contextMenu.file.neverSync ? 'Allow syncing to GitHub' : 'Never sync to GitHub'}</span>
+            </button>
+          )}
+
+          {!contextMenu.file.isPackage && (
+            <div className="context-menu-separator" />
+          )}
+
+          {!contextMenu.file.isPackage && (
+            <button
+              className="context-menu-item"
               onClick={() => handleMenuAction(() => handleDuplicate(contextMenu.file))}
             >
               <Copy size={16} />
@@ -1535,6 +2453,134 @@ export default function HomePage({
             <Trash2 size={16} />
             <span>Delete</span>
           </button>
+        </div>
+      )}
+
+      {gitSyncShareDialog && (
+        <div className="settings-backdrop" onClick={() => setGitSyncShareDialog(null)}>
+          <div className="folder-modal git-sync-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="git-sync-modal-title">Share {gitSyncShareDialog.file?.name}</div>
+            {gitSyncShareDialog.loading && (
+              <p className="folder-modal-text">Loading share info…</p>
+            )}
+            {gitSyncShareDialog.error && (
+              <p className="folder-modal-text folder-modal-error">{gitSyncShareDialog.error}</p>
+            )}
+            {!gitSyncShareDialog.loading && gitSyncShareDialog.info && (
+              <>
+                <p className="folder-modal-text">
+                  Viewer links currently work for GitHub remotes and require the repo to be public.
+                </p>
+                {!gitSyncShareDialog.info.canShareViewer ? (
+                  <p className="folder-modal-text">
+                    This remote does not map to a GitHub viewer link yet.
+                  </p>
+                ) : (
+                  <>
+                    {gitSyncShareDialog.info.pending && (
+                      <p className="folder-modal-text">
+                        This timeline has local changes or unpushed commits. Sync before sharing if you want the latest version online.
+                      </p>
+                    )}
+
+                    <div className="git-sync-link-block">
+                      <div className="git-sync-link-label">Latest Branch Link</div>
+                      <code className="git-sync-link-code">{gitSyncShareDialog.info.viewerUrl}</code>
+                      <div className="folder-modal-actions">
+                        {gitSyncShareDialog.info.pending ? (
+                          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleSyncAndCopyGitSyncLink("viewerUrl")}>
+                            Sync & Copy
+                          </button>
+                        ) : (
+                          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleCopyGitSyncLink("viewerUrl")}>
+                            {gitSyncShareDialog.copied === "viewerUrl" ? "Copied" : "Copy Link"}
+                          </button>
+                        )}
+                        <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.viewerUrl })}>
+                          <ExternalLink size={14} />
+                          <span>Open</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {gitSyncShareDialog.info.exactViewerUrl && (
+                      <div className="git-sync-link-block">
+                        <div className="git-sync-link-label">Last Synced Exact-Version Link</div>
+                        <code className="git-sync-link-code">{gitSyncShareDialog.info.exactViewerUrl}</code>
+                        <div className="folder-modal-actions">
+                          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleCopyGitSyncLink("exactViewerUrl")}>
+                            {gitSyncShareDialog.copied === "exactViewerUrl" ? "Copied" : "Copy Exact Link"}
+                          </button>
+                          <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.exactViewerUrl })}>
+                            <Link2 size={14} />
+                            <span>Open</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            <div className="folder-modal-actions">
+              <button className="folder-modal-btn" onClick={() => setGitSyncShareDialog(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gitSyncHistoryDialog && (
+        <div className="settings-backdrop" onClick={() => setGitSyncHistoryDialog(null)}>
+          <div className="folder-modal git-sync-modal git-sync-history-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="git-sync-modal-title">Version History: {gitSyncHistoryDialog.file?.name}</div>
+            {gitSyncHistoryDialog.loading && (
+              <p className="folder-modal-text">Loading history…</p>
+            )}
+            {gitSyncHistoryDialog.error && (
+              <p className="folder-modal-text folder-modal-error">{gitSyncHistoryDialog.error}</p>
+            )}
+            {!gitSyncHistoryDialog.loading && gitSyncHistoryDialog.history && (
+              <>
+                {gitSyncHistoryDialog.history.entries.length === 0 ? (
+                  <p className="folder-modal-text">No synced history found for this timeline yet.</p>
+                ) : (
+                  <div className="git-sync-history-list">
+                    {gitSyncHistoryDialog.history.entries.map((entry) => (
+                      <div key={entry.oid} className="git-sync-history-item">
+                        <div className="git-sync-history-main">
+                          <div className="git-sync-history-subject">{entry.subject || entry.oid.slice(0, 7)}</div>
+                          <div className="git-sync-history-meta">
+                            {formatDateTime(entry.committedAt)} · {entry.authorName || "Unknown author"} · {entry.oid.slice(0, 7)}
+                          </div>
+                          {entry.summary && (
+                            <div className="git-sync-history-summary">{entry.summary}</div>
+                          )}
+                        </div>
+                        <div className="git-sync-history-actions">
+                          {entry.viewerUrl && (
+                            <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: entry.viewerUrl })}>
+                              <ExternalLink size={14} />
+                              <span>Open</span>
+                            </button>
+                          )}
+                          <button
+                            className="folder-modal-btn folder-modal-btn-primary"
+                            disabled={gitSyncHistoryDialog.restoringOid === entry.oid}
+                            onClick={() => handleRestoreGitSyncVersion(entry.oid)}
+                          >
+                            {gitSyncHistoryDialog.restoringOid === entry.oid ? "Restoring…" : "Restore as Copy"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+            <div className="folder-modal-actions">
+              <button className="folder-modal-btn" onClick={() => setGitSyncHistoryDialog(null)}>Close</button>
+            </div>
+          </div>
         </div>
       )}
 

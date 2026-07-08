@@ -18,14 +18,24 @@ const sanitizeEntryPath = (name) => {
   return parts.join('/');
 };
 
+// Fixed entry mtime so deterministic builds don't embed the build time
+const DETERMINISTIC_MTIME = new Date('2000-01-01T00:00:00Z');
+
 // files: { 'assets/img.png': Uint8Array, 'notes/note.md': Uint8Array }
-function buildPackage(timelineJson, files = {}) {
+// opts.deterministic: sorted entries, stored (level 0), fixed mtime, so an
+// unchanged timeline zips byte-identically; used by git sync mirror exports
+function buildPackage(timelineJson, files = {}, opts = {}) {
   const entries = {
     'manifest.json': strToU8(JSON.stringify({ format: 'timeline-package', version: PACKAGE_FORMAT_VERSION }, null, 2)),
     'timeline.json': strToU8(timelineJson),
     ...files,
   };
-  return zipSync(entries);
+  if (!opts.deterministic) return zipSync(entries);
+  const sorted = {};
+  for (const name of Object.keys(entries).sort()) {
+    sorted[name] = [entries[name], { level: 0, mtime: DETERMINISTIC_MTIME }];
+  }
+  return zipSync(sorted);
 }
 
 function readPackage(buf) {

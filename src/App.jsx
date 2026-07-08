@@ -214,6 +214,7 @@ function App() {
   const [returnToProjectSettings, setReturnToProjectSettings] = useState(false);
   const [isProjectSettingsCovered, setIsProjectSettingsCovered] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [diskReloadNotice, setDiskReloadNotice] = useState(false);
 
   const HISTORY_LIMIT = 100;
   const historyRef = useRef({ past: [], future: [] });
@@ -447,6 +448,16 @@ function App() {
 
   // Keep ref in sync so saveCurrentTimeline can read it inside stale closures
   useEffect(() => { currentTimelineIdRef.current = currentTimelineId; }, [currentTimelineId]);
+
+  useEffect(() => {
+    if (!window.electron?.onGitSyncApplied) return undefined;
+    const handleApplied = (ids) => {
+      if (Array.isArray(ids) && currentTimelineIdRef.current && ids.includes(currentTimelineIdRef.current)) {
+        setDiskReloadNotice(true);
+      }
+    };
+    return window.electron.onGitSyncApplied(handleApplied);
+  }, []);
 
   // Serialize renames/saves so an in-flight save can't land after a rename and recreate the old file
   const persistQueueRef = useRef(Promise.resolve());
@@ -1434,6 +1445,7 @@ function App() {
       setTimelineData(normalizeTimelineData(loadedTimeline));
       setPinnedTags(Array.isArray(loadedTimeline.file?.pinnedTags) ? loadedTimeline.file.pinnedTags : []);
       setCurrentTimelineId(timelineId);
+      setDiskReloadNotice(false);
       setSelectedId(null);
     } catch (error) {
       console.error('Failed to load timeline:', error);
@@ -1446,6 +1458,7 @@ function App() {
     setCurrentTimelineId(null);
     setSelectedId(null);
     setPinnedTags([]);
+    setDiskReloadNotice(false);
     setIsSettingsOpen(false);
     setIsAppSettingsOverlayOpen(false);
     setReturnToProjectSettings(false);
@@ -2234,6 +2247,34 @@ function App() {
             </ErrorBoundary>
           </aside>
         </>
+      )}
+
+      {diskReloadNotice && currentTimelineId && (
+        <div
+          style={{
+            position: "fixed",
+            top: 52,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1200,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "1px solid var(--border-color)",
+            background: "var(--surface)",
+            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          }}
+        >
+          <span>Timeline changed on disk.</span>
+          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleLoadTimeline(currentTimelineId)}>
+            Reload
+          </button>
+          <button className="folder-modal-btn" onClick={() => setDiskReloadNotice(false)}>
+            Dismiss
+          </button>
+        </div>
       )}
 
       <main

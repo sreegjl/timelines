@@ -181,6 +181,375 @@
   transform: scale(0.95);
 }
 
+.git-sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  margin-right: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.git-sync-chip-spin {
+  animation: git-sync-spin 900ms linear infinite;
+}
+
+.git-sync-chip.is-ok {
+  border-color: color-mix(in srgb, var(--accent-color) 45%, var(--border-color));
+}
+
+.git-sync-chip.is-warn,
+.git-sync-chip.is-error,
+.git-sync-chip.is-dirty {
+  border-color: color-mix(in srgb, var(--accent-color) 65%, var(--border-color));
+}
+
+@keyframes git-sync-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Identity banner shown at the top of both the setup and connected views */
+.git-sync-intro {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--accent-color);
+}
+
+.git-sync-intro-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--inset-bg);
+  color: var(--text-primary);
+}
+
+.git-sync-intro-text {
+  min-width: 0;
+}
+
+.git-sync-intro-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.git-sync-intro-desc {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-subtle);
+}
+
+/* Numbered walkthrough for the first-time setup flow */
+.git-sync-step-row {
+  display: flex;
+  gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--accent-color);
+}
+
+.git-sync-step-badge {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--inset-bg);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.git-sync-step-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.git-sync-step-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.git-sync-step-text {
+  margin-top: 3px;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-subtle);
+}
+
+.git-sync-step-form {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 440px;
+}
+
+.git-sync-step-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.git-sync-step-field-label {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.git-sync-step-form .git-sync-input,
+.git-sync-step-form .git-sync-input-wide {
+  width: 100%;
+}
+
+.git-sync-step-actions {
+  margin-top: 2px;
+}
+
+.git-sync-tree-panel {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+}
+
+.git-sync-tree-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.git-sync-tree-panel::-webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  border-radius: 3px;
+}
+
+.git-sync-tree-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.git-sync-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.git-sync-inline + .git-sync-inline {
+  margin-top: 10px;
+}
+
+.git-sync-input {
+  box-sizing: border-box;
+  width: 180px;
+  padding-left: 14px;
+  max-width: none;
+}
+
+.git-sync-input.git-sync-input-wide {
+  width: 300px;
+  max-width: 100%;
+}
+
+.git-sync-input-branch {
+  width: 72px;
+}
+
+/* input + button / toggle + interval combos inside a settings-row-right */
+.git-sync-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Synced-timelines row stacks its label above a full-width tree */
+.settings-row.git-sync-row-stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.settings-row.git-sync-row-stacked .settings-row-right {
+  min-width: 0;
+  justify-content: stretch;
+}
+
+.settings-row.git-sync-row-stacked .git-sync-tree-panel {
+  width: 100%;
+}
+
+.git-sync-inline-label {
+  color: var(--text-subtle);
+  font-size: var(--text-sm);
+}
+
+.git-sync-tree-wrap.settings-folder-column {
+  max-height: 280px;
+  overflow: auto;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.git-sync-tree-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.git-sync-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.git-sync-tree-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.git-sync-tree-badge,
+.timeline-item-conflict {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.git-sync-modal {
+  width: min(760px, calc(100vw - 32px));
+  max-width: 760px;
+  max-height: min(78vh, 760px);
+  overflow: auto;
+}
+
+.git-sync-history-modal {
+  width: min(860px, calc(100vw - 32px));
+  max-width: 860px;
+}
+
+.git-sync-modal-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.git-sync-link-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+}
+
+.git-sync-link-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.git-sync-link-code {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.git-sync-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.git-sync-history-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+}
+
+.git-sync-history-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.git-sync-history-subject {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.git-sync-history-meta {
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
+.git-sync-history-summary {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.git-sync-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.folder-modal-btn svg {
+  flex-shrink: 0;
+}
+
 .marketplace-modal {
   width: 90%;
   max-width: 910px;
