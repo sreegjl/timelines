@@ -152,19 +152,6 @@
   border-bottom: 1px solid var(--accent-color);
 }
 
-.git-sync-intro-icon {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  background: var(--inset-bg);
-  color: var(--text-primary);
-}
-
 .git-sync-intro-text {
   min-width: 0;
 }
@@ -299,6 +286,11 @@
 
 .git-sync-input-branch {
   width: 72px;
+}
+
+/* Matches .settings-folder-actions width so the token input lines up with the button below */
+.git-sync-input.git-sync-input-token {
+  width: 225px;
 }
 
 /* input + button / toggle + interval combos inside a settings-row-right */
@@ -1480,6 +1472,10 @@
 }
 
 .folder-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-family: inherit;
   font-size: var(--text-xs);
   font-weight: 600;
@@ -2143,21 +2139,30 @@
 
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 295px), 1fr));
+  justify-content: start;
   gap: 14px;
 }
 
 .home-grid-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-height: 172px;
-  padding: 16px;
+  width: 100%;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--home-line);
   border-radius: 14px;
   background: var(--home-surface);
   cursor: pointer;
   transition: transform 140ms ease, border-color 140ms ease;
+}
+
+/* Between one 450px card and two 295px cards, use two narrower columns instead of wrapping */
+@container (min-width: 451px) and (max-width: 603px) {
+  .home-grid {
+    grid-template-columns: repeat(auto-fit, minmax(218px, 1fr));
+  }
 }
 
 .home-grid-card:hover {
@@ -2166,14 +2171,87 @@
 }
 
 .home-grid-card-top {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  aspect-ratio: 8 / 3;
+  overflow: hidden;
+  border-bottom: 1px solid var(--home-line);
+  background: var(--home-tint-2);
 }
 
-.timeline-item-icon {
-  background: var(--home-tint-2);
+.home-grid-card-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.home-grid-card-thumbnail-placeholder {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  flex: 0 0 100%;
+  background:
+    linear-gradient(180deg, transparent 49%, color-mix(in srgb, var(--home-ink-3) 28%, transparent) 50%, transparent 51%),
+    var(--home-tint-2);
+}
+
+.home-grid-card-thumbnail-placeholder span {
+  position: absolute;
+  top: calc(50% - 3px);
+  width: 7px;
+  height: 7px;
+  border: 2px solid var(--home-surface);
+  border-radius: 50%;
+  background: var(--home-ink-3);
+}
+
+.home-grid-card-thumbnail-placeholder span:nth-child(1) { left: 23%; }
+.home-grid-card-thumbnail-placeholder span:nth-child(2) { left: 49%; }
+.home-grid-card-thumbnail-placeholder span:nth-child(3) { left: 74%; }
+
+.home-grid-card .timeline-card-body {
+  box-sizing: border-box;
+  padding: 12px 16px 14px;
+}
+
+.home-grid-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.home-grid-card-title-row .timeline-item-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-grid-card-menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin: -4px -5px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
   color: var(--home-ink-2);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.home-grid-card-menu:hover {
+  color: var(--home-ink);
+  background: var(--home-tint-4);
 }
 
 .no-timelines {
@@ -2208,9 +2286,6 @@
     gap: 10px;
   }
 
-  .home-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 560px) {

@@ -156,6 +156,7 @@ class GitSyncEngine {
     this.importPackage = opts.importPackage;
     this.removeLocalTimeline = opts.removeLocalTimeline;
     this.http = opts.http || httpNode;
+    this.fetch = opts.fetch || ((...args) => globalThis.fetch(...args));
     this.onAuth = opts.onAuth || (() => (
       this.credentials?.token
         ? {
@@ -414,11 +415,32 @@ class GitSyncEngine {
     return this.getStatus();
   }
 
+  // Live visibility probe; returns true (public), false (private or missing), or null (unknown)
+  async _repoVisibility(github) {
+    const apiUrl = `https://api.github.com/repos/${github.owner}/${github.repo}`;
+    const headers = { accept: 'application/vnd.github+json', 'user-agent': 'timelines-app' };
+    try {
+      const res = await this.fetch(apiUrl, { headers, signal: AbortSignal.timeout(5000) });
+      if (res.status === 200) return true;
+      if (res.status === 404) return false;
+      if (!this.credentials?.token) return null;
+      const authed = await this.fetch(apiUrl, {
+        headers: { ...headers, authorization: `Bearer ${this.credentials.token}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (authed.status === 200) return !(await authed.json()).private;
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   async shareInfo(uid) {
     if (!this.isConnected()) throw new Error('Git sync is not connected');
     const rel = this.state?.uidToPath?.[uid];
     if (!rel) throw new Error('Timeline is not synced to the remote');
     const github = parseGitHubRemote(this.state.url);
+    const isPublic = github ? await this._repoVisibility(github) : null;
     const branch = this.state.branch;
     const localOid = await this._resolve(`refs/heads/${branch}`);
     const remoteOid = await this._resolve(`refs/remotes/origin/${branch}`);
@@ -431,6 +453,7 @@ class GitSyncEngine {
       github,
       canShareViewer: Boolean(github),
       requiresPublicRepo: Boolean(github),
+      isPublic,
       pending,
       viewerUrl: github ? viewerDeepLink(github.owner, github.repo, branch, rel) : null,
       exactViewerUrl: github && remoteOid ? viewerDeepLink(github.owner, github.repo, remoteOid, rel) : null,

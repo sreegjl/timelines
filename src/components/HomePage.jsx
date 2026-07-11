@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
-import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, Share2, History, Link2, ExternalLink } from "lucide-react";
+import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, History, ExternalLink, Share2 } from "lucide-react";
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
@@ -229,6 +229,7 @@ export default function HomePage({
   onAppSettingsClosed,
   keybinds = cloneDefaultKeybinds(),
   onKeybindsChange,
+  thumbnailRefreshSignal = 0,
 }) {
   const [timelineFiles, setTimelineFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +237,7 @@ export default function HomePage({
   const [contextMenu, setContextMenu] = useState(null);
   const [view, setView] = useState(settingsOnly ? "settings" : "home");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("list");
+  const [viewMode, setViewMode] = useState("grid");
   const [sortMode, setSortMode] = useState("date");
   const [librarySection, setLibrarySection] = useState("home");
   const [currentFolder, setCurrentFolder] = useState("");
@@ -290,6 +291,9 @@ export default function HomePage({
   useEffect(() => {
     getAppSettings().then((settings) => {
       if (settings?.homeSortMode) setSortMode(settings.homeSortMode);
+      if (settings?.homeViewMode === "list" || settings?.homeViewMode === "grid") {
+        setViewMode(settings.homeViewMode);
+      }
       const w = Number(settings?.homeSidebarWidth);
       const shellWidth = getHomeShellWidth(homeShellRef.current);
       if (Number.isFinite(w)) {
@@ -299,6 +303,11 @@ export default function HomePage({
       }
     });
   }, []);
+
+  const handleViewModeChange = (nextMode) => {
+    setViewMode(nextMode);
+    saveAppSettings({ homeViewMode: nextMode });
+  };
 
   useEffect(() => {
     if (settingsOnly) return undefined;
@@ -615,7 +624,7 @@ export default function HomePage({
 
     loadTimelineList();
     setCurrentFolder("");
-  }, [timelineStorageDir]);
+  }, [timelineStorageDir, thumbnailRefreshSignal]);
 
   // Close context menus when clicking outside
   useEffect(() => {
@@ -946,21 +955,6 @@ export default function HomePage({
         loading: false,
         error: error.message,
       } : current);
-    }
-  };
-
-  const handleToggleNeverSync = async (file) => {
-    if (!file || file.isPackage) return;
-    const next = !file.neverSync;
-    if (next && !window.confirm(
-      "Stop syncing this timeline to GitHub?\n\nFuture changes won't be pushed. Anything already pushed stays in the repo and its history; use \"Remove from repo\" to take it down."
-    )) return;
-    const result = await window.electron?.setTimelineNeverSync?.({ id: file.id, neverSync: next });
-    if (result?.success) {
-      await refreshLocal();
-      await loadGitSyncStatus();
-    } else if (result?.error) {
-      setGitSyncError(result.error);
     }
   };
 
@@ -1550,7 +1544,7 @@ export default function HomePage({
                   <div className="view-mode-pill">
                     <button
                       className={`view-mode-pill-btn${viewMode === "list" ? " is-active" : ""}`}
-                      onClick={() => setViewMode("list")}
+                      onClick={() => handleViewModeChange("list")}
                       aria-label="List view"
                       title="List"
                     >
@@ -1558,7 +1552,7 @@ export default function HomePage({
                     </button>
                     <button
                       className={`view-mode-pill-btn${viewMode === "grid" ? " is-active" : ""}`}
-                      onClick={() => setViewMode("grid")}
+                      onClick={() => handleViewModeChange("grid")}
                       aria-label="Grid view"
                       title="Grid"
                     >
@@ -1636,7 +1630,16 @@ export default function HomePage({
                     })}
                   </div>
                 ) : (
-                  <div className="home-grid">
+                  <div
+                    className="home-grid"
+                    style={{
+                      maxWidth: `${Math.max(
+                        0,
+                        filteredTimelines.length * 450
+                          + Math.max(0, filteredTimelines.length - 1) * 14,
+                      )}px`,
+                    }}
+                  >
                     {filteredTimelines.map((file) => {
                       return (
                         <div
@@ -1644,24 +1647,45 @@ export default function HomePage({
                           className="home-grid-card"
                           onClick={() => openTimelineFile(file)}
                           onContextMenu={(e) => handleContextMenu(e, file)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openTimelineFile(file);
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
                         >
                           <div className="home-grid-card-top">
-                            <div className="timeline-item-icon">
-                              <File size={18} />
+                            <div className="home-grid-card-thumbnail-placeholder" aria-hidden="true">
+                              <span />
+                              <span />
+                              <span />
                             </div>
-                            <button
-                              className="timeline-item-dots"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleContextMenu(e, file);
-                              }}
-                              aria-label="More options"
-                            >
-                              <MoreVertical size={14} />
-                            </button>
+                            {file.thumbnailUrl ? (
+                              <img
+                                className="home-grid-card-thumbnail"
+                                src={file.thumbnailUrl}
+                                alt=""
+                                loading="lazy"
+                              />
+                            ) : null}
                           </div>
                           <div className="timeline-card-body">
-                            <span className="timeline-item-title">{file.name}</span>
+                            <div className="home-grid-card-title-row">
+                              <span className="timeline-item-title">{file.name}</span>
+                              <button
+                                type="button"
+                                className="home-grid-card-menu"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleContextMenu(e, file);
+                                }}
+                                aria-label="More options"
+                              >
+                                <MoreVertical size={14} />
+                              </button>
+                            </div>
                             {showFolderMeta && <span className="home-row-folder">{file.folder || "Home"}</span>}
                             <span className="timeline-item-meta">{file.modifiedAt ? `Edited ${relativeTime(file.modifiedAt)}` : "No edits yet"}</span>
                           </div>
@@ -2080,9 +2104,6 @@ export default function HomePage({
                         {!gitSyncConnected ? (
                           <>
                             <div className="git-sync-intro">
-                              <div className="git-sync-intro-icon">
-                                <Cloud size={20} />
-                              </div>
                               <div className="git-sync-intro-text">
                                 <div className="git-sync-intro-title">Git Sync</div>
                                 <div className="git-sync-intro-desc">
@@ -2166,9 +2187,6 @@ export default function HomePage({
                         ) : (
                           <>
                             <div className="git-sync-intro">
-                              <div className="git-sync-intro-icon">
-                                <Cloud size={20} />
-                              </div>
                               <div className="git-sync-intro-text">
                                 <div className="git-sync-intro-title">Git Sync</div>
                                 <div className="git-sync-intro-desc">
@@ -2240,7 +2258,7 @@ export default function HomePage({
                               <div className="settings-row-right">
                                 <div className="settings-folder settings-folder-column">
                                   <input
-                                    className="homepage-search git-sync-input git-sync-input-wide"
+                                    className="homepage-search git-sync-input git-sync-input-token"
                                     type="password"
                                     value={gitSyncPat}
                                     onChange={(e) => setGitSyncPat(e.target.value)}
@@ -2600,7 +2618,7 @@ export default function HomePage({
             <span>{contextMenu.file.isPackage ? 'Import' : 'Open'}</span>
           </button>
 
-          {!contextMenu.file.isPackage && (
+          {!contextMenu.file.isPackage && gitSyncConnected && (
             <button
               className="context-menu-item"
               onClick={() => handleMenuAction(() => handleOpenGitSyncShare(contextMenu.file))}
@@ -2610,23 +2628,13 @@ export default function HomePage({
             </button>
           )}
 
-          {!contextMenu.file.isPackage && (
+          {!contextMenu.file.isPackage && gitSyncConnected && (
             <button
               className="context-menu-item"
               onClick={() => handleMenuAction(() => handleOpenGitSyncHistory(contextMenu.file))}
             >
               <History size={16} />
               <span>Version History</span>
-            </button>
-          )}
-
-          {!contextMenu.file.isPackage && gitSyncConnected && (
-            <button
-              className="context-menu-item"
-              onClick={() => handleMenuAction(() => handleToggleNeverSync(contextMenu.file))}
-            >
-              <CloudOff size={16} />
-              <span>{contextMenu.file.neverSync ? 'Allow syncing to GitHub' : 'Never sync to GitHub'}</span>
             </button>
           )}
 
@@ -2685,15 +2693,49 @@ export default function HomePage({
             )}
             {!gitSyncShareDialog.loading && gitSyncShareDialog.info && (
               <>
-                <p className="folder-modal-text">
-                  Viewer links currently work for GitHub remotes and require the repo to be public.
-                </p>
                 {!gitSyncShareDialog.info.canShareViewer ? (
-                  <p className="folder-modal-text">
-                    This remote does not map to a GitHub viewer link yet.
-                  </p>
+                  <>
+                    <p className="folder-modal-text">
+                      Viewer links currently work for GitHub remotes and require the repo to be public.
+                    </p>
+                    <p className="folder-modal-text">
+                      This remote does not map to a GitHub viewer link yet.
+                    </p>
+                  </>
+                ) : gitSyncShareDialog.info.isPublic === false ? (
+                  <>
+                    <p className="folder-modal-text">
+                      This GitHub repository is private, so viewer links will not work for other people. Make the repo public to share it.
+                    </p>
+                    <div className="folder-modal-actions">
+                      <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: `${gitSyncShareDialog.info.github.htmlUrl}/settings` })}>
+                        <ExternalLink size={14} />
+                        <span>Open Repo Settings</span>
+                      </button>
+                    </div>
+                    {gitSyncShareDialog.info.githubBlobUrl && (
+                      <div className="git-sync-link-block">
+                        <div className="git-sync-link-label">GitHub Link (works for you while signed in)</div>
+                        <code className="git-sync-link-code">{gitSyncShareDialog.info.githubBlobUrl}</code>
+                        <div className="folder-modal-actions">
+                          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleCopyGitSyncLink("githubBlobUrl")}>
+                            {gitSyncShareDialog.copied === "githubBlobUrl" ? "Copied" : "Copy Link"}
+                          </button>
+                          <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.githubBlobUrl })}>
+                            <ExternalLink size={14} />
+                            <span>Open</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <>
+                    <p className="folder-modal-text">
+                      {gitSyncShareDialog.info.isPublic === true
+                        ? "Anyone with these links can view this timeline while the repo stays public."
+                        : "Viewer links require the repo to be public. Could not check this repo's visibility right now."}
+                    </p>
                     {gitSyncShareDialog.info.pending && (
                       <p className="folder-modal-text">
                         This timeline has local changes or unpushed commits. Sync before sharing if you want the latest version online.
@@ -2729,7 +2771,7 @@ export default function HomePage({
                             {gitSyncShareDialog.copied === "exactViewerUrl" ? "Copied" : "Copy Exact Link"}
                           </button>
                           <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.exactViewerUrl })}>
-                            <Link2 size={14} />
+                            <ExternalLink size={14} />
                             <span>Open</span>
                           </button>
                         </div>

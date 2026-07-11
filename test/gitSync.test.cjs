@@ -391,21 +391,27 @@ test('shareInfo builds viewer links and reports pending local changes', async (t
   const ctx = await makeCtx(t);
   const libA = makeLibrary();
   libA.add({ uid: 'alpha', relativeId: 'alpha', title: 'Alpha' });
-  const A = makeEngine(ctx, 'machine-a', libA);
+  let visibilityStatus = 200;
+  const A = makeEngine(ctx, 'machine-a', libA, {
+    fetch: async () => ({ status: visibilityStatus, json: async () => ({}) }),
+  });
   await A.init();
   await A.connect({ url: ctx.url, branch: 'main' });
 
   A.state.url = 'https://github.com/sreegjl/timelines-sync.git';
   const clean = await A.shareInfo('alpha');
   assert.equal(clean.canShareViewer, true);
+  assert.equal(clean.isPublic, true);
   assert.equal(clean.pending, false);
   assert.match(clean.viewerUrl, /viewer\/gh\/sreegjl\/timelines-sync\/main\/alpha\.timeline$/);
   assert.ok(clean.exactViewerUrl);
 
+  visibilityStatus = 404;
   libA.get('alpha').title = 'Alpha changed';
   A.markDirty('alpha');
   const pending = await A.shareInfo('alpha');
   assert.equal(pending.pending, true);
+  assert.equal(pending.isPublic, false);
 });
 
 test('fileHistory lists commits and restoreVersion imports a copy', async (t) => {

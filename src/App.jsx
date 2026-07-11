@@ -54,6 +54,34 @@ const EMPTY_SELECTION_NAVIGATION = Object.freeze({
   nextElement: null,
 });
 const SELECTION_NAV_REPEAT_INTERVAL_MS = 140;
+const CARD_THUMBNAIL_WIDTH = 640;
+const CARD_THUMBNAIL_HEIGHT = 240;
+
+const createCardThumbnail = (imageUrl) => new Promise((resolve, reject) => {
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = CARD_THUMBNAIL_WIDTH;
+    canvas.height = CARD_THUMBNAIL_HEIGHT;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      reject(new Error("Could not create thumbnail canvas"));
+      return;
+    }
+
+    const rootStyles = getComputedStyle(document.documentElement);
+    context.fillStyle = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const scale = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+    resolve(canvas.toDataURL("image/jpeg", 0.82));
+  };
+  image.onerror = () => reject(new Error("Could not load generated timeline preview"));
+  image.src = imageUrl;
+});
 
 // Bare filename of a local thumbnail; null for external URLs
 const getLocalThumbnailFilename = (thumbnail) => {
@@ -215,6 +243,7 @@ function App() {
   const [isProjectSettingsCovered, setIsProjectSettingsCovered] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [diskReloadNotice, setDiskReloadNotice] = useState(false);
+  const [thumbnailRefreshSignal, setThumbnailRefreshSignal] = useState(0);
 
   const HISTORY_LIMIT = 100;
   const historyRef = useRef({ past: [], future: [] });
@@ -1453,6 +1482,47 @@ function App() {
     }
   };
 
+  const captureTimelineThumbnail = useCallback(async () => {
+    const timelineId = getStorageId(timelineDataRef.current?.file);
+    if (!timelineId || !timelineViewRef.current?.generatePreview || !window.electron?.saveTimelineThumbnail) return;
+
+    try {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const secondaryBg = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
+      const preview = await timelineViewRef.current.generatePreview({
+        customBg: secondaryBg,
+        maxWidth: 1280,
+        maxHeight: 480,
+        simplifyContent: true,
+      });
+      if (!preview?.imageUrl) return;
+      const dataUrl = await createCardThumbnail(preview.imageUrl);
+      const result = await window.electron.saveTimelineThumbnail({ timelineId, dataUrl });
+      if (result?.success === false) throw new Error(result.error || "Thumbnail save failed");
+      setThumbnailRefreshSignal((value) => value + 1);
+    } catch (error) {
+      console.warn("Could not update timeline card thumbnail:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!timelineData || viewMode === "spreadsheet") return undefined;
+    let idleCallback = null;
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === "function") {
+        idleCallback = window.requestIdleCallback(captureTimelineThumbnail, { timeout: 1200 });
+      } else {
+        captureTimelineThumbnail();
+      }
+    }, 900);
+    return () => {
+      window.clearTimeout(timer);
+      if (idleCallback !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleCallback);
+      }
+    };
+  }, [timelineData, viewMode, captureTimelineThumbnail]);
+
   const handleBackToHome = () => {
     setTimelineData(null);
     setCurrentTimelineId(null);
@@ -2153,6 +2223,7 @@ function App() {
             onAppSettingsClosed={handleAppSettingsClosedFromHome}
             keybinds={keybinds}
             onKeybindsChange={setKeybinds}
+            thumbnailRefreshSignal={thumbnailRefreshSignal}
           />
         </div>
         {importConflictModal}
@@ -2407,6 +2478,7 @@ function App() {
           onAppSettingsClosed={handleAppSettingsClosedFromHome}
           keybinds={keybinds}
           onKeybindsChange={setKeybinds}
+          thumbnailRefreshSignal={thumbnailRefreshSignal}
         />
       )}
 

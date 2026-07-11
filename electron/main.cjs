@@ -555,6 +555,29 @@ ipcMain.handle('save-timeline', async (event, { data, filename, create }) => {
   }
 });
 
+ipcMain.handle('save-timeline-thumbnail', async (event, { timelineId, dataUrl }) => {
+  try {
+    const match = /^data:image\/(?:jpeg|jpg);base64,([a-z0-9+/=\s]+)$/i.exec(String(dataUrl || ''));
+    if (!match) return { success: false, error: 'Invalid thumbnail image' };
+
+    const bytes = Buffer.from(match[1], 'base64');
+    if (bytes.length === 0 || bytes.length > 2 * 1024 * 1024) {
+      return { success: false, error: 'Thumbnail image is empty or too large' };
+    }
+
+    const assetsDir = await getAssetsDir(timelineId);
+    const thumbnailPath = path.join(assetsDir, '.timeline-thumbnail.jpg');
+    const tempPath = `${thumbnailPath}.tmp`;
+    await fs.mkdir(assetsDir, { recursive: true });
+    await fs.writeFile(tempPath, bytes);
+    await fs.rename(tempPath, thumbnailPath);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving timeline thumbnail:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('list-timelines', async () => {
   try {
     const userDataDir = await getTimelinesDir();
@@ -573,14 +596,20 @@ ipcMain.handle('list-timelines', async () => {
           const stat = await fs.stat(fullPath);
           const parts = relativeId.split('/');
           const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+          const storageId = deriveStorageId(data.file);
+          const thumbnailPath = path.join(await getAssetsDir(storageId), '.timeline-thumbnail.jpg');
+          const thumbnailStat = await fs.stat(thumbnailPath).catch(() => null);
           return {
             id: relativeId,
-            uid: deriveStorageId(data.file),
+            uid: storageId,
             name: data.file?.title || parts[parts.length - 1],
             neverSync: Boolean(data.file?.neverSync),
             modifiedAt: stat.mtimeMs,
             eventCount: Array.isArray(data.elements) ? data.elements.length : 0,
             folder,
+            ...(thumbnailStat ? {
+              thumbnailUrl: `${toAssetUrl(thumbnailPath)}&v=${Math.floor(thumbnailStat.mtimeMs)}`,
+            } : {}),
             ...(isPackage ? { isPackage: true, packagePath: fullPath } : {}),
           };
         } catch (err) {
@@ -1564,7 +1593,7 @@ const ALLOWED_SETTINGS_KEYS = new Set([
   'timelineStorageDir', 'storageDir', 'notesStorageDir',
   'themeKey',
   'theme', 'notesSubfolder', 'notesSubfolderEnabled',
-  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'assetsStorageDir', 'homeSortMode', 'homeSidebarWidth',
+  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
   'gitSyncAutoSync', 'gitSyncIntervalMinutes', 'gitSyncMachineLabel',
 ]);
 
