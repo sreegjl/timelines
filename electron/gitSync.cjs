@@ -1122,7 +1122,7 @@ class GitSyncEngine {
       const link = owner && repo
         ? `[Open](https://www.timelines.studio/viewer/gh/${owner}/${repo}/${branch}/${encoded})`
         : '';
-      rows.push(`| ${pkg.title.replace(/\|/g, '\\|')} | ${link} | ${date} |`);
+      rows.push(`| ${pkg.title.replace(/\\/g, '\\\\').replace(/\|/g, '\\|')} | ${link} | ${date} |`);
     }
     const lines = [
       '# Timelines library',
