@@ -87,6 +87,18 @@ function urlThemeOverride() {
 const MARKETPLACE_BASE = "https://raw.githubusercontent.com/sreegjl/timelines-marketplace/refs/heads/main/";
 const FONT_FALLBACK = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
+const FONT_CSS_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "fonts.bunny.net", "raw.githubusercontent.com"];
+
+function safeFontCssUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value));
+    return url.protocol === "https:" && FONT_CSS_HOSTS.includes(url.hostname) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 // Colors plus the font handling App.jsx does outside applyTheme (theme font
 // stylesheet + --app-font-family, overridable by file.font)
 function applyViewerTheme(themes, key, fileFont) {
@@ -95,7 +107,7 @@ function applyViewerTheme(themes, key, fileFont) {
   const themeFont = themes[key]?.font;
   const useFileFont = fileFont && String(fileFont).toLowerCase() !== "default";
   const family = useFileFont ? String(fileFont) : themeFont?.family;
-  const cssUrl = useFileFont ? null : themeFont?.cssUrl;
+  const cssUrl = useFileFont ? null : safeFontCssUrl(themeFont?.cssUrl);
 
   const linkId = "theme-font-css";
   const existing = document.getElementById(linkId);
