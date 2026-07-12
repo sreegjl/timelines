@@ -2662,9 +2662,7 @@ const TimelineView = forwardRef(function TimelineView({
     }
   };
 
-  const handleSliderChange = (e) => {
-    if (e?.nativeEvent && e.nativeEvent.isTrusted === false) return;
-    const value = parseFloat(e.target.value);
+  const applySliderValue = (value) => {
     if (!Number.isFinite(value)) return;
     if (Math.abs(value - sliderValueRef.current) < 0.01) return;
     sliderValueRef.current = value;
@@ -2679,6 +2677,19 @@ const TimelineView = forwardRef(function TimelineView({
 
     translateRef.current.x = panPosition;
     applyTransform();
+  };
+
+  const handleSliderChange = (e) => {
+    if (e?.nativeEvent && e.nativeEvent.isTrusted === false) return;
+    applySliderValue(parseFloat(e.target.value));
+  };
+
+  // Touch drags never reach the range input (its thumb is hidden), so map touch X to a value directly
+  const handleSliderTouch = (e) => {
+    const touch = e.touches[0];
+    const rect = sliderElementRef.current?.getBoundingClientRect();
+    if (!touch || !rect || rect.width <= 0) return;
+    applySliderValue(Math.min(100, Math.max(0, ((touch.clientX - rect.left) / rect.width) * 100)));
   };
 
   const handlePlayPause = useCallback(() => {
@@ -4389,6 +4400,8 @@ const TimelineView = forwardRef(function TimelineView({
             step="0.1"
             defaultValue={0}
             onChange={handleSliderChange}
+            onTouchStart={handleSliderTouch}
+            onTouchMove={handleSliderTouch}
             className="timeline-slider"
           />
           <div

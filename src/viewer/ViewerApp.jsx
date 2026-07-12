@@ -71,7 +71,18 @@ function parseDeepLink() {
 function deepLinkUrl(segments) {
   const encoded = "gh/" + segments.map(encodeURIComponent).join("/");
   const base = viewerBasePath();
-  return base.endsWith("/") ? base + encoded : `${base}#${encoded}`;
+  const search = window.location.search || "";
+  return base.endsWith("/") ? base + encoded + search : `${base}${search}#${encoded}`;
+}
+
+// ?theme= overrides the timeline's own theme; accepts bundled or marketplace theme ids
+function urlThemeOverride() {
+  try {
+    const value = new URLSearchParams(window.location.search).get("theme");
+    return value?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 const MARKETPLACE_BASE = "https://raw.githubusercontent.com/sreegjl/timelines-marketplace/refs/heads/main/";
 const FONT_FALLBACK = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -174,7 +185,7 @@ export default function ViewerApp() {
     }
 
     const fileFont = timelineData.file?.font;
-    const requested = timelineData.file?.theme;
+    const requested = urlThemeOverride() || timelineData.file?.theme;
     const lower = requested ? String(requested).toLowerCase() : "";
     const bundledMatch = Object.keys(bundled).find((k) => k.toLowerCase() === lower);
     if (!requested || lower === "default" || bundledMatch) {
@@ -193,7 +204,9 @@ export default function ViewerApp() {
         if (!theme?.colors) throw new Error("unsupported theme format");
         if (!cancelled) applyViewerTheme({ [requested]: theme }, requested, fileFont);
       } catch {
-        if (!cancelled) applyViewerTheme(bundled, defaultKey, fileFont);
+        const fileLower = String(timelineData.file?.theme || "").toLowerCase();
+        const fileBundled = Object.keys(bundled).find((k) => k.toLowerCase() === fileLower);
+        if (!cancelled) applyViewerTheme(bundled, fileBundled || defaultKey, fileFont);
       }
     })();
     return () => { cancelled = true; };
@@ -326,6 +339,18 @@ export default function ViewerApp() {
   }, [handleFile]);
 
   const handleSelect = useCallback((id) => setSelectedId(id), []);
+
+  const handlePatchFile = useCallback((patch) => {
+    setTimelineData((prev) => prev ? { ...prev, file: { ...(prev.file ?? {}), ...patch } } : prev);
+  }, []);
+
+  const handleUpdateGroup = useCallback((groupId, patch) => {
+    setTimelineData((prev) => {
+      if (!prev) return prev;
+      const groups = (prev.file?.groups ?? []).map((g) => (g.id === groupId ? { ...g, ...patch } : g));
+      return { ...prev, file: { ...(prev.file ?? {}), groups } };
+    });
+  }, []);
 
   const handleToggleTag = useCallback((tag) => {
     setActiveTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
@@ -524,6 +549,8 @@ export default function ViewerApp() {
               pinnedTags={pinnedTags}
               onTogglePinnedTag={handleTogglePinnedTag}
               tagColors={tagColors}
+              onPatchFile={handlePatchFile}
+              onUpdateGroup={handleUpdateGroup}
             />
           </ErrorBoundary>
         </aside>

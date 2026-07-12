@@ -1217,11 +1217,9 @@ export default function Sidebar({
             <button type="button" className={`sidebar-tab-button${sidebarTab === "tags" ? " is-active" : ""}`} onClick={() => setSidebarTab("tags")} aria-label="Tags tab" title="Tags">
               <Tag size={15} strokeWidth={2.2} />
             </button>
-            {!readOnly && (
-              <button type="button" className={`sidebar-tab-button${sidebarTab === "groups" ? " is-active" : ""}`} onClick={() => setSidebarTab("groups")} aria-label="Groups tab" title="Groups">
-                <Layers3 size={15} strokeWidth={2.2} />
-              </button>
-            )}
+            <button type="button" className={`sidebar-tab-button${sidebarTab === "groups" ? " is-active" : ""}`} onClick={() => setSidebarTab("groups")} aria-label="Groups tab" title="Groups">
+              <Layers3 size={15} strokeWidth={2.2} />
+            </button>
           </div>
           {!readOnly && (
           <div className="sb-new-wrapper" ref={newMenuRef}>
@@ -1708,14 +1706,16 @@ export default function Sidebar({
                   <span className="sb-group-list-separator">·</span>
                   <span className="sb-group-list-count">{visibleDisplayGroups.length}</span>
                 </div>
-                <button
-                  className="sidebar-group-add-btn"
-                  type="button"
-                  onClick={handleAddGroupAndEdit}
-                >
-                  <Plus size={10} strokeWidth={2.5} />
-                  <span>Add Group</span>
-                </button>
+                {!readOnly && (
+                  <button
+                    className="sidebar-group-add-btn"
+                    type="button"
+                    onClick={handleAddGroupAndEdit}
+                  >
+                    <Plus size={10} strokeWidth={2.5} />
+                    <span>Add Group</span>
+                  </button>
+                )}
               </div>
               {visibleDisplayGroups.length === 0 && (
                 <div className="filter-menu-empty">{searchActive ? "No matching groups" : "No groups found"}</div>
@@ -1771,7 +1771,7 @@ export default function Sidebar({
                     {isFirstBelowLine && dividerEl}
                     <div
                       className={`sb-group-item${draggedGroupId === group.id ? " is-dragging" : ""}${dragOverPlacement?.id === group.id ? ` is-drag-over-${dragOverPlacement.position}` : ""}`}
-                      draggable={editingGroupId !== group.id}
+                      draggable={!readOnly && editingGroupId !== group.id}
                       onDragStart={(e) => {
                         setDraggedGroupId(group.id);
                         e.dataTransfer.effectAllowed = "move";
@@ -1836,23 +1836,27 @@ export default function Sidebar({
                       onClick={() => itemsInGroup.length > 0 && toggleGroupContents(group.id)}
                       style={{ cursor: itemsInGroup.length > 0 ? "pointer" : "default" }}
                     >
-                      <button
-                        type="button"
-                        className="sb-group-swatch"
-                        style={{ background: groupTint }}
-                        onClick={(e) => { e.stopPropagation(); openGroupColorPicker(group.id); }}
-                        title="Group color"
-                      >
-                        <input
-                          ref={(node) => { groupColorInputRefs.current[group.id] = node; }}
-                          className="sidebar-group-inline-color-input"
-                          type="color"
-                          value={normalizeColorForInput(group.bgColor) || themeGroupColor}
-                          onChange={(e) => updateGroupPatch(group.id, { bgColor: e.target.value })}
-                          tabIndex={-1}
-                          aria-hidden="true"
-                        />
-                      </button>
+                      {readOnly ? (
+                        <span className="sb-group-swatch" style={{ background: groupTint }} />
+                      ) : (
+                        <button
+                          type="button"
+                          className="sb-group-swatch"
+                          style={{ background: groupTint }}
+                          onClick={(e) => { e.stopPropagation(); openGroupColorPicker(group.id); }}
+                          title="Group color"
+                        >
+                          <input
+                            ref={(node) => { groupColorInputRefs.current[group.id] = node; }}
+                            className="sidebar-group-inline-color-input"
+                            type="color"
+                            value={normalizeColorForInput(group.bgColor) || themeGroupColor}
+                            onChange={(e) => updateGroupPatch(group.id, { bgColor: e.target.value })}
+                            tabIndex={-1}
+                            aria-hidden="true"
+                          />
+                        </button>
+                      )}
                       {editingGroupId === group.id ? (
                         <input
                           className="sidebar-group-title-input"
@@ -1872,14 +1876,16 @@ export default function Sidebar({
                       )}
                       <span className="sb-group-count">{count}</span>
                       <div className="sb-group-actions" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          className={`filter-menu-icon-btn${group.hideBand ? " is-active" : ""}`}
-                          title={group.hideBand ? "Show band" : "Hide band"}
-                          onClick={() => onUpdateGroup?.(group.id, { hideBand: !group.hideBand })}
-                        >
-                          {group.hideBand ? <SquareDashed size={12} /> : <Square size={12} />}
-                        </button>
+                        {!readOnly && (
+                          <button
+                            type="button"
+                            className={`filter-menu-icon-btn${group.hideBand ? " is-active" : ""}`}
+                            title={group.hideBand ? "Show band" : "Hide band"}
+                            onClick={() => onUpdateGroup?.(group.id, { hideBand: !group.hideBand })}
+                          >
+                            {group.hideBand ? <SquareDashed size={12} /> : <Square size={12} />}
+                          </button>
+                        )}
                         <button
                           type="button"
                           className={`filter-menu-icon-btn${group.visible === false ? " filter-menu-hide-btn is-active" : ""}`}
@@ -1888,6 +1894,7 @@ export default function Sidebar({
                         >
                           {group.visible === false ? <EyeOff size={12} /> : <Eye size={12} />}
                         </button>
+                        {!readOnly && (
                         <div className="sb-group-kebab-wrap" ref={groupMenuOpenId === group.id ? groupMenuRef : null}>
                           <button
                             type="button"
@@ -1917,6 +1924,7 @@ export default function Sidebar({
                             </div>
                           )}
                         </div>
+                        )}
                       </div>
                     </div>
                     {isGroupOpen && itemsInGroup.length > 0 && (
