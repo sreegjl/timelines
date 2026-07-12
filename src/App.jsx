@@ -54,6 +54,34 @@ const EMPTY_SELECTION_NAVIGATION = Object.freeze({
   nextElement: null,
 });
 const SELECTION_NAV_REPEAT_INTERVAL_MS = 140;
+const CARD_THUMBNAIL_WIDTH = 640;
+const CARD_THUMBNAIL_HEIGHT = 240;
+
+const createCardThumbnail = (imageUrl) => new Promise((resolve, reject) => {
+  const image = new Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = CARD_THUMBNAIL_WIDTH;
+    canvas.height = CARD_THUMBNAIL_HEIGHT;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      reject(new Error("Could not create thumbnail canvas"));
+      return;
+    }
+
+    const rootStyles = getComputedStyle(document.documentElement);
+    context.fillStyle = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const scale = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+    resolve(canvas.toDataURL("image/jpeg", 0.82));
+  };
+  image.onerror = () => reject(new Error("Could not load generated timeline preview"));
+  image.src = imageUrl;
+});
 
 // Bare filename of a local thumbnail; null for external URLs
 const getLocalThumbnailFilename = (thumbnail) => {
@@ -214,6 +242,8 @@ function App() {
   const [returnToProjectSettings, setReturnToProjectSettings] = useState(false);
   const [isProjectSettingsCovered, setIsProjectSettingsCovered] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [diskReloadNotice, setDiskReloadNotice] = useState(false);
+  const [thumbnailRefreshSignal, setThumbnailRefreshSignal] = useState(0);
 
   const HISTORY_LIMIT = 100;
   const historyRef = useRef({ past: [], future: [] });
@@ -447,6 +477,16 @@ function App() {
 
   // Keep ref in sync so saveCurrentTimeline can read it inside stale closures
   useEffect(() => { currentTimelineIdRef.current = currentTimelineId; }, [currentTimelineId]);
+
+  useEffect(() => {
+    if (!window.electron?.onGitSyncApplied) return undefined;
+    const handleApplied = (ids) => {
+      if (Array.isArray(ids) && currentTimelineIdRef.current && ids.includes(currentTimelineIdRef.current)) {
+        setDiskReloadNotice(true);
+      }
+    };
+    return window.electron.onGitSyncApplied(handleApplied);
+  }, []);
 
   // Serialize renames/saves so an in-flight save can't land after a rename and recreate the old file
   const persistQueueRef = useRef(Promise.resolve());
@@ -1434,6 +1474,7 @@ function App() {
       setTimelineData(normalizeTimelineData(loadedTimeline));
       setPinnedTags(Array.isArray(loadedTimeline.file?.pinnedTags) ? loadedTimeline.file.pinnedTags : []);
       setCurrentTimelineId(timelineId);
+      setDiskReloadNotice(false);
       setSelectedId(null);
     } catch (error) {
       console.error('Failed to load timeline:', error);
@@ -1441,11 +1482,53 @@ function App() {
     }
   };
 
+  const captureTimelineThumbnail = useCallback(async () => {
+    const timelineId = getStorageId(timelineDataRef.current?.file);
+    if (!timelineId || !timelineViewRef.current?.generatePreview || !window.electron?.saveTimelineThumbnail) return;
+
+    try {
+      const rootStyles = getComputedStyle(document.documentElement);
+      const secondaryBg = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
+      const preview = await timelineViewRef.current.generatePreview({
+        customBg: secondaryBg,
+        maxWidth: 1280,
+        maxHeight: 480,
+        simplifyContent: true,
+      });
+      if (!preview?.imageUrl) return;
+      const dataUrl = await createCardThumbnail(preview.imageUrl);
+      const result = await window.electron.saveTimelineThumbnail({ timelineId, dataUrl });
+      if (result?.success === false) throw new Error(result.error || "Thumbnail save failed");
+      setThumbnailRefreshSignal((value) => value + 1);
+    } catch (error) {
+      console.warn("Could not update timeline card thumbnail:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!timelineData || viewMode === "spreadsheet") return undefined;
+    let idleCallback = null;
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === "function") {
+        idleCallback = window.requestIdleCallback(captureTimelineThumbnail, { timeout: 1200 });
+      } else {
+        captureTimelineThumbnail();
+      }
+    }, 900);
+    return () => {
+      window.clearTimeout(timer);
+      if (idleCallback !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleCallback);
+      }
+    };
+  }, [timelineData, viewMode, captureTimelineThumbnail]);
+
   const handleBackToHome = () => {
     setTimelineData(null);
     setCurrentTimelineId(null);
     setSelectedId(null);
     setPinnedTags([]);
+    setDiskReloadNotice(false);
     setIsSettingsOpen(false);
     setIsAppSettingsOverlayOpen(false);
     setReturnToProjectSettings(false);
@@ -2140,6 +2223,7 @@ function App() {
             onAppSettingsClosed={handleAppSettingsClosedFromHome}
             keybinds={keybinds}
             onKeybindsChange={setKeybinds}
+            thumbnailRefreshSignal={thumbnailRefreshSignal}
           />
         </div>
         {importConflictModal}
@@ -2234,6 +2318,34 @@ function App() {
             </ErrorBoundary>
           </aside>
         </>
+      )}
+
+      {diskReloadNotice && currentTimelineId && (
+        <div
+          style={{
+            position: "fixed",
+            top: 52,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1200,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "1px solid var(--border-color)",
+            background: "var(--surface)",
+            boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+          }}
+        >
+          <span>Timeline changed on disk.</span>
+          <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleLoadTimeline(currentTimelineId)}>
+            Reload
+          </button>
+          <button className="folder-modal-btn" onClick={() => setDiskReloadNotice(false)}>
+            Dismiss
+          </button>
+        </div>
       )}
 
       <main
@@ -2366,6 +2478,7 @@ function App() {
           onAppSettingsClosed={handleAppSettingsClosedFromHome}
           keybinds={keybinds}
           onKeybindsChange={setKeybinds}
+          thumbnailRefreshSignal={thumbnailRefreshSignal}
         />
       )}
 

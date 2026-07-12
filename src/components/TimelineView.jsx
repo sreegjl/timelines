@@ -25,6 +25,120 @@ const FILTER_TYPE_TERMS = ["is:event", "is:span", "is:era", "has:coords"];
 const FILTER_DATE_OPS = [[">", ">"], [">=", "≥"], ["<", "<"], ["<=", "≤"]];
 const FILTER_OP_GLYPH = { ">": ">", ">=": "≥", "<": "<", "<=": "≤" };
 
+const HTML2CANVAS_COLOR_PROPERTIES = [
+  "color",
+  "background-color",
+  "background-image",
+  "border-top-color",
+  "border-right-color",
+  "border-bottom-color",
+  "border-left-color",
+  "outline-color",
+  "text-decoration-color",
+  "-webkit-text-stroke-color",
+  "box-shadow",
+  "text-shadow",
+  "fill",
+  "stroke",
+];
+const UNSUPPORTED_COLOR_FUNCTION = /(?:color|color-mix|lab|lch|oklab|oklch)\(/i;
+
+// html2canvas 1.4 can't parse color-mix()/color(srgb ...) values, so rasterize them to rgba() in its detached clone
+const normalizeHtml2CanvasColors = (clonedDocument, clonedRoot) => {
+  const canvas = clonedDocument.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context || !clonedRoot) return;
+
+  const cache = new Map();
+  const toRgba = (value) => {
+    if (cache.has(value)) return cache.get(value);
+    context.clearRect(0, 0, 1, 1);
+    context.fillStyle = value;
+    context.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
+    const resolved = `rgba(${r}, ${g}, ${b}, ${Math.round((a / 255) * 1000) / 1000})`;
+    cache.set(value, resolved);
+    return resolved;
+  };
+
+  const replaceColorFunctions = (value) => {
+    let output = value;
+    let searchFrom = 0;
+    while (searchFrom < output.length) {
+      const match = output.slice(searchFrom).match(UNSUPPORTED_COLOR_FUNCTION);
+      if (!match) break;
+      const start = searchFrom + match.index;
+      let depth = 0;
+      let end = -1;
+      for (let i = start; i < output.length; i += 1) {
+        if (output[i] === "(") depth += 1;
+        else if (output[i] === ")") {
+          depth -= 1;
+          if (depth === 0) {
+            end = i + 1;
+            break;
+          }
+        }
+      }
+      if (end < 0) break;
+      const token = output.slice(start, end);
+      const replacement = toRgba(token);
+      output = `${output.slice(0, start)}${replacement}${output.slice(end)}`;
+      searchFrom = start + replacement.length;
+    }
+    return output;
+  };
+
+  const elements = [clonedRoot, ...clonedRoot.querySelectorAll("*")];
+  for (const element of elements) {
+    const styles = clonedDocument.defaultView?.getComputedStyle(element);
+    if (!styles) continue;
+    for (const property of HTML2CANVAS_COLOR_PROPERTIES) {
+      const value = styles.getPropertyValue(property);
+      if (UNSUPPORTED_COLOR_FUNCTION.test(value)) {
+        element.style.setProperty(property, replaceColorFunctions(value), "important");
+      }
+    }
+  }
+};
+
+const simplifyTimelinePreview = (clonedDocument, clonedTimeline) => {
+  const walker = clonedDocument.createTreeWalker(
+    clonedTimeline,
+    clonedDocument.defaultView?.NodeFilter?.SHOW_TEXT ?? 4,
+  );
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  for (const node of textNodes) node.nodeValue = "";
+
+  for (const element of clonedTimeline.querySelectorAll(
+    "img, svg, .event-thumbnail-tile, .event-thumbnail-banner, .event-thumbnail-square, .event-thumbnail-circle",
+  )) {
+    element.remove();
+  }
+
+  for (const item of clonedTimeline.querySelectorAll(".event, .span-item, .era-item")) {
+    item.replaceChildren();
+    item.classList.remove(
+      "is-selected",
+      "has-source-link",
+      "has-thumbnail",
+      "has-thumbnail-banner",
+      "has-thumbnail-square",
+      "has-thumbnail-circle",
+    );
+  }
+
+  for (const element of [clonedTimeline, ...clonedTimeline.querySelectorAll("*")]) {
+    const backgroundImage = clonedDocument.defaultView?.getComputedStyle(element).backgroundImage;
+    if (backgroundImage?.includes("url(")) {
+      element.style.setProperty("background-image", "none", "important");
+    }
+  }
+};
+
 const filterChipTerm = (chip) => {
   let term;
   if (chip.kind === "date") term = `${chip.op}${chip.value}`;
@@ -2380,6 +2494,7 @@ const TimelineView = forwardRef(function TimelineView({
         height: exportHeight,
         windowWidth: elFullWidth,
         windowHeight: exportHeight,
+        onclone: normalizeHtml2CanvasColors,
       });
 
       if (exportPngOptions?.transparentBg || exportPngOptions?.customBg) {
@@ -2806,28 +2921,23 @@ const TimelineView = forwardRef(function TimelineView({
       try {
         const html2canvas = (await import('html2canvas')).default;
 
-        const currentTransform = timelineEl.style.transform;
-        const currentTransformOrigin = timelineEl.style.transformOrigin;
-
-        // Store original --app-bg and set to transparent if needed
-        const root = document.documentElement;
-        const originalPrimaryBg = getComputedStyle(root).getPropertyValue('--app-bg').trim();
-
-        timelineEl.style.transform = 'none';
-        timelineEl.style.transformOrigin = '';
-
-        if (options?.transparentBg) {
-          root.style.setProperty('--app-bg', 'transparent');
-        } else if (options?.customBg) {
-          root.style.setProperty('--app-bg', options.customBg);
-        }
-
         const elWidth = timelineEl.scrollWidth;
         const elHeight = calculatedHeight + 100;
+        const originalPrimaryBg = getComputedStyle(document.documentElement)
+          .getPropertyValue('--app-bg')
+          .trim();
 
         // Clamp scale so canvas pixel dimensions stay within browser limits
         const MAX_CANVAS_DIM = 16384;
-        const previewScale = Math.min(1, MAX_CANVAS_DIM / elWidth, MAX_CANVAS_DIM / elHeight);
+        const maxPreviewWidth = Number(options?.maxWidth);
+        const maxPreviewHeight = Number(options?.maxHeight);
+        const previewScale = Math.min(
+          1,
+          MAX_CANVAS_DIM / elWidth,
+          MAX_CANVAS_DIM / elHeight,
+          Number.isFinite(maxPreviewWidth) ? maxPreviewWidth / elWidth : 1,
+          Number.isFinite(maxPreviewHeight) ? maxPreviewHeight / elHeight : 1,
+        );
 
         const previewBgColor = options?.transparentBg
           ? null
@@ -2841,15 +2951,20 @@ const TimelineView = forwardRef(function TimelineView({
           height: elHeight,
           windowWidth: elWidth,
           windowHeight: elHeight,
+          onclone: (clonedDocument, clonedTimeline) => {
+            clonedTimeline.style.transform = 'none';
+            clonedTimeline.style.transformOrigin = '';
+            if (options?.transparentBg) {
+              clonedDocument.documentElement.style.setProperty('--app-bg', 'transparent');
+            } else if (options?.customBg) {
+              clonedDocument.documentElement.style.setProperty('--app-bg', options.customBg);
+            }
+            if (options?.simplifyContent) {
+              simplifyTimelinePreview(clonedDocument, clonedTimeline);
+            }
+            normalizeHtml2CanvasColors(clonedDocument, clonedTimeline);
+          },
         });
-
-        // Restore original --app-bg
-        if (options?.transparentBg || options?.customBg) {
-          root.style.setProperty('--app-bg', originalPrimaryBg);
-        }
-
-        timelineEl.style.transform = currentTransform;
-        timelineEl.style.transformOrigin = currentTransformOrigin;
 
         const minYear = file?.start ?? 0;
         const maxYear = file?.end ?? 2024;

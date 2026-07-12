@@ -31,5 +31,6 @@ export async function saveAppSettings(settings) {
     }
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  const existing = await getAppSettings();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...settings }));
 }

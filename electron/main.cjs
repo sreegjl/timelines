@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, shell, protocol, net, session } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, protocol, net, session, safeStorage } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
 const fs = require('fs').promises;
@@ -6,6 +6,7 @@ const fsSync = require('fs');
 const http = require('http');
 const { autoUpdater } = require('electron-updater');
 const { isZipBuffer, readPackage, buildPackage, strToU8 } = require('./timelinePackage.cjs');
+const { createEngine } = require('./gitSync.cjs');
 const DEFAULT_THEME_KEY = 'parchment';
 
 // Force sRGB color profile to prevent washed-out appearance in screenshots/screenshare on HDR displays
@@ -24,10 +25,15 @@ try {
 }
 
 let mainWindow;
+let gitSync = null;
+let gitSyncQuitStarted = false;
 const appSettingsPath = () => path.join(app.getPath('userData'), 'app-settings.json');
 const defaultTimelinesDir = () => path.join(app.getPath('userData'), 'timelines');
 const userThemesDir = () => path.join(app.getPath('userData'), 'themes');
 const defaultFontsDir = () => path.join(app.getPath('userData'), 'fonts');
+const gitSyncRepoDir = () => path.join(app.getPath('userData'), 'git-sync-repo');
+const gitSyncStatePath = () => path.join(app.getPath('userData'), 'git-sync-state.json');
+const gitSyncCredsPath = () => path.join(app.getPath('userData'), 'git-sync-credentials.json');
 
 const safeName = (value) => String(value || '')
   .trim()
@@ -111,6 +117,50 @@ const readAppSettings = async () => {
     return {};
   }
 };
+
+async function writeAppSettingsPartial(partial) {
+  const filePath = appSettingsPath();
+  let existing = {};
+  try {
+    existing = JSON.parse(await fs.readFile(filePath, 'utf8'));
+  } catch {}
+  await writeFileAtomic(filePath, JSON.stringify({ ...existing, ...partial }, null, 2));
+}
+
+async function loadGitSyncCredentials() {
+  try {
+    const raw = JSON.parse(await fs.readFile(gitSyncCredsPath(), 'utf8'));
+    if (!raw?.data) return null;
+    let json = '';
+    if (raw.encrypted) {
+      if (!safeStorage.isEncryptionAvailable()) return null;
+      json = safeStorage.decryptString(Buffer.from(raw.data, 'base64'));
+    } else {
+      json = Buffer.from(raw.data, 'base64').toString('utf8');
+    }
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+async function saveGitSyncCredentials(credentials) {
+  const json = JSON.stringify(credentials);
+  const payload = safeStorage.isEncryptionAvailable()
+    ? {
+      encrypted: true,
+      data: safeStorage.encryptString(json).toString('base64'),
+    }
+    : {
+      encrypted: false,
+      data: Buffer.from(json, 'utf8').toString('base64'),
+    };
+  await writeFileAtomic(gitSyncCredsPath(), JSON.stringify(payload, null, 2));
+}
+
+async function clearGitSyncCredentials() {
+  await fs.rm(gitSyncCredsPath(), { force: true });
+}
 
 const getTimelinesDir = async () => {
   const settings = await readAppSettings();
@@ -432,8 +482,12 @@ app.whenReady().then(async () => {
   });
 
   await initializeUserData();
+  await initGitSync();
   await createWindow();
   setupAutoUpdater();
+  gitSync?.startupSync().catch((err) => {
+    console.error('git-sync startup failed:', err);
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -446,6 +500,20 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', (event) => {
+  if (gitSyncQuitStarted || !gitSync?.isConnected()) return;
+  const status = gitSync.getStatus();
+  if (status.pendingCount <= 0 || status.state === 'offline' || status.state === 'auth-expired') return;
+  gitSyncQuitStarted = true;
+  event.preventDefault();
+  Promise.race([
+    gitSync.syncNow(),
+    new Promise((resolve) => setTimeout(resolve, 5000)),
+  ]).finally(() => {
+    app.quit();
+  });
 });
 
 // Window control handlers
@@ -479,9 +547,33 @@ ipcMain.handle('save-timeline', async (event, { data, filename, create }) => {
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     const dataToSave = { ...data, elements: await stripThumbnails(data.elements, deriveStorageId(data.file)) };
     await writeFileAtomic(filePath, JSON.stringify(dataToSave, null, 2));
+    markGitSyncDirty(deriveStorageId(dataToSave.file));
     return { success: true, message: 'Timeline saved successfully', path: filePath };
   } catch (error) {
     console.error('Error saving timeline:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('save-timeline-thumbnail', async (event, { timelineId, dataUrl }) => {
+  try {
+    const match = /^data:image\/(?:jpeg|jpg);base64,([a-z0-9+/=\s]+)$/i.exec(String(dataUrl || ''));
+    if (!match) return { success: false, error: 'Invalid thumbnail image' };
+
+    const bytes = Buffer.from(match[1], 'base64');
+    if (bytes.length === 0 || bytes.length > 2 * 1024 * 1024) {
+      return { success: false, error: 'Thumbnail image is empty or too large' };
+    }
+
+    const assetsDir = await getAssetsDir(timelineId);
+    const thumbnailPath = path.join(assetsDir, '.timeline-thumbnail.jpg');
+    const tempPath = `${thumbnailPath}.tmp`;
+    await fs.mkdir(assetsDir, { recursive: true });
+    await fs.writeFile(tempPath, bytes);
+    await fs.rename(tempPath, thumbnailPath);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving timeline thumbnail:', error);
     return { success: false, error: error.message };
   }
 });
@@ -504,12 +596,20 @@ ipcMain.handle('list-timelines', async () => {
           const stat = await fs.stat(fullPath);
           const parts = relativeId.split('/');
           const folder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
+          const storageId = deriveStorageId(data.file);
+          const thumbnailPath = path.join(await getAssetsDir(storageId), '.timeline-thumbnail.jpg');
+          const thumbnailStat = await fs.stat(thumbnailPath).catch(() => null);
           return {
             id: relativeId,
+            uid: storageId,
             name: data.file?.title || parts[parts.length - 1],
+            neverSync: Boolean(data.file?.neverSync),
             modifiedAt: stat.mtimeMs,
             eventCount: Array.isArray(data.elements) ? data.elements.length : 0,
             folder,
+            ...(thumbnailStat ? {
+              thumbnailUrl: `${toAssetUrl(thumbnailPath)}&v=${Math.floor(thumbnailStat.mtimeMs)}`,
+            } : {}),
             ...(isPackage ? { isPackage: true, packagePath: fullPath } : {}),
           };
         } catch (err) {
@@ -596,6 +696,88 @@ const rewriteNoteSrc = (content, oldSrc, newSrc) => content
   .split(`](${oldSrc})`).join(`](${newSrc})`)
   .replace(new RegExp(`(src\\s*=\\s*["'])${escapeRegExp(oldSrc)}(["'])`, 'gi'), `$1${newSrc}$2`);
 
+// Collects a timeline's thumbnails, notes, and note images as zip entries; elements must be in stored-ref form
+async function collectPackageFiles(data, storageId) {
+  const elementsArr = Array.isArray(data.elements) ? data.elements : [];
+
+  const assetsRoot = await getAssetsRootDir();
+  const timelineAssetsDir = storageId ? await getAssetsDir(storageId) : null;
+
+  const files = {}; // zip entry -> Uint8Array
+  const skipped = [];
+
+  const buffersEqual = (a, b) => a.length === b.length && Buffer.compare(a, b) === 0;
+
+  const addAssetBytes = (desiredEntry, bytes) => {
+    const ext = path.posix.extname(desiredEntry);
+    const stem = desiredEntry.slice(0, desiredEntry.length - ext.length);
+    let entry = desiredEntry;
+    let counter = 1;
+    while (files[entry] !== undefined && !buffersEqual(files[entry], bytes)) {
+      entry = `${stem}-${counter}${ext}`;
+      counter++;
+    }
+    if (files[entry] === undefined) files[entry] = bytes;
+    return entry;
+  };
+
+  // Element thumbnails keep their stored refs, so they claim entry names first
+  for (const el of elementsArr) {
+    const ref = el.thumbnail;
+    if (!ref || typeof ref !== 'string' || ref.includes('://')) continue;
+    const abs = await findThumbnailFile(ref, assetsRoot, timelineAssetsDir);
+    if (!abs) { skipped.push(ref); continue; }
+    try {
+      files[`assets/${ref.replace(/\\/g, '/')}`] = new Uint8Array(await fs.readFile(abs));
+    } catch {
+      skipped.push(ref);
+    }
+  }
+
+  for (const el of elementsArr) {
+    if (!el.noteFile || typeof el.noteFile !== 'string') continue;
+    let content = null;
+    try {
+      const notePath = storageId ? await resolveNotePath(storageId, el.noteFile) : null;
+      if (notePath) content = await fs.readFile(notePath, 'utf8');
+    } catch {}
+    if (content === null) { skipped.push(el.noteFile); continue; }
+
+    for (const src of extractNoteImageSrcs(content)) {
+      if (src.startsWith('timelines-asset://')) {
+        const decoded = decodeAssetUrl(src);
+        const normalizedRoot = path.normalize(assetsRoot);
+        if (!decoded || !path.normalize(decoded).startsWith(normalizedRoot + path.sep)) {
+          skipped.push(src);
+          continue;
+        }
+        let bytes;
+        try { bytes = new Uint8Array(await fs.readFile(decoded)); } catch { skipped.push(src); continue; }
+        // Absolute asset URLs don't travel; store flat and point the note copy at the bare name
+        const entry = addAssetBytes(`assets/${path.basename(decoded)}`, bytes);
+        content = rewriteNoteSrc(content, src, entry.slice('assets/'.length));
+        continue;
+      }
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(src)) continue; // external URL / other scheme
+      if (src.includes('/') || src.includes('\\')) continue; // only bare refs resolve in notes
+      const abs = await findThumbnailFile(src, assetsRoot, timelineAssetsDir);
+      if (!abs) { skipped.push(src); continue; }
+      let bytes;
+      try { bytes = new Uint8Array(await fs.readFile(abs)); } catch { skipped.push(src); continue; }
+      const entry = addAssetBytes(`assets/${src}`, bytes);
+      if (entry !== `assets/${src}`) {
+        content = rewriteNoteSrc(content, src, entry.slice('assets/'.length));
+      }
+    }
+
+    const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
+    const noteRef = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
+    files[`notes/${noteRef}`] = strToU8(content);
+  }
+
+  return { files, skipped };
+}
+
 ipcMain.handle('export-timeline-package', async (event, { data, suggestedName }) => {
   try {
     const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
@@ -608,86 +790,8 @@ ipcMain.handle('export-timeline-package', async (event, { data, suggestedName })
     if (canceled || !filePath) return { success: false, canceled: true };
 
     const storageId = deriveStorageId(data.file);
-    const elements = await stripThumbnails(data.elements, storageId);
-    const dataToExport = { ...data, elements };
-    const elementsArr = Array.isArray(elements) ? elements : [];
-
-    const assetsRoot = await getAssetsRootDir();
-    const timelineAssetsDir = storageId ? await getAssetsDir(storageId) : null;
-
-    const files = {}; // zip entry -> Uint8Array
-    const skipped = [];
-
-    const buffersEqual = (a, b) => a.length === b.length && Buffer.compare(a, b) === 0;
-
-    // Adds bytes under the desired entry name, suffixing on collision with
-    // different content; returns the entry name used
-    const addAssetBytes = (desiredEntry, bytes) => {
-      const ext = path.posix.extname(desiredEntry);
-      const stem = desiredEntry.slice(0, desiredEntry.length - ext.length);
-      let entry = desiredEntry;
-      let counter = 1;
-      while (files[entry] !== undefined && !buffersEqual(files[entry], bytes)) {
-        entry = `${stem}-${counter}${ext}`;
-        counter++;
-      }
-      if (files[entry] === undefined) files[entry] = bytes;
-      return entry;
-    };
-
-    // Element thumbnails keep their stored refs, so they claim entry names first
-    for (const el of elementsArr) {
-      const ref = el.thumbnail;
-      if (!ref || typeof ref !== 'string' || ref.includes('://')) continue;
-      const abs = await findThumbnailFile(ref, assetsRoot, timelineAssetsDir);
-      if (!abs) { skipped.push(ref); continue; }
-      try {
-        files[`assets/${ref.replace(/\\/g, '/')}`] = new Uint8Array(await fs.readFile(abs));
-      } catch {
-        skipped.push(ref);
-      }
-    }
-
-    for (const el of elementsArr) {
-      if (!el.noteFile || typeof el.noteFile !== 'string') continue;
-      let content = null;
-      try {
-        const notePath = storageId ? await resolveNotePath(storageId, el.noteFile) : null;
-        if (notePath) content = await fs.readFile(notePath, 'utf8');
-      } catch {}
-      if (content === null) { skipped.push(el.noteFile); continue; }
-
-      for (const src of extractNoteImageSrcs(content)) {
-        if (src.startsWith('timelines-asset://')) {
-          const decoded = decodeAssetUrl(src);
-          const normalizedRoot = path.normalize(assetsRoot);
-          if (!decoded || !path.normalize(decoded).startsWith(normalizedRoot + path.sep)) {
-            skipped.push(src);
-            continue;
-          }
-          let bytes;
-          try { bytes = new Uint8Array(await fs.readFile(decoded)); } catch { skipped.push(src); continue; }
-          // Absolute asset URLs don't travel; store flat and point the note copy at the bare name
-          const entry = addAssetBytes(`assets/${path.basename(decoded)}`, bytes);
-          content = rewriteNoteSrc(content, src, entry.slice('assets/'.length));
-          continue;
-        }
-        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(src)) continue; // external URL / other scheme
-        if (src.includes('/') || src.includes('\\')) continue; // only bare refs resolve in notes
-        const abs = await findThumbnailFile(src, assetsRoot, timelineAssetsDir);
-        if (!abs) { skipped.push(src); continue; }
-        let bytes;
-        try { bytes = new Uint8Array(await fs.readFile(abs)); } catch { skipped.push(src); continue; }
-        const entry = addAssetBytes(`assets/${src}`, bytes);
-        if (entry !== `assets/${src}`) {
-          content = rewriteNoteSrc(content, src, entry.slice('assets/'.length));
-        }
-      }
-
-      const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
-      const noteRef = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
-      files[`notes/${noteRef}`] = strToU8(content);
-    }
+    const dataToExport = { ...data, elements: await stripThumbnails(data.elements, storageId) };
+    const { files, skipped } = await collectPackageFiles(dataToExport, storageId);
 
     const zip = buildPackage(JSON.stringify(dataToExport, null, 2), files);
     await fs.writeFile(filePath, Buffer.from(zip));
@@ -738,8 +842,275 @@ async function writeExtractedFile(baseDir, rel, contents) {
   return [...parts, candidate].join('/');
 }
 
-// Opening a package (or bare timeline) is a transparent import: extract into
-// the library and the configured assets/notes dirs, then open normally
+// Sync-pull update for an existing uid: rewrite the .timeline in place and write assets/notes where the exporter reads them; never deletes stray files
+async function overwriteExistingTimeline(data, pkg, existing, opts) {
+  const storageId = deriveStorageId(data.file);
+  if (pkg) {
+    const assetsRoot = await getAssetsRootDir();
+    const assetsDir = await getAssetsDir(storageId);
+    for (const [rel, bytes] of Object.entries(pkg.assets)) {
+      const target = rel.includes('/') ? path.join(assetsRoot, ...rel.split('/')) : path.join(assetsDir, rel);
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.writeFile(target, Buffer.from(bytes));
+    }
+    const notesRoot = await getNotesRootDir();
+    const notesDir = await getNotesDir(storageId);
+    for (const [rel, content] of Object.entries(pkg.notes)) {
+      const target = rel.includes('/') ? path.join(notesRoot, ...rel.split('/')) : path.join(notesDir, rel);
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.writeFile(target, content, 'utf8');
+    }
+  }
+
+  const timelinesDir = await getTimelinesDir();
+  let relId = existing.relativeId;
+  if (opts.preferredRelId) {
+    const preferred = sanitizeTimelinePath(opts.preferredRelId);
+    // Adopt the mirror's placement unless another file already sits there
+    if (preferred !== relId && !fsSync.existsSync(path.join(timelinesDir, `${preferred}.timeline`))) {
+      relId = preferred;
+    }
+  }
+  const targetPath = path.join(timelinesDir, `${relId}.timeline`);
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await writeFileAtomic(targetPath, JSON.stringify(data, null, 2));
+  if (relId !== existing.relativeId) {
+    await fs.unlink(existing.fullPath).catch(() => {});
+  }
+  return { success: true, id: relId, uid: data.file.uid, overwritten: true };
+}
+
+// Installs a timeline (JSON or zip) from bytes; opts: sourcePath, resolution (open-existing|copy|overwrite), preferredRelId, titleSuffix. Throws on bad input.
+async function installTimelineFromBuffer(buf, opts = {}) {
+  const { sourcePath = null, resolution = null } = opts;
+  let pkg = null;
+  let data;
+  if (isZipBuffer(buf)) {
+    pkg = readPackage(buf);
+    data = JSON.parse(pkg.timelineJson);
+  } else {
+    data = JSON.parse(Buffer.from(buf).toString('utf8'));
+  }
+  if (!data || typeof data !== 'object' || !Array.isArray(data.elements)) {
+    return { success: false, error: 'Not a valid timeline file' };
+  }
+
+  data.file = data.file && typeof data.file === 'object' ? data.file : {};
+  if (!data.file.uid) {
+    data.file.uid = data.file.id?.replace(/-timeline$/, '')
+      || (sourcePath ? safeName(path.basename(sourcePath).replace(/\.(timeline|json)$/i, '')) : '')
+      || `timeline-${Date.now()}`;
+  }
+
+  const existing = await findTimelineByUid(data.file.uid);
+  if (existing) {
+    if (resolution === 'open-existing') {
+      return { success: true, openedExisting: true, id: existing.relativeId };
+    }
+    if (resolution === 'overwrite') {
+      return overwriteExistingTimeline(data, pkg, existing, opts);
+    }
+    if (resolution === 'copy') {
+      let candidate;
+      let counter = 1;
+      do {
+        candidate = `${data.file.uid}-copy${counter > 1 ? `-${counter}` : ''}`;
+        counter++;
+      } while (await findTimelineByUid(candidate));
+      data.file.uid = candidate;
+      if (data.file.title) data.file.title = `${data.file.title}${opts.titleSuffix ?? ' (Copy)'}`;
+    } else {
+      return {
+        success: false,
+        conflict: true,
+        sourcePath,
+        existingId: existing.relativeId,
+        title: data.file.title || existing.relativeId,
+      };
+    }
+  }
+
+  const storageId = data.file.uid;
+  const skipped = [];
+
+  if (pkg) {
+    // Assets first, tracking collision renames so refs can follow
+    const assetsDir = await getAssetsDir(storageId);
+    const assetRenames = new Map();
+    for (const [rel, bytes] of Object.entries(pkg.assets)) {
+      try {
+        const written = await writeExtractedFile(assetsDir, rel, bytes);
+        if (written !== rel) assetRenames.set(rel, written);
+      } catch {
+        skipped.push(rel);
+      }
+    }
+    if (assetRenames.size > 0) {
+      data.elements = data.elements.map((el) => {
+        if (!el.thumbnail || typeof el.thumbnail !== 'string') return el;
+        const ref = el.thumbnail.replace(/\\/g, '/');
+        return assetRenames.has(ref) ? { ...el, thumbnail: assetRenames.get(ref) } : el;
+      });
+    }
+
+    const notesDir = await getNotesDir(storageId);
+    const noteRenames = new Map();
+    for (const [rel, rawContent] of Object.entries(pkg.notes)) {
+      let content = rawContent;
+      for (const [oldRef, newRef] of assetRenames) {
+        content = rewriteNoteSrc(content, oldRef, newRef);
+      }
+      try {
+        const written = await writeExtractedFile(notesDir, rel, content);
+        if (written !== rel) noteRenames.set(rel, written);
+      } catch {
+        skipped.push(rel);
+      }
+    }
+    data.elements = data.elements.map((el) => {
+      if (!el.noteFile || typeof el.noteFile !== 'string') return el;
+      const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
+      let ref = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
+      if (noteRenames.has(ref)) ref = noteRenames.get(ref);
+      // Slash refs resolve against the notes root, so anchor them to this timeline's folder
+      if (ref.includes('/')) ref = `${sanitizeTimelinePath(storageId)}/${ref}`;
+      return ref === el.noteFile ? el : { ...el, noteFile: ref };
+    });
+  }
+
+  const timelinesDir = await getTimelinesDir();
+  await fs.mkdir(timelinesDir, { recursive: true });
+
+  // A package sitting inside the library folder is converted in place (the bare timeline replaces the zip)
+  const samePath = (a, b) => process.platform === 'win32'
+    ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
+    : path.resolve(a) === path.resolve(b);
+  let sourceInLibrary = false;
+  let folderPrefix = '';
+  if (sourcePath) {
+    const sourceRel = path.relative(path.resolve(timelinesDir), path.resolve(sourcePath));
+    sourceInLibrary = Boolean(pkg)
+      && /\.timeline$/i.test(sourcePath)
+      && !sourceRel.startsWith('..')
+      && !path.isAbsolute(sourceRel);
+    // Keep a library package's folder placement when converting it
+    const sourceFolder = sourceInLibrary ? path.dirname(sourceRel.replace(/\\/g, '/')) : '';
+    folderPrefix = sourceFolder && sourceFolder !== '.' ? `${sanitizeTimelinePath(sourceFolder)}/` : '';
+  }
+
+  const baseName = safeName(data.file.title) || sanitizeId(storageId, 'timeline');
+  const desiredRelId = opts.preferredRelId ? sanitizeTimelinePath(opts.preferredRelId) : `${folderPrefix}${baseName}`;
+  let relId = desiredRelId;
+  let counter = 1;
+  let targetPath = path.join(timelinesDir, `${relId}.timeline`);
+  // The source zip's own name is free to reuse; writing there replaces it
+  while (fsSync.existsSync(targetPath) && !(sourceInLibrary && samePath(targetPath, sourcePath))) {
+    relId = `${desiredRelId}-${counter}`;
+    counter++;
+    targetPath = path.join(timelinesDir, `${relId}.timeline`);
+  }
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
+  await fs.writeFile(targetPath, JSON.stringify(data, null, 2), 'utf8');
+  if (sourceInLibrary && !samePath(targetPath, sourcePath)) {
+    await fs.unlink(sourcePath).catch((e) => console.warn('Could not remove imported package:', e.message));
+  }
+
+  return { success: true, id: relId, uid: data.file.uid, imported: true, skipped: [...new Set(skipped)] };
+}
+
+async function listGitSyncTimelines() {
+  const timelinesDir = await getTimelinesDir();
+  const files = await listTimelineFilesRecursive(timelinesDir, timelinesDir);
+  const timelines = [];
+  for (const { fullPath, relativeId } of files) {
+    let raw;
+    try {
+      raw = await fs.readFile(fullPath);
+    } catch {
+      continue;
+    }
+    if (isZipBuffer(raw)) continue;
+    try {
+      const data = JSON.parse(raw.toString('utf8'));
+      const uid = deriveStorageId(data.file) || relativeId.split('/').pop();
+      timelines.push({
+        uid,
+        relativeId,
+        neverSync: Boolean(data.file?.neverSync),
+      });
+    } catch {
+      // Corrupt timelines are already skipped elsewhere; sync ignores them too
+    }
+  }
+  return timelines;
+}
+
+async function buildGitSyncPackageForTimeline(timeline) {
+  if (!timeline?.relativeId) throw new Error('Missing timeline relativeId');
+  const timelinesDir = await getTimelinesDir();
+  const filePath = path.join(timelinesDir, ...`${timeline.relativeId}.timeline`.split('/'));
+  const raw = await fs.readFile(filePath);
+  if (isZipBuffer(raw)) {
+    throw new Error('Packaged timelines inside the library are not syncable');
+  }
+  const data = JSON.parse(raw.toString('utf8'));
+  if (!data.file?.uid) {
+    data.file = { ...(data.file || {}), uid: deriveStorageId(data.file) || timeline.uid };
+  }
+  const storageId = deriveStorageId(data.file);
+  const { files } = await collectPackageFiles(data, storageId);
+  return buildPackage(JSON.stringify(data, null, 2), files, { deterministic: true });
+}
+
+async function removeGitSyncTimeline(uid) {
+  const existing = await findTimelineByUid(uid);
+  if (!existing) return { success: true };
+  await fs.unlink(existing.fullPath).catch((err) => {
+    if (err.code !== 'ENOENT') throw err;
+  });
+  return { success: true };
+}
+
+async function initGitSync() {
+  const settings = await readAppSettings();
+  gitSync = createEngine({
+    repoDir: gitSyncRepoDir(),
+    statePath: gitSyncStatePath(),
+    listTimelines: listGitSyncTimelines,
+    buildPackageForTimeline: buildGitSyncPackageForTimeline,
+    importPackage: installTimelineFromBuffer,
+    removeLocalTimeline: removeGitSyncTimeline,
+    loadCredentials: loadGitSyncCredentials,
+    saveCredentials: saveGitSyncCredentials,
+    clearCredentials: clearGitSyncCredentials,
+    machineLabel: settings?.gitSyncMachineLabel,
+    autoSync: settings?.gitSyncAutoSync !== false,
+    debounceMs: Math.max(30_000, (Number(settings?.gitSyncIntervalMinutes) || 5) * 60_000),
+    onStatus: (status) => {
+      mainWindow?.webContents?.send('git-sync-state-changed', status);
+    },
+    onApplied: (ids) => {
+      mainWindow?.webContents?.send('git-sync-applied', ids);
+    },
+  });
+  await gitSync.init();
+}
+
+function requireGitSync() {
+  if (!gitSync) {
+    throw new Error('Git sync is not initialized');
+  }
+  return gitSync;
+}
+
+function markGitSyncDirty(uid) {
+  gitSync?.markDirty(uid);
+}
+
+function markGitSyncStructureDirty() {
+  gitSync?.markStructureDirty();
+}
+
 ipcMain.handle('import-timeline', async (event, payload) => {
   try {
     const resolution = payload?.resolution || null; // null | 'open-existing' | 'copy'
@@ -759,133 +1130,11 @@ ipcMain.handle('import-timeline', async (event, payload) => {
     }
 
     const buf = await fs.readFile(sourcePath);
-    let pkg = null;
-    let data;
-    if (isZipBuffer(buf)) {
-      pkg = readPackage(buf);
-      data = JSON.parse(pkg.timelineJson);
-    } else {
-      data = JSON.parse(buf.toString('utf8'));
+    const result = await installTimelineFromBuffer(buf, { sourcePath, resolution });
+    if (result?.success && !result?.openedExisting) {
+      markGitSyncStructureDirty();
     }
-    if (!data || typeof data !== 'object' || !Array.isArray(data.elements)) {
-      return { success: false, error: 'Not a valid timeline file' };
-    }
-
-    data.file = data.file && typeof data.file === 'object' ? data.file : {};
-    if (!data.file.uid) {
-      data.file.uid = data.file.id?.replace(/-timeline$/, '')
-        || safeName(path.basename(sourcePath).replace(/\.(timeline|json)$/i, ''))
-        || `timeline-${Date.now()}`;
-    }
-
-    const existing = await findTimelineByUid(data.file.uid);
-    if (existing) {
-      if (resolution === 'open-existing') {
-        return { success: true, openedExisting: true, id: existing.relativeId };
-      }
-      if (resolution === 'copy') {
-        let candidate;
-        let counter = 1;
-        do {
-          candidate = `${data.file.uid}-copy${counter > 1 ? `-${counter}` : ''}`;
-          counter++;
-        } while (await findTimelineByUid(candidate));
-        data.file.uid = candidate;
-        if (data.file.title) data.file.title = `${data.file.title} (Copy)`;
-      } else {
-        return {
-          success: false,
-          conflict: true,
-          sourcePath,
-          existingId: existing.relativeId,
-          title: data.file.title || existing.relativeId,
-        };
-      }
-    }
-
-    const storageId = data.file.uid;
-    const skipped = [];
-
-    if (pkg) {
-      // Assets first, tracking collision renames so refs can follow
-      const assetsDir = await getAssetsDir(storageId);
-      const assetRenames = new Map();
-      for (const [rel, bytes] of Object.entries(pkg.assets)) {
-        try {
-          const written = await writeExtractedFile(assetsDir, rel, bytes);
-          if (written !== rel) assetRenames.set(rel, written);
-        } catch {
-          skipped.push(rel);
-        }
-      }
-      if (assetRenames.size > 0) {
-        data.elements = data.elements.map((el) => {
-          if (!el.thumbnail || typeof el.thumbnail !== 'string') return el;
-          const ref = el.thumbnail.replace(/\\/g, '/');
-          return assetRenames.has(ref) ? { ...el, thumbnail: assetRenames.get(ref) } : el;
-        });
-      }
-
-      const notesDir = await getNotesDir(storageId);
-      const noteRenames = new Map();
-      for (const [rel, rawContent] of Object.entries(pkg.notes)) {
-        let content = rawContent;
-        for (const [oldRef, newRef] of assetRenames) {
-          content = rewriteNoteSrc(content, oldRef, newRef);
-        }
-        try {
-          const written = await writeExtractedFile(notesDir, rel, content);
-          if (written !== rel) noteRenames.set(rel, written);
-        } catch {
-          skipped.push(rel);
-        }
-      }
-      data.elements = data.elements.map((el) => {
-        if (!el.noteFile || typeof el.noteFile !== 'string') return el;
-        const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
-        let ref = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
-        if (noteRenames.has(ref)) ref = noteRenames.get(ref);
-        // Slash refs resolve against the notes root, so anchor them to this timeline's folder
-        if (ref.includes('/')) ref = `${sanitizeTimelinePath(storageId)}/${ref}`;
-        return ref === el.noteFile ? el : { ...el, noteFile: ref };
-      });
-    }
-
-    // Install into the library; the renderer then opens it like any other timeline
-    const timelinesDir = await getTimelinesDir();
-    await fs.mkdir(timelinesDir, { recursive: true });
-
-    // A package sitting inside the library folder is converted in place:
-    // once extracted, the installed bare timeline replaces the zip
-    const samePath = (a, b) => process.platform === 'win32'
-      ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
-      : path.resolve(a) === path.resolve(b);
-    const sourceRel = path.relative(path.resolve(timelinesDir), path.resolve(sourcePath));
-    const sourceInLibrary = Boolean(pkg)
-      && /\.timeline$/i.test(sourcePath)
-      && !sourceRel.startsWith('..')
-      && !path.isAbsolute(sourceRel);
-    // Keep a library package's folder placement when converting it
-    const sourceFolder = sourceInLibrary ? path.dirname(sourceRel.replace(/\\/g, '/')) : '';
-    const folderPrefix = sourceFolder && sourceFolder !== '.' ? `${sanitizeTimelinePath(sourceFolder)}/` : '';
-
-    const baseName = safeName(data.file.title) || sanitizeId(storageId, 'timeline');
-    let relId = `${folderPrefix}${baseName}`;
-    let counter = 1;
-    let targetPath = path.join(timelinesDir, `${relId}.timeline`);
-    // The source zip's own name is free to reuse; writing there replaces it
-    while (fsSync.existsSync(targetPath) && !(sourceInLibrary && samePath(targetPath, sourcePath))) {
-      relId = `${folderPrefix}${baseName}-${counter}`;
-      counter++;
-      targetPath = path.join(timelinesDir, `${relId}.timeline`);
-    }
-    await fs.mkdir(path.dirname(targetPath), { recursive: true });
-    await fs.writeFile(targetPath, JSON.stringify(data, null, 2), 'utf8');
-    if (sourceInLibrary && !samePath(targetPath, sourcePath)) {
-      await fs.unlink(sourcePath).catch((e) => console.warn('Could not remove imported package:', e.message));
-    }
-
-    return { success: true, id: relId, imported: true, skipped: [...new Set(skipped)] };
+    return result;
   } catch (error) {
     console.error('Error importing timeline:', error);
     return {
@@ -915,6 +1164,7 @@ ipcMain.handle('delete-timeline', async (event, payload) => {
 
     await fs.unlink(filePath);
     console.log(`Deleted timeline: ${filename}`);
+    markGitSyncStructureDirty();
 
     // Remove folder if now empty
     const dir = path.dirname(filePath);
@@ -956,6 +1206,7 @@ ipcMain.handle('rename-folder', async (event, { folderPath, newName }) => {
     const safeNew = parts.join('/');
     if (safeOld === safeNew) return { success: true, newPath: safeNew };
     await fs.rename(path.join(baseDir, safeOld), path.join(baseDir, safeNew));
+    markGitSyncStructureDirty();
     return { success: true, newPath: safeNew };
   } catch (error) {
     return { success: false, error: error.message };
@@ -985,6 +1236,7 @@ ipcMain.handle('update-timeline-title', async (event, { id, title }) => {
 
     if (safePath === nextPath) {
       await writeFileAtomic(filePath, JSON.stringify(data, null, 2));
+      markGitSyncDirty(deriveStorageId(data.file));
       return { success: true, oldId: safePath, newId: nextPath, title, fileId: data.file.id };
     }
 
@@ -993,7 +1245,29 @@ ipcMain.handle('update-timeline-title', async (event, { id, title }) => {
     await fs.mkdir(path.dirname(nextFilePath), { recursive: true });
     await fs.rename(filePath, nextFilePath);
     await writeFileAtomic(nextFilePath, JSON.stringify(data, null, 2));
+    markGitSyncStructureDirty();
     return { success: true, oldId: safePath, newId: nextPath, title, fileId: data.file.id };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Toggle the in-file "never sync" flag; enabling only stops future syncs (already-pushed data stays)
+ipcMain.handle('set-timeline-never-sync', async (event, payload) => {
+  try {
+    const id = payload?.id;
+    const neverSync = Boolean(payload?.neverSync);
+    if (!id) return { success: false, error: 'Missing timeline id' };
+    const baseDir = await getTimelinesDir();
+    const safePath = sanitizeTimelinePath(id);
+    const filePath = path.join(baseDir, `${safePath}.timeline`);
+    const raw = await fs.readFile(filePath);
+    if (isZipBuffer(raw)) return { success: false, error: 'Packaged timelines cannot be flagged' };
+    const data = JSON.parse(raw.toString('utf8'));
+    data.file = { ...(data.file || {}), neverSync };
+    await writeFileAtomic(filePath, JSON.stringify(data, null, 2));
+    markGitSyncStructureDirty();
+    return { success: true, id: safePath, neverSync };
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -1004,6 +1278,7 @@ ipcMain.handle('delete-folder', async (event, { folderPath }) => {
     const baseDir = await getTimelinesDir();
     const safe = sanitizeTimelinePath(folderPath);
     await fs.rm(path.join(baseDir, safe), { recursive: true, force: true });
+    markGitSyncStructureDirty();
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -1023,6 +1298,7 @@ ipcMain.handle('move-folder', async (event, { folderPath, targetFolder }) => {
     if (safeDest.startsWith(safeSrc + '/')) return { success: false, error: 'Cannot move folder into itself' };
     await fs.mkdir(path.join(baseDir, path.dirname(safeDest)), { recursive: true });
     await fs.rename(path.join(baseDir, safeSrc), path.join(baseDir, safeDest));
+    markGitSyncStructureDirty();
     return { success: true, newPath: safeDest };
   } catch (error) {
     return { success: false, error: error.message };
@@ -1037,6 +1313,7 @@ ipcMain.handle('create-folder', async (event, { folderName, parentFolder }) => {
       : sanitizeTimelinePath(folderName);
     if (!safeFolderName) return { success: false, error: 'Invalid folder name' };
     await fs.mkdir(path.join(baseDir, safeFolderName), { recursive: true });
+    markGitSyncStructureDirty();
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -1087,6 +1364,7 @@ ipcMain.handle('move-timeline', async (event, { id, targetFolder }) => {
     if (oldNotesPath !== newNotesPath) {
       await fs.rename(oldNotesPath, newNotesPath).catch(e => { if (e.code !== 'ENOENT') throw e; });
     }
+    markGitSyncStructureDirty();
     return { success: true, newId: newRelId };
   } catch (error) {
     return { success: false, error: error.message };
@@ -1112,7 +1390,7 @@ ipcMain.handle('create-note', async (event, { timelineId, title, elementId }) =>
       const heading = title ? `# ${title}\n\n` : '';
       await fs.writeFile(filePath, heading, 'utf8');
     }
-
+    markGitSyncDirty(timelineId);
     return { success: true, filename };
   } catch (error) {
     console.error('Error creating note:', error);
@@ -1149,7 +1427,7 @@ ipcMain.handle('add-existing-note', async (event, { timelineId } = {}) => {
 
     const normalizedRelative = relative.split(path.sep).join('/');
     const content = await fs.readFile(sourcePath, 'utf8');
-
+    markGitSyncDirty(timelineId);
     return { success: true, filename: normalizedRelative, content };
   } catch (error) {
     console.error('Error adding existing note:', error);
@@ -1221,6 +1499,7 @@ ipcMain.handle('write-note', async (event, { timelineId, filename, content }) =>
     // Slash refs resolve against the notes root, so mkdir the actual target folder
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await writeFileAtomic(filePath, content ?? '');
+    markGitSyncDirty(timelineId);
     return { success: true };
   } catch (error) {
     console.error('Error writing note:', error);
@@ -1249,6 +1528,7 @@ ipcMain.handle('rename-note', async (event, { timelineId, oldFilename, newFilena
       }
       throw error;
     }
+    markGitSyncDirty(timelineId);
     return { success: true };
   } catch (error) {
     console.error('Error renaming note:', error);
@@ -1272,6 +1552,7 @@ ipcMain.handle('rename-timeline', async (event, { oldId, newId }) => {
     await fs.rename(oldFilePath, newFilePath).catch(e => { if (e.code !== 'ENOENT') throw e; });
 
     // Storage folders are keyed by immutable file.uid, so they don't move on rename
+    markGitSyncStructureDirty();
     return { success: true };
   } catch (error) {
     console.error('Error renaming timeline:', error);
@@ -1285,6 +1566,7 @@ ipcMain.handle('delete-note', async (event, { timelineId, filename }) => {
     }
     const filePath = await resolveNotePath(timelineId, filename);
     await fs.unlink(filePath);
+    markGitSyncDirty(timelineId);
     return { success: true };
   } catch (error) {
     console.error('Error deleting note:', error);
@@ -1311,7 +1593,8 @@ const ALLOWED_SETTINGS_KEYS = new Set([
   'timelineStorageDir', 'storageDir', 'notesStorageDir',
   'themeKey',
   'theme', 'notesSubfolder', 'notesSubfolderEnabled',
-  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'assetsStorageDir', 'homeSortMode',
+  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
+  'gitSyncAutoSync', 'gitSyncIntervalMinutes', 'gitSyncMachineLabel',
 ]);
 
 ipcMain.handle('set-app-settings', async (event, settings) => {
@@ -1335,6 +1618,142 @@ ipcMain.handle('set-app-settings', async (event, settings) => {
     return { success: true };
   } catch (error) {
     console.error('Error saving app settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-connect', async (event, payload) => {
+  try {
+    const remoteUrl = String(payload?.remoteUrl || payload?.url || '').trim();
+    const branch = String(payload?.branch || 'main').trim() || 'main';
+    const token = String(payload?.token || '').trim();
+    const username = String(payload?.username || 'x-access-token').trim() || 'x-access-token';
+    if (!remoteUrl) {
+      return { success: false, error: 'Missing repository URL' };
+    }
+    if (/^(ssh:\/\/|git@)/i.test(remoteUrl)) {
+      return { success: false, error: 'This build currently supports HTTPS remotes with a personal access token. Use an https:// clone URL.' };
+    }
+    if (!token) {
+      return { success: false, error: 'Missing personal access token' };
+    }
+    const engine = requireGitSync();
+    await engine.updateCredentials({ token, username });
+    return { success: true, status: await engine.connect({ url: remoteUrl, branch }) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-update-credentials', async (event, payload) => {
+  try {
+    const token = String(payload?.token || '').trim();
+    const username = String(payload?.username || 'x-access-token').trim() || 'x-access-token';
+    if (!token) {
+      return { success: false, error: 'Missing personal access token' };
+    }
+    return {
+      success: true,
+      status: await requireGitSync().updateCredentials({ token, username }),
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-now', async () => {
+  try {
+    return { success: true, status: await requireGitSync().syncNow() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-status', async () => {
+  try {
+    return { success: true, status: requireGitSync().getStatus() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-update-settings', async (event, payload) => {
+  try {
+    const intervalMinutes = Math.max(1, Number(payload?.intervalMinutes) || 5);
+    const autoSync = payload?.autoSync !== false;
+    const machineLabel = String(payload?.machineLabel || '').trim();
+    await writeAppSettingsPartial({
+      gitSyncAutoSync: autoSync,
+      gitSyncIntervalMinutes: intervalMinutes,
+      ...(machineLabel ? { gitSyncMachineLabel: machineLabel } : {}),
+    });
+    const status = await requireGitSync().updateSettings({
+      autoSync,
+      debounceMs: intervalMinutes * 60_000,
+      machineLabel: machineLabel || undefined,
+      excludedPaths: payload?.excludedPaths,
+      writeReadme: payload?.writeReadme,
+    });
+    return { success: true, status };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-rebuild', async () => {
+  try {
+    return { success: true, status: await requireGitSync().rebuildMirror() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-mirror-size', async () => {
+  try {
+    return { success: true, bytes: await requireGitSync().mirrorSize() };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-disconnect', async (event, payload) => {
+  try {
+    await requireGitSync().disconnect({ deleteMirror: Boolean(payload?.deleteMirror) });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-share-info', async (event, payload) => {
+  try {
+    const uid = String(payload?.uid || '').trim();
+    if (!uid) return { success: false, error: 'Missing timeline uid' };
+    return { success: true, info: await requireGitSync().shareInfo(uid) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-file-history', async (event, payload) => {
+  try {
+    const uid = String(payload?.uid || '').trim();
+    if (!uid) return { success: false, error: 'Missing timeline uid' };
+    return { success: true, history: await requireGitSync().fileHistory(uid) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('git-sync-restore-version', async (event, payload) => {
+  try {
+    const uid = String(payload?.uid || '').trim();
+    const commitOid = String(payload?.commitOid || payload?.oid || '').trim();
+    if (!uid || !commitOid) {
+      return { success: false, error: 'Missing timeline uid or commit SHA' };
+    }
+    return { success: true, result: await requireGitSync().restoreVersion(uid, commitOid) };
+  } catch (error) {
     return { success: false, error: error.message };
   }
 });
@@ -1793,7 +2212,9 @@ ipcMain.handle('pick-and-import-image', async (event, { timelineId }) => {
       properties: ['openFile'],
     });
     if (result.canceled || !result.filePaths[0]) return { cancelled: true };
-    return await importImageByPath(result.filePaths[0], timelineId);
+    const imported = await importImageByPath(result.filePaths[0], timelineId);
+    if (imported?.success) markGitSyncDirty(timelineId);
+    return imported;
   } catch (error) {
     console.error('Error importing image:', error);
     return { success: false, error: error.message };
@@ -1802,7 +2223,9 @@ ipcMain.handle('pick-and-import-image', async (event, { timelineId }) => {
 
 ipcMain.handle('import-image-from-path', async (event, { timelineId, filePath }) => {
   try {
-    return await importImageByPath(filePath, timelineId);
+    const imported = await importImageByPath(filePath, timelineId);
+    if (imported?.success) markGitSyncDirty(timelineId);
+    return imported;
   } catch (error) {
     console.error('Error importing dropped image:', error);
     return { success: false, error: error.message };
@@ -1824,6 +2247,7 @@ ipcMain.handle('copy-timeline-storage', async (event, { sourceId, targetId }) =>
         if (e.code !== 'ENOENT') throw e;
       }
     }
+    markGitSyncDirty(targetId);
     return { success: true };
   } catch (error) {
     console.error('Error copying timeline storage:', error);
@@ -1842,6 +2266,7 @@ ipcMain.handle('delete-asset', async (event, { timelineId, filename }) => {
       return { success: false, error: 'Invalid asset path' };
     }
     await fs.unlink(filePath);
+    markGitSyncDirty(timelineId);
     return { success: true };
   } catch (error) {
     if (error.code === 'ENOENT') return { success: true };
