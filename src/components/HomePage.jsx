@@ -1757,7 +1757,7 @@ export default function HomePage({
                   className={`settings-sidebar-item${settingsSection === "sync" ? " is-active" : ""}`}
                   onClick={() => setSettingsSection("sync")}
                 >
-                  Sync
+                  Sync (Experimental)
                 </button>
               </div>
               <div className="settings-content">
