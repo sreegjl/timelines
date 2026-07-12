@@ -557,6 +557,21 @@
   height: 30px;
 }
 
+.marketplace-bulk-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.marketplace-bulk-progress svg {
+  animation: git-sync-spin 900ms linear infinite;
+}
+
 .marketplace-tabs-row {
   display: flex;
   align-items: center;

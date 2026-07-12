@@ -450,7 +450,7 @@ app.whenReady().then(async () => {
           },
         });
       }
-      return net.fetch(pathToFileURL(normalizedAssetPath).toString());
+      return await net.fetch(pathToFileURL(normalizedAssetPath).toString());
     } catch (error) {
       console.error('Error serving asset:', error);
       return new Response('Not found', { status: 404 });
@@ -474,7 +474,7 @@ app.whenReady().then(async () => {
         return new Response('Forbidden', { status: 403 });
       }
 
-      return net.fetch(pathToFileURL(normalizedFontPath).toString());
+      return await net.fetch(pathToFileURL(normalizedFontPath).toString());
     } catch (error) {
       console.error('Error serving font:', error);
       return new Response('Not found', { status: 404 });

@@ -1349,6 +1349,8 @@ function App() {
       const nextFile = { ...prevData.file, ...patch };
       if (!nextFile.panelGroupMode || nextFile.panelGroupMode === "default") delete nextFile.panelGroupMode;
       if (!nextFile.nestEraSubGroups) delete nextFile.nestEraSubGroups;
+      if (nextFile.panelSortField !== "name") delete nextFile.panelSortField;
+      if (nextFile.panelSortOrder !== "desc") delete nextFile.panelSortOrder;
       const updatedData = { ...prevData, file: nextFile };
       saveCurrentTimeline(updatedData).catch(console.error);
       return updatedData;

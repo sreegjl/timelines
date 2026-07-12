@@ -233,8 +233,9 @@ export default function Sidebar({
   const [openEraGroups, setOpenEraGroups] = useState({});
   const [openSpanGroups, setOpenSpanGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState("year");
-  const [sortOrder, setSortOrder] = useState("asc");
+  // Sort prefs live on the file (like panelGroupMode) so they survive reloads
+  const sortField = file?.panelSortField === "name" ? "name" : "year";
+  const sortOrder = file?.panelSortOrder === "desc" ? "desc" : "asc";
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
@@ -1276,20 +1277,20 @@ export default function Sidebar({
               {sortMenuOpen && (
                 <div className="sb-sort-menu timeline-context-menu">
                   <div className="sb-sort-menu-header">Sort by</div>
-                  <button className="context-menu-item" onClick={() => { setSortField("year"); setSortMenuOpen(false); }}>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "year" }); setSortMenuOpen(false); }}>
                     <span>Year</span>
                     {sortField === "year" && <Check size={12} className="sb-sort-check" />}
                   </button>
-                  <button className="context-menu-item" onClick={() => { setSortField("name"); setSortMenuOpen(false); }}>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "name" }); setSortMenuOpen(false); }}>
                     <span>Name</span>
                     {sortField === "name" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <div className="sb-sort-divider" />
-                  <button className="context-menu-item" onClick={() => { setSortOrder("asc"); setSortMenuOpen(false); }}>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortOrder: "asc" }); setSortMenuOpen(false); }}>
                     <span>Ascending</span>
                     {sortOrder === "asc" && <Check size={12} className="sb-sort-check" />}
                   </button>
-                  <button className="context-menu-item" onClick={() => { setSortOrder("desc"); setSortMenuOpen(false); }}>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortOrder: "desc" }); setSortMenuOpen(false); }}>
                     <span>Descending</span>
                     {sortOrder === "desc" && <Check size={12} className="sb-sort-check" />}
                   </button>

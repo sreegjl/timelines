@@ -1,17 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Upload, X, Download, Check, Trash2, FolderOpen, Search, Moon, Sun, ChevronDown, MoreVertical } from "lucide-react";
+import { ArrowLeft, Upload, X, Download, Check, Trash2, FolderOpen, Search, Moon, Sun, ChevronDown, MoreVertical, RefreshCw } from "lucide-react";
 import { saveUserTheme, deleteUserTheme } from "../utils/electronApi";
+import { formatCollectionName } from "../utils/themeLoader";
 
 const MARKETPLACE_BASE = "https://raw.githubusercontent.com/sreegjl/timelines-marketplace/refs/heads/main/";
-
-function formatCollectionName(collection) {
-  if (!collection) return "";
-  return String(collection)
-    .split(/[_-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
 
 export default function MarketplaceModal({
   isOpen,
@@ -43,6 +35,7 @@ export default function MarketplaceModal({
   const localDropHandlerRef = useRef(null);
   const [installedOriginFilter, setInstalledOriginFilter] = useState("all");
   const [marketplaceBulkBusy, setMarketplaceBulkBusy] = useState("");
+  const [bulkProgress, setBulkProgress] = useState(null); // { done, total } | null
 
   const loadInstalledThemes = async () => {
     if (!window.electron?.listThemes) return;
@@ -308,6 +301,12 @@ export default function MarketplaceModal({
     ) && marketplaceBulkBusy !== "download";
     return (
       <div className="marketplace-bulk-actions" ref={bulkMenuRef}>
+        {bulkProgress && (
+          <span className="marketplace-bulk-progress" role="status">
+            <RefreshCw size={12} />
+            <span>{bulkProgress.done}/{bulkProgress.total}</span>
+          </span>
+        )}
         <button
           className="marketplace-icon-button marketplace-bulk-trigger"
           type="button"
@@ -353,21 +352,28 @@ export default function MarketplaceModal({
     if (!downloadableMarketplaceThemes.length) return;
     setMarketplaceBulkBusy("download");
     setMarketplaceError("");
+    setBulkProgress({ done: 0, total: downloadableMarketplaceThemes.length });
     let failed = 0;
     try {
-      for (const theme of downloadableMarketplaceThemes) {
-        try {
-          await downloadThemeFile(theme);
-        } catch (error) {
-          failed += 1;
-          console.error("Failed to download theme:", error);
+      const queue = [...downloadableMarketplaceThemes];
+      const worker = async () => {
+        for (let theme = queue.shift(); theme; theme = queue.shift()) {
+          try {
+            await downloadThemeFile(theme);
+          } catch (error) {
+            failed += 1;
+            console.error("Failed to download theme:", error);
+          }
+          setBulkProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
         }
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(6, queue.length) }, worker));
       await onRefreshThemes?.();
       await loadInstalledThemes();
       if (failed > 0) setMarketplaceError(`Failed to download ${failed} theme(s).`);
     } finally {
       setMarketplaceBulkBusy("");
+      setBulkProgress(null);
     }
   };
 

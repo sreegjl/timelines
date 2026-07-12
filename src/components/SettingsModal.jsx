@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { parseTimelineInput, snapToMonthGrid } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
+import { themeOptionLabel } from "../utils/themeLoader";
 import "../styles/07-modals-menus.css";
 
 const MAP_MARKER_OPTIONS = [
@@ -902,7 +903,7 @@ export default function SettingsModal({
                       <option value="default">Default (App Theme)</option>
                       {Object.entries(themes || {}).map(([key, theme]) => (
                         <option key={key} value={key}>
-                          {theme?.name || key}
+                          {themeOptionLabel(key, theme)}
                         </option>
                       ))}
                     </select>

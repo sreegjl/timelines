@@ -388,6 +388,7 @@ const TimelineView = forwardRef(function TimelineView({
   const [filterText, setFilterText] = useState("");
   const [filterDateOp, setFilterDateOp] = useState(">=");
   const [filterDateVal, setFilterDateVal] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [filterHistory, setFilterHistory] = useState(() => {
     try {
       const stored = JSON.parse(window.localStorage.getItem(FILTER_HISTORY_KEY) ?? "[]");
@@ -1509,6 +1510,7 @@ const TimelineView = forwardRef(function TimelineView({
       if (typeof value === "number") {
         const delta = Math.abs(value - sliderValueRef.current);
         if (delta >= 0.001) {
+          sliderValueRef.current = value;
           setSliderValue(value);
         }
       }
@@ -1724,7 +1726,8 @@ const TimelineView = forwardRef(function TimelineView({
     const query = (q ?? "").trim();
     if (!query) return;
     setFilterHistory((prev) => {
-      const next = [query, ...prev.filter((x) => x !== query)].slice(0, FILTER_HISTORY_MAX);
+      // Drop entries the new query extends, so growing one filter doesn't fill history with its drafts
+      const next = [query, ...prev.filter((x) => x !== query && !query.startsWith(x))].slice(0, FILTER_HISTORY_MAX);
       try { window.localStorage.setItem(FILTER_HISTORY_KEY, JSON.stringify(next)); } catch { /* storage unavailable */ }
       return next;
     });
@@ -1743,6 +1746,15 @@ const TimelineView = forwardRef(function TimelineView({
   useEffect(() => {
     if (!filterUiOpen && filterQueryRef.current.trim()) commitFilterHistory(filterQueryRef.current);
   }, [filterUiOpen, commitFilterHistory]);
+
+  // Commit-on-close alone loses filters the user clears before closing
+  useEffect(() => {
+    if (!filterUiOpen) return undefined;
+    const query = chipsQuery.trim();
+    if (!query) return undefined;
+    const timer = setTimeout(() => commitFilterHistory(query), 1500);
+    return () => clearTimeout(timer);
+  }, [chipsQuery, filterUiOpen, commitFilterHistory]);
 
   const nextChipId = () => { filterChipIdRef.current += 1; return `chip-${filterChipIdRef.current}`; };
   const addFilterChip = (chip) =>
@@ -1771,7 +1783,11 @@ const TimelineView = forwardRef(function TimelineView({
   const clearFilterChips = () => { setFilterChips([]); setFilterText(""); setFilterDateVal(""); };
   const clearAllFilters = () => { clearFilterChips(); onClearTags?.(); };
 
-  const renderFilterMenuContent = (isModal) => (
+  const renderFilterMenuContent = (isModal) => {
+    const hasOr = filterChips.some((c, i) => i > 0 && c.join === "or");
+    const historyNeedle = filterText.trim().toLowerCase();
+    const historyMatches = filterHistory.filter((q) => !historyNeedle || q.toLowerCase().includes(historyNeedle));
+    return (
     <>
       <div className="fm-header">
         <span className="fm-header-title"><ListFilter size={12} /> Filters</span>
@@ -1798,13 +1814,17 @@ const TimelineView = forwardRef(function TimelineView({
         )}
       </div>
       <div className="fm-query-section">
+        <div className="fm-field-wrap">
         <div
           className="fm-field"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) { e.preventDefault(); filterInputRef.current?.focus(); }
           }}
         >
-          {filterChips.map((chip, i) => (
+          {filterChips.map((chip, i) => {
+            const startsGroup = i === 0 || chip.join === "or";
+            const endsGroup = i === filterChips.length - 1 || filterChips[i + 1].join === "or";
+            return (
             <Fragment key={chip.id}>
               {i > 0 && (
                 <button
@@ -1814,6 +1834,7 @@ const TimelineView = forwardRef(function TimelineView({
                   onClick={() => toggleChipJoin(chip.id)}
                 >{chip.join === "or" ? "OR" : "AND"}</button>
               )}
+              {hasOr && startsGroup && !endsGroup && <span className="fm-paren">(</span>}
               <span className={`fm-fchip fm-fchip-${chip.kind}${chip.negated ? " is-negated" : ""}`}>
                 <button
                   type="button"
@@ -1828,30 +1849,66 @@ const TimelineView = forwardRef(function TimelineView({
                   onClick={() => removeFilterChip(chip.id)}
                 >×</button>
               </span>
+              {hasOr && endsGroup && !startsGroup && <span className="fm-paren">)</span>}
             </Fragment>
-          ))}
+            );
+          })}
           <input
             ref={filterInputRef}
             autoFocus
             className="fm-field-input"
             placeholder={filterChips.length ? "Filter…" : "Filter elements…"}
             value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
+            onChange={(e) => { setFilterText(e.target.value); setHistoryOpen(true); }}
+            onFocus={() => setHistoryOpen(true)}
+            onClick={() => setHistoryOpen(true)}
+            onBlur={() => setHistoryOpen(false)}
             spellCheck={false}
             autoComplete="off"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const v = filterText.trim().replace(/^"+|"+$/g, "");
                 if (v) { addFilterChip({ kind: "text", value: v }); setFilterText(""); }
+                setHistoryOpen(false);
                 return;
               }
               if (e.key === "Backspace" && !filterText && filterChips.length) {
                 setFilterChips((prev) => prev.slice(0, -1));
                 return;
               }
+              if (e.key === "Escape" && historyOpen) { e.stopPropagation(); setHistoryOpen(false); return; }
               if (e.key === "Escape" && filterText) { e.stopPropagation(); setFilterText(""); }
             }}
           />
+        </div>
+        {historyOpen && historyMatches.length > 0 && (
+          <div className="fm-history-dropdown">
+            <div className="fm-history-dropdown-header"><History size={10} /> Recent filters</div>
+            {historyMatches.map((q) => (
+              <div key={q} className="fm-history-item">
+                <button
+                  type="button"
+                  className="fm-history-item-text"
+                  title={q}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setFilterChips(chipsFromQuery(q, nextChipId));
+                    setFilterText("");
+                    setHistoryOpen(false);
+                    filterInputRef.current?.focus();
+                  }}
+                >{q}</button>
+                <button
+                  type="button"
+                  className="fm-history-item-x"
+                  title="Remove from history"
+                  aria-label={`Remove "${q}" from history`}
+                  onMouseDown={(e) => { e.preventDefault(); removeFilterHistory(q); }}
+                >×</button>
+              </div>
+            ))}
+          </div>
+        )}
         </div>
         <div className="fm-chip-row">
           <span className="fm-chip-label">TYPE</span>
@@ -1898,32 +1955,6 @@ const TimelineView = forwardRef(function TimelineView({
             onClick={addDateChip}
           >+</button>
         </div>
-        {filterHistory.length > 0 && (
-          <div className="fm-chip-row fm-history-row">
-            <span className="fm-chip-label fm-history-label"><History size={10} /> RECENT</span>
-            {filterHistory.map((q) => (
-              <span key={q} className="fm-history-chip" title={q}>
-                <button
-                  type="button"
-                  className="fm-history-chip-text"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setFilterChips(chipsFromQuery(q, nextChipId));
-                    setFilterText("");
-                    filterInputRef.current?.focus();
-                  }}
-                >{q}</button>
-                <button
-                  type="button"
-                  className="fm-history-chip-x"
-                  title="Remove from history"
-                  aria-label={`Remove "${q}" from history`}
-                  onMouseDown={(e) => { e.preventDefault(); removeFilterHistory(q); }}
-                >×</button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
       <div className="fm-tags-header">
         <span className="fm-tags-title">TAGS</span>
@@ -2005,7 +2036,8 @@ const TimelineView = forwardRef(function TimelineView({
         </a>
       </div>
     </>
-  );
+    );
+  };
 
   // Reset viewport when switching to a different timeline
   const prevFileIdRef = useRef(file?.id);

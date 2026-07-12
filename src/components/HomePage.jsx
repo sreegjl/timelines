@@ -162,7 +162,7 @@ import NewTimelineModal from "./NewTimelineModal";
 import "../styles/02-homepage.css";
 import "../styles/07-modals-menus.css";
 import themeConfig from "../config/theme.json";
-import { loadThemeConfig } from "../utils/themeLoader";
+import { loadThemeConfig, themeOptionLabel } from "../utils/themeLoader";
 import { DEFAULT_KEYBINDS, cloneDefaultKeybinds, saveKeybinds } from "../utils/keybinds";
 import MarketplaceModal from "./MarketplaceModal";
 
@@ -1898,7 +1898,7 @@ export default function HomePage({
                             >
                               {appThemes.map(([key, theme]) => {
                                 const isDefault = key.toLowerCase() === "parchment_v2";
-                                const label = `${theme?.name || key}${isDefault ? " (Default)" : ""}`;
+                                const label = `${themeOptionLabel(key, theme)}${isDefault ? " (Default)" : ""}`;
                                 return (
                                   <option key={key} value={key}>
                                     {label}
@@ -1907,7 +1907,7 @@ export default function HomePage({
                               })}
                               {userThemes.map(([key, theme]) => (
                                 <option key={key} value={key}>
-                                  {theme?.name || key}
+                                  {themeOptionLabel(key, theme)}
                                 </option>
                               ))}
                             </select>
