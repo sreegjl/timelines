@@ -211,6 +211,7 @@ function App() {
   const currentTimelineIdRef = useRef(null);
   const [isNewTimelineModalOpen, setIsNewTimelineModalOpen] = useState(false);
   const [importConflict, setImportConflict] = useState(null); // { title, sourcePath }
+  const [skippedFilesNotice, setSkippedFilesNotice] = useState(null); // { title, message, files }
   const [isExportPngModalOpen, setIsExportPngModalOpen] = useState(false);
   const [exportPngOptions, setExportPngOptions] = useState(null);
   const [isExportVideoModalOpen, setIsExportVideoModalOpen] = useState(false);
@@ -1388,7 +1389,11 @@ function App() {
     const baseName = timelineData.file?.uid || timelineData.file?.id?.replace(/-timeline$/, "") || "timeline";
     const result = await exportTimelinePackage(timelineData, `${baseName}.timeline`);
     if (result?.success && result.skipped?.length > 0) {
-      alert(`Package exported, but ${result.skipped.length} referenced file(s) could not be found and were skipped:\n\n${result.skipped.join("\n")}`);
+      setSkippedFilesNotice({
+        title: "EXPORT FINISHED",
+        message: `Package exported, but ${result.skipped.length} referenced file(s) could not be found and were skipped:`,
+        files: result.skipped,
+      });
     } else if (result && !result.success && !result.canceled) {
       alert(`Failed to export package: ${result.error || "unknown error"}`);
     }
@@ -1397,7 +1402,11 @@ function App() {
   const finishImport = async (result) => {
     if (result?.success && result.id) {
       if (result.skipped?.length > 0) {
-        alert(`Imported, but ${result.skipped.length} bundled file(s) could not be written:\n\n${result.skipped.join("\n")}`);
+        setSkippedFilesNotice({
+          title: "IMPORT FINISHED",
+          message: `Imported, but ${result.skipped.length} bundled file(s) could not be written:`,
+          files: result.skipped,
+        });
       }
       await handleLoadTimeline(result.id);
     } else if (result && !result.success && !result.canceled) {
@@ -1446,6 +1455,29 @@ function App() {
           </button>
           <button className="settings-folder-button" onClick={() => handleResolveImportConflict("open-existing")}>
             Open Existing
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const skippedFilesModal = skippedFilesNotice && (
+    <div className="settings-backdrop" onClick={() => setSkippedFilesNotice(null)}>
+      <div className="settings-modal confirm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="settings-header">
+          <h2 className="settings-title">{skippedFilesNotice.title}</h2>
+        </div>
+        <div className="confirm-content">
+          <p className="confirm-text">{skippedFilesNotice.message}</p>
+          <ul className="confirm-file-list">
+            {skippedFilesNotice.files.map((file, i) => (
+              <li key={i}>{file}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="confirm-actions">
+          <button className="settings-folder-button" onClick={() => setSkippedFilesNotice(null)}>
+            OK
           </button>
         </div>
       </div>
@@ -2229,6 +2261,7 @@ function App() {
           />
         </div>
         {importConflictModal}
+        {skippedFilesModal}
       </>
     );
   }
@@ -2649,6 +2682,7 @@ function App() {
         fileSettings={timelineData?.file}
       />
       {importConflictModal}
+      {skippedFilesModal}
       </div>
       {screenshotToast && (
         <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#1a7a4a', borderRadius: '8px', padding: '8px 14px', zIndex: 9999, fontSize: 'var(--text-sm)', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', pointerEvents: 'none' }}>

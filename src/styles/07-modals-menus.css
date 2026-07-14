@@ -1481,6 +1481,24 @@
   margin: 0 0 12px;
 }
 
+.confirm-file-list {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  max-height: 40vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--app-bg);
+  border: 1px solid var(--accent-color);
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  color: var(--ui-muted);
+}
+
+.confirm-file-list li {
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
 .confirm-checkbox {
   display: flex;
   align-items: center;
