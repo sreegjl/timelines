@@ -188,11 +188,14 @@ export default function ViewerApp() {
     const defaultKey = getInitialThemeKey(themeConfig);
 
     if (!timelineData) {
+      // URL override beats the website theme so deep links don't flash the site theme while loading
+      const urlLower = String(urlThemeOverride() || "").toLowerCase();
+      const urlMatch = Object.keys(bundled).find((k) => k.toLowerCase() === urlLower);
       let siteTheme = null;
       try {
         siteTheme = window.localStorage.getItem(WEBSITE_THEME_KEY);
       } catch { /* storage unavailable */ }
-      applyViewerTheme(bundled, siteTheme && bundled[siteTheme] ? siteTheme : defaultKey, null);
+      applyViewerTheme(bundled, urlMatch || (siteTheme && bundled[siteTheme] ? siteTheme : defaultKey), null);
       return;
     }
 
@@ -264,7 +267,7 @@ export default function ViewerApp() {
     reader.onload = () => {
       try {
         loadTimelineBuffer(reader.result);
-        window.history.replaceState(null, "", viewerBasePath());
+        window.history.replaceState(null, "", viewerBasePath() + window.location.search);
       } catch (err) {
         setLoadError(`Could not read timeline: ${err.message}`);
       }
@@ -517,6 +520,7 @@ export default function ViewerApp() {
           >
             <input
               className="viewer-landing-gh-input"
+              name="github-link"
               placeholder="Paste a GitHub link to a .timeline file"
               value={ghInput}
               onChange={(e) => setGhInput(e.target.value)}
