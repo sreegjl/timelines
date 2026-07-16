@@ -18,6 +18,26 @@
   color: var(--text-primary);
 }
 
+.wiki-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.wiki-refresh-btn:hover {
+  color: var(--text-primary);
+}
+
+@keyframes wiki-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+.wiki-refresh-btn-loading svg {
+  animation: wiki-refresh-spin 0.8s linear infinite;
+}
+
 @keyframes wiki-pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }

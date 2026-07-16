@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Pencil, Trash2, BookOpen } from "lucide-react";
+import { ChevronDown, Pencil, Trash2, BookOpen, RotateCw } from "lucide-react";
 import DOMPurify from "dompurify";
 import { parseMediaWikiUrl } from "../utils/validation";
 import { fetchWikipedia } from "../utils/electronApi";
+import { getWikiCacheEntry, setWikiCacheEntry } from "../utils/wikiCacheStore";
 
 // Outside Electron there is no IPC proxy; MediaWiki APIs allow direct
 // anonymous CORS requests when origin=* is appended.
@@ -18,6 +19,27 @@ async function fetchWikiApi(url) {
 }
 
 const WIKI_SANITIZE_VERSION = "collapsible-2";
+
+// Persistent cache entries older than this are re-fetched in the background after being served.
+const WIKI_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Module-level LRU so cached articles survive component remounts (WikiSection is keyed by selected element).
+const WIKI_CACHE_MAX_ENTRIES = 30;
+const wikiCache = new Map();
+
+function getCachedWiki(key) {
+  if (!wikiCache.has(key)) return undefined;
+  const value = wikiCache.get(key);
+  wikiCache.delete(key);
+  wikiCache.set(key, value);
+  return value;
+}
+
+function setCachedWiki(key, value) {
+  wikiCache.delete(key);
+  wikiCache.set(key, value);
+  while (wikiCache.size > WIKI_CACHE_MAX_ENTRIES) wikiCache.delete(wikiCache.keys().next().value);
+}
 
 function sanitizeWikiHtml(html, host = "https://en.wikipedia.org") {
   const preDoc = new DOMParser().parseFromString(html, "text/html");
@@ -130,29 +152,46 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
   const [wikiUrlInput, setWikiUrlInput] = useState("");
   const [isWikiUrlInputOpen, setIsWikiUrlInputOpen] = useState(false);
   const [wikiUrlInputError, setWikiUrlInputError] = useState("");
-  const wikiCacheRef = useRef(new Map());
   const wikiRenderRef = useRef(null);
   const wikiUrlInputRef = useRef(null);
   const activeUrlRef = useRef(null);
 
-  const fetchWikiContent = async (url) => {
+  const fetchWikiContent = async (url, { forceRefresh = false, background = false } = {}) => {
     if (!url) return;
-    activeUrlRef.current = url;
+    if (!background) activeUrlRef.current = url;
     const cacheKey = `${WIKI_SANITIZE_VERSION}:${url}`;
-    if (wikiCacheRef.current.has(cacheKey)) {
+    if (!forceRefresh && !background) {
+      const cached = getCachedWiki(cacheKey);
+      if (cached !== undefined) {
+        if (activeUrlRef.current !== url) return;
+        setWikiContent(cached);
+        setWikiError("");
+        return;
+      }
+      const entry = await getWikiCacheEntry(cacheKey);
+      if (entry?.html) {
+        setCachedWiki(cacheKey, entry.html);
+        if (activeUrlRef.current !== url) return;
+        setWikiContent(entry.html);
+        setWikiError("");
+        if (Date.now() - (entry.fetchedAt || 0) > WIKI_CACHE_TTL_MS) {
+          fetchWikiContent(url, { background: true });
+        }
+        return;
+      }
       if (activeUrlRef.current !== url) return;
-      setWikiContent(wikiCacheRef.current.get(cacheKey));
-      setWikiError("");
-      return;
     }
     const parsed = parseMediaWikiUrl(url);
     if (!parsed) {
+      if (background) return;
       setWikiError("Invalid wiki URL");
       setWikiContent("");
       return;
     }
-    setIsWikiLoading(true);
-    setWikiError("");
+    if (!background) {
+      setIsWikiLoading(true);
+      setWikiError("");
+    }
     try {
       const apiPaths = [`${parsed.host}/api.php`, `${parsed.host}/w/api.php`];
       const titleCandidates = [parsed.title];
@@ -237,16 +276,24 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
       }
       if (!data) throw new Error("No content returned");
       const sanitized = sanitizeWikiHtml(data.parse.text, parsed.host);
+      setCachedWiki(cacheKey, sanitized);
+      setWikiCacheEntry(cacheKey, sanitized);
       if (activeUrlRef.current !== url) return;
-      wikiCacheRef.current.set(cacheKey, sanitized);
       setWikiContent(sanitized);
     } catch (err) {
+      if (background) return;
       if (activeUrlRef.current !== url) return;
       setWikiError(`Failed to load wiki article: ${err.message}`);
       setWikiContent("");
     } finally {
-      if (activeUrlRef.current === url) setIsWikiLoading(false);
+      if (!background && activeUrlRef.current === url) setIsWikiLoading(false);
     }
+  };
+
+  const handleWikiRefresh = (e) => {
+    e.stopPropagation();
+    if (isWikiLoading) return;
+    fetchWikiContent(wikiUrl, { forceRefresh: true });
   };
 
   useEffect(() => {
@@ -354,6 +401,16 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
                 {parsedForLink?.section ? `§ ${parsedForLink.section.replace(/_/g, " ")}` : "Open article"}
               </a>
             )}
+            <span
+              role="button"
+              tabIndex={0}
+              className={`wiki-refresh-btn${isWikiLoading ? " wiki-refresh-btn-loading" : ""}`}
+              title="Reload article"
+              onClick={handleWikiRefresh}
+              onKeyDown={(e) => { if (e.key === "Enter") handleWikiRefresh(e); }}
+            >
+              <RotateCw size={13} />
+            </span>
             <ChevronDown size={14} style={{ transform: isWikiCollapsed ? "rotate(-90deg)" : "none", transition: "transform 0.15s ease", color: "var(--ui-muted)" }} />
           </span>
         </button>
