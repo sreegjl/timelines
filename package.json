@@ -57,6 +57,9 @@
       "releaseType": "prerelease"
     }
   },
+  "overrides": {
+    "shell-quote": "^1.10.0"
+  },
   "dependencies": {
     "dompurify": "^3.4.11",
     "electron-updater": "^6.3.9",
