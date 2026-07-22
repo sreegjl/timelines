@@ -1,12 +1,21 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
-import { Maximize2, Minimize2, Underline, Link, Trash2, Unlink, ChevronLeft, ChevronRight, ChevronDown, Pencil, ExternalLink, Calendar, FileText, BookOpen, ImagePlus, RotateCcw, X } from "lucide-react";
+import { Maximize2, Minimize2, Underline, Link, Trash2, Unlink, ChevronLeft, ChevronRight, ChevronDown, Pencil, ExternalLink, Calendar, Clock, FileText, BookOpen, ImagePlus, RotateCcw, X } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
-import { parseTimelineInput, fractionalYearToDate } from "../utils/dateUtils";
+import { parseTimelineInput, fractionalYearToDate, displayDateLabel } from "../utils/dateUtils";
+
+const DYNAMIC_DATE_OPTIONS = [
+  { label: "Today", value: "today" },
+  { label: "Yesterday", value: "yesterday" },
+  { label: "Tomorrow", value: "tomorrow" },
+  { label: "1 week ago", value: "today-1w" },
+  { label: "1 month ago", value: "today-1m" },
+  { label: "1 year ago", value: "today-1y" },
+];
 import { formatYear } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
 import { normalizeColor } from "../utils/colorUtils";
@@ -120,6 +129,59 @@ export default function RightPanel({
   const TAG_MAX_LENGTH = 32;
   const ID_MAX_LENGTH = 60;
   const showCalendarInputIcon = timelineData?.file?.useCalendar === true;
+  const [dynamicMenuField, setDynamicMenuField] = useState(null);
+
+  const applyDynamicDate = (field, keyword) => {
+    const next = { ...formData, [field]: keyword };
+    setFormData(next);
+    commitDraft(next);
+    setDynamicMenuField(null);
+  };
+
+  useEffect(() => {
+    if (!dynamicMenuField) return;
+    const close = (e) => {
+      // ignore clicks on any dynamic-date toggle or menu so toggling/selecting works
+      if (e.target.closest?.(".dynamic-date-menu, .edit-input-icon-button-dynamic")) return;
+      setDynamicMenuField(null);
+    };
+    const onKeyDown = (e) => { if (e.key === "Escape") setDynamicMenuField(null); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [dynamicMenuField]);
+
+  const renderDynamicDateButton = (field) => (
+    <>
+      <button
+        type="button"
+        className={`edit-input-icon-button edit-input-icon-button-dynamic${dynamicMenuField === field ? " is-open" : ""}`}
+        aria-label="Insert dynamic date"
+        title="Dynamic date (stays anchored to the current date)"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => setDynamicMenuField((v) => (v === field ? null : field))}
+      >
+        <Clock size={14} className="edit-input-icon" aria-hidden="true" />
+      </button>
+      {dynamicMenuField === field && (
+        <div className="span-relation-dropdown-menu dynamic-date-menu">
+          {DYNAMIC_DATE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className="span-relation-dropdown-item"
+              onMouseDown={() => applyDynamicDate(field, opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
 
   const pushValidationError = (message) => {
     if (!message) return;
@@ -788,7 +850,7 @@ export default function RightPanel({
                   <label>Date</label>
                   <div className="view-separator" />
                   <p>
-                    {formData.dateLabel ??
+                    {displayDateLabel(formData.dateLabel) ??
                       formatDisplayYear(formData.date)}
                   </p>
                 </div>
@@ -797,9 +859,9 @@ export default function RightPanel({
                 <label>Date</label>
                 <div className="view-separator" />
                 <p>
-                  {(formData.startLabel ?? formatDisplayYear(formData.start))}
+                  {(displayDateLabel(formData.startLabel) ?? formatDisplayYear(formData.start))}
                   {" – "}
-                  {(formData.endLabel ?? formatDisplayYear(formData.end))}
+                  {(displayDateLabel(formData.endLabel) ?? formatDisplayYear(formData.end))}
                 </p>
               </div>
             )}
@@ -1029,7 +1091,7 @@ export default function RightPanel({
                 <div className="edit-row">
                   <label htmlFor="date">Date</label>
                   <div className="edit-separator" />
-                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon" : ""}`}>
+                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon has-dynamic-icon" : ""}`}>
                     {showCalendarInputIcon && (
                       <>
                         <button
@@ -1068,6 +1130,7 @@ export default function RightPanel({
                       className="edit-input"
                       maxLength={20}
                     />
+                    {showCalendarInputIcon && renderDynamicDateButton("dateInput")}
                   </div>
                 </div>
               </div>
@@ -1077,7 +1140,7 @@ export default function RightPanel({
                   <div className="edit-row">
                     <label htmlFor="start">Start Year</label>
                     <div className="edit-separator" />
-                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon" : ""}`}>
+                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon has-dynamic-icon" : ""}`}>
                     {showCalendarInputIcon && (
                       <>
                         <button
@@ -1116,6 +1179,7 @@ export default function RightPanel({
                       className="edit-input"
                       maxLength={20}
                     />
+                    {showCalendarInputIcon && renderDynamicDateButton("startInput")}
                   </div>
                   </div>
                 </div>
@@ -1123,7 +1187,7 @@ export default function RightPanel({
                   <div className="edit-row">
                     <label htmlFor="end">End Year</label>
                     <div className="edit-separator" />
-                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon" : ""}`}>
+                  <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon has-dynamic-icon" : ""}`}>
                     {showCalendarInputIcon && (
                       <>
                         <button
@@ -1162,6 +1226,7 @@ export default function RightPanel({
                       className="edit-input"
                       maxLength={20}
                     />
+                    {showCalendarInputIcon && renderDynamicDateButton("endInput")}
                   </div>
                   </div>
                 </div>

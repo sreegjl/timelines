@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from 
 import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
 import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
 import { formatYear } from "../utils/timelineUtils";
+import { displayDateLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
 import "../styles/07-modals-menus.css";
 
@@ -143,8 +144,8 @@ function ElementRow({ element, selectedId, onSelect, listRef, lastScrollTopRef, 
     ? (element.color || tagColor || "var(--ui-muted)")
     : (parentSpanColor || tagColor || "var(--ui-muted)");
   const dateText = (isSpan || isEra)
-    ? `${element.startLabel ?? fmtYear(element.start)}–${element.endLabel ?? fmtYear(element.end)}`
-    : (element.dateLabel ?? fmtYear(element.date));
+    ? `${displayDateLabel(element.startLabel) ?? fmtYear(element.start)}–${displayDateLabel(element.endLabel) ?? fmtYear(element.end)}`
+    : (displayDateLabel(element.dateLabel) ?? fmtYear(element.date));
   return (
     <button
       className={`sb-el-row${isSelected ? " is-selected" : ""}`}
@@ -570,8 +571,8 @@ export default function Sidebar({
   }, [allTags, pinnedTags]);
 
   const formatRange = (start, end, startLabel, endLabel) => {
-    const left = startLabel ?? fmtYear(start);
-    const right = endLabel ?? fmtYear(end);
+    const left = displayDateLabel(startLabel) ?? fmtYear(start);
+    const right = displayDateLabel(endLabel) ?? fmtYear(end);
     return `${left} - ${right}`;
   };
 
@@ -1485,7 +1486,7 @@ export default function Sidebar({
               {(openEvents || searchActive) && (
                 <div className="sb-section-body">
                   {visibleEvents.map((ev) => (
-                    <SidebarRow key={ev.id} item={ev} rightText={ev.dateLabel ?? fmtYear(ev.date)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
+                    <SidebarRow key={ev.id} item={ev} rightText={displayDateLabel(ev.dateLabel) ?? fmtYear(ev.date)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
                   ))}
                 </div>
               )}
@@ -1949,7 +1950,7 @@ export default function Sidebar({
                             <span className="sidebar-group-element-title">{element.title || element.id}</span>
                             <span className="sidebar-group-element-range">
                               {element.type === "event"
-                                ? (element.dateLabel ?? fmtYear(element.date))
+                                ? (displayDateLabel(element.dateLabel) ?? fmtYear(element.date))
                                 : formatRange(element.start, element.end, element.startLabel, element.endLabel)}
                             </span>
                           </button>

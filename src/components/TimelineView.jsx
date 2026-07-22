@@ -12,7 +12,7 @@ import {
   getReadableTextColor,
   MONTH_LABELS,
 } from "../utils/timelineUtils";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
 import { withAlpha, blendColors } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Target, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History } from "lucide-react";
@@ -3103,10 +3103,20 @@ const TimelineView = forwardRef(function TimelineView({
 
   // Reapply grid overlay transform after re-renders that update the grid labels
   useLayoutEffect(() => {
-    if (!showMap && file.showGrid) {
+    if (!showMap && (file.showGrid || file.showTodayLine)) {
       applyTransform();
     }
-  }, [ticks, file.showGrid]);
+  }, [ticks, file.showGrid, file.showTodayLine]);
+
+  const todayMarkerPx = useMemo(() => {
+    if (!file?.showTodayLine) return null;
+    const todayVal = todayFractionalYear();
+    if (file.start != null && todayVal < file.start) return null;
+    if (file.end != null && todayVal > file.end) return null;
+    const px = yearToPx(todayVal);
+    if (!Number.isFinite(px) || px < 0 || px > timelineWidth) return null;
+    return px;
+  }, [file, yearToPx, timelineWidth]);
 
   // Auto-exit map view if maps are disabled in settings
   useEffect(() => {
@@ -3196,9 +3206,9 @@ const TimelineView = forwardRef(function TimelineView({
     >
       {!showMap && (
         <>
-          {file.showGrid && (
+          {(file.showGrid || todayMarkerPx != null) && (
             <div ref={gridLabelsRef} className="grid-year-labels-overlay">
-              {(() => {
+              {file.showGrid && (() => {
                 const tx = translateRef.current.x;
                 const scale = scaleRef.current;
                 const SCREEN_LABEL_WIDTH = 14;
@@ -3233,6 +3243,24 @@ const TimelineView = forwardRef(function TimelineView({
                   );
                 });
               })()}
+              {todayMarkerPx != null && (
+                <>
+                  <div
+                    className="grid-year-label grid-year-label-top today-line-year-label"
+                    data-px={todayMarkerPx}
+                    style={{ left: `${todayMarkerPx * scaleRef.current + 4}px` }}
+                  >
+                    Today
+                  </div>
+                  <div
+                    className="grid-year-label grid-year-label-bottom today-line-year-label"
+                    data-px={todayMarkerPx}
+                    style={{ left: `${todayMarkerPx * scaleRef.current + 4}px` }}
+                  >
+                    Today
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -3329,6 +3357,11 @@ const TimelineView = forwardRef(function TimelineView({
             </svg>
           </div>
         ))}
+
+        {/* Today marker */}
+        {todayMarkerPx != null && (
+          <div className="today-line" style={{ left: `${todayMarkerPx}px` }} />
+        )}
 
         <div className="eras-layer">
           {finalEras.map((era) => {
@@ -3742,7 +3775,7 @@ const TimelineView = forwardRef(function TimelineView({
                           )}
                           {!hideSpanYears && (
                             <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                              {span.startLabel ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {span.endLabel ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
+                              {displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
                             </span>
                           )}
                         </>
@@ -3834,7 +3867,7 @@ const TimelineView = forwardRef(function TimelineView({
                           ><ExternalLink size={11} strokeWidth={2.7} /></a>
                         )}
                         {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                          {event.hideYears !== true && <span className="event-year">{event.dateLabel ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
+                          {event.hideYears !== true && <span className="event-year">{displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
                           {(() => {
                             const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                               .filter((tag) => pinnedTags.includes(tag));
@@ -3929,7 +3962,7 @@ const TimelineView = forwardRef(function TimelineView({
                   )}
                   {!hideSpanYears && (
                     <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                      {span.startLabel ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {span.endLabel ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
+                      {displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
                     </span>
                   )}
                   {span.sourceLink && !hideSpanYears && (
@@ -4154,7 +4187,7 @@ const TimelineView = forwardRef(function TimelineView({
                 <div className={event.thumbnail && event.thumbnailStyle !== "banner" ? "event-text-content" : ""}>
                 <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={evFontSize} className="event-title-icon" />; })()}{event.title}</div>
                 {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                  {event.hideYears !== true && <span className="event-year">{event.dateLabel ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
+                  {event.hideYears !== true && <span className="event-year">{displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
                   {(() => {
                     const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                       .filter((tag) => pinnedTags.includes(tag));

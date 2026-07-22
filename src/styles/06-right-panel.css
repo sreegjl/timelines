@@ -438,6 +438,25 @@
   color: var(--text-primary);
 }
 
+.edit-input-shell.has-dynamic-icon .edit-input {
+  padding-left: 52px;
+}
+
+.edit-input-icon-button-dynamic {
+  left: 28px;
+}
+
+.edit-input-icon-button-dynamic.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dynamic-date-menu {
+  left: 4px;
+  right: auto;
+  min-width: 130px;
+}
+
 .edit-input-native-date {
   position: absolute;
   inset: auto;

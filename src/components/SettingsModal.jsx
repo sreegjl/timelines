@@ -66,6 +66,7 @@ export default function SettingsModal({
   const [eventLinesToGroupBottom, setEventLinesToGroupBottom] = useState(false);
   const [hideDecimals, setHideDecimals] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+  const [showTodayLine, setShowTodayLine] = useState(false);
   const [spanColorEvents, setSpanColorEvents] = useState(false);
   const [disableGroups, setDisableGroups] = useState(false);
   const [panelGroupMode, setPanelGroupMode] = useState("default");
@@ -239,6 +240,7 @@ export default function SettingsModal({
         setEventLinesToGroupBottom(Boolean(timelineData.file.eventLinesToGroupBottom));
         setHideDecimals(Boolean(timelineData.file.hideDecimals));
         setShowGrid(Boolean(timelineData.file.showGrid));
+        setShowTodayLine(Boolean(timelineData.file.showTodayLine));
         setSpanColorEvents(Boolean(timelineData.file.spanColorEvents));
         setDisableGroups(Boolean(timelineData.file.disableGroups));
         setPanelGroupMode(timelineData.file.panelGroupMode || (timelineData.file.useEraGroupsInPanel ? "eras" : "default"));
@@ -358,6 +360,7 @@ export default function SettingsModal({
           eventLinesToGroupBottom,
           hideDecimals,
           showGrid,
+          showTodayLine,
           spanColorEvents,
           disableGroups,
           panelGroupMode,
@@ -408,6 +411,7 @@ export default function SettingsModal({
     eventLinesToGroupBottom,
     hideDecimals,
     showGrid,
+    showTodayLine,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -962,6 +966,24 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={showGrid}
                       onChange={(e) => setShowGrid(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Today Marker */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Today Marker</div>
+                  <div className="settings-row-description">Display a vertical line at the current date. Tip: date fields also accept dynamic values like "today", "now", "yesterday", "tomorrow", and offsets such as "today-30d", "now+2w", "today-6m", "today-1y".</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showTodayLine}
+                      onChange={(e) => setShowTodayLine(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>

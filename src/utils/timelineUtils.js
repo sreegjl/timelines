@@ -1,4 +1,4 @@
-import { daysInMonth } from "./dateUtils";
+import { daysInMonth, displayDateLabel } from "./dateUtils";
 
 export const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -879,7 +879,7 @@ export function layoutEvents({
 
   const finalEvents = laidOut.map((event) => {
     const x = event._x;
-    const yearLabel = event.dateLabel ?? formatYear(event.date, negID, posID, useCalendar, hideDecimals);
+    const yearLabel = displayDateLabel(event.dateLabel) ?? formatYear(event.date, negID, posID, useCalendar, hideDecimals);
     const { boxHeight, isMultiLine, squareSize, boxWidth = EVENT_WIDTH } = measureEvent(
       event.title,
       event.tags,

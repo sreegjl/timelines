@@ -1188,6 +1188,7 @@ function App() {
     eventLinesToGroupBottom,
     hideDecimals,
     showGrid,
+    showTodayLine,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -1248,6 +1249,7 @@ function App() {
         eventLinesToGroupBottom,
         hideDecimals,
         showGrid,
+        showTodayLine,
         spanColorEvents,
         disableGroups,
         panelGroupMode,
@@ -1290,6 +1292,7 @@ function App() {
       if (!eventLinesToGroupBottom) delete nextFile.eventLinesToGroupBottom;
       if (!hideDecimals) delete nextFile.hideDecimals;
       if (!showGrid) delete nextFile.showGrid;
+      if (!showTodayLine) delete nextFile.showTodayLine;
       if (!spanColorEvents) delete nextFile.spanColorEvents;
       if (!disableGroups) delete nextFile.disableGroups;
       if (!panelGroupMode || panelGroupMode === "default") delete nextFile.panelGroupMode;

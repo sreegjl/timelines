@@ -141,6 +141,23 @@
   pointer-events: none;
 }
 
+/* no z-index so it paints behind all z-indexed layers, same as .grid-line */
+.today-line {
+  position: absolute;
+  top: -10000px;
+  height: calc(100% + 20000px);
+  width: 2px;
+  transform: translateX(-1px);
+  background: var(--link-color);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.grid-year-label.today-line-year-label {
+  color: var(--link-color);
+  opacity: 0.75;
+}
+
 .grid-year-labels-overlay {
   position: absolute;
   top: 0;
