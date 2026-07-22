@@ -578,6 +578,9 @@ export function layoutSpans({
   return { finalSpans, spanLaneEnds, spanLaneById, spanChildPlacement };
 }
 
+let measureCache = new Map();
+let measureCacheConfig = "";
+
 export function layoutEvents({
   events,
   yearToPx,
@@ -844,6 +847,27 @@ export function layoutEvents({
       };
     };
   }
+
+  // Cache by measurement inputs; probe-derived heights in the config key catch CSS/theme changes
+  const configKey = JSON.stringify([
+    fixedEventHeight, eventWidth, eventFontSize, fontFamily || "", pinnedTags,
+    singleLineHeight, noYearSingleLineHeight, textContentHeight, probeBorderSize,
+  ]);
+  if (configKey !== measureCacheConfig) {
+    measureCacheConfig = configKey;
+    measureCache = new Map();
+  }
+  const measureEventUncached = measureEvent;
+  measureEvent = (title, tags, yearLabel, icon, thumbnail, thumbnailStyle, hideYears, sourceLink, eventBorderStyle) => {
+    const key = JSON.stringify([title, tags, yearLabel, !!icon, thumbnail || "", thumbnailStyle || "", hideYears === true, !!sourceLink, eventBorderStyle || ""]);
+    let box = measureCache.get(key);
+    if (!box) {
+      box = measureEventUncached(title, tags, yearLabel, icon, thumbnail, thumbnailStyle, hideYears, sourceLink, eventBorderStyle);
+      if (measureCache.size >= 20000) measureCache.clear();
+      measureCache.set(key, box);
+    }
+    return box;
+  };
 
   // Use continuous vertical packing instead of discrete lanes
   const VERTICAL_GAP = Math.max(0, LANE_SPACING - singleLineHeight);
