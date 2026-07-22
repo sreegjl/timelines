@@ -42,6 +42,27 @@ const getRandomDigits = (length = 12) => {
   return String(Math.floor(Math.random() * max)).padStart(length, "0");
 };
 
+export function ensureUniqueElementIds(elements) {
+  if (!Array.isArray(elements)) return elements;
+  const used = new Set();
+  let changed = false;
+  const next = elements.map((el) => {
+    if (!el || typeof el !== "object") return el;
+    const id = el.id != null ? String(el.id) : "";
+    if (id && !used.has(id)) {
+      used.add(id);
+      return el;
+    }
+    changed = true;
+    const prefix = String(el.type || "item").trim().toLowerCase();
+    let fresh = `${prefix}-${getRandomDigits(12)}`;
+    while (used.has(fresh)) fresh = `${prefix}-${getRandomDigits(12)}`;
+    used.add(fresh);
+    return { ...el, id: fresh };
+  });
+  return changed ? next : elements;
+}
+
 export function generateUniqueRandomElementId(elements, type = "item", excludeId) {
   const ids = new Set((elements || []).map((el) => String(el.id)));
   if (excludeId) ids.delete(String(excludeId));

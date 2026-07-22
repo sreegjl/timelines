@@ -8,6 +8,7 @@ import { applyTheme, getInitialThemeKey } from "../utils/theme";
 import { loadThemeConfig } from "../utils/themeLoader";
 import { isZipBuffer, readPackage } from "../utils/packageReader";
 import { setViewerPackage, getPackageNote, resolvePackageAssetSrc } from "../utils/viewerPackageStore";
+import { ensureUniqueElementIds } from "../utils/idUtils";
 
 const DEFAULT_GROUP_ID = "g-main";
 const SIDEBAR_WIDTH = 350;
@@ -139,7 +140,7 @@ function applyViewerTheme(themes, key, fileFont) {
 // in-memory package store (blob URLs / zipped markdown); otherwise those
 // references are dropped. Remote thumbnails and wiki links always work.
 function sanitizeForBrowser(data) {
-  const elements = (data.elements ?? []).map((el) => {
+  const elements = ensureUniqueElementIds(data.elements ?? []).map((el) => {
     let next = el;
     const thumb = next.thumbnail ? String(next.thumbnail) : "";
     if (thumb && !/^https?:\/\//i.test(thumb) && !thumb.startsWith("data:")) {

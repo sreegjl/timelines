@@ -29,7 +29,7 @@ import {
   importTimeline,
   updateTimelineTitle,
 } from "./utils/electronApi";
-import { updateElementWithNewId, generateUniqueRandomElementId, generateIdFromTitle, generateStorageUid, getStorageId } from "./utils/idUtils";
+import { updateElementWithNewId, generateUniqueRandomElementId, generateIdFromTitle, generateStorageUid, getStorageId, ensureUniqueElementIds } from "./utils/idUtils";
 import { applyTheme, getInitialThemeKey } from "./utils/theme";
 import { loadThemeConfig } from "./utils/themeLoader";
 import { countOldFormatThemes, isOldFormatTheme, migrateThemeColors } from "./utils/themeMigration";
@@ -104,7 +104,7 @@ function App() {
   const normalizeTimelineData = useCallback((data) => {
     if (!data || typeof data !== "object") return data;
 
-    const elements = Array.isArray(data.elements) ? data.elements : [];
+    const elements = ensureUniqueElementIds(Array.isArray(data.elements) ? data.elements : []);
     const groupsRaw = Array.isArray(data.file?.groups) ? data.file.groups : [];
     const sourceGroups = groupsRaw.length > 0 ? groupsRaw : [DEFAULT_GROUP];
     const groups = sourceGroups.map((group, index) => {
