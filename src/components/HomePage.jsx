@@ -1070,11 +1070,14 @@ export default function HomePage({
 
     try {
       if (window.electron?.deleteTimeline) {
-        await window.electron.deleteTimeline({
+        const result = await window.electron.deleteTimeline({
           id: file.id,
           deleteNotes: deleteDialogWithNotes,
           deleteAssets: deleteDialogWithAssets,
         });
+        if (result && result.success === false) {
+          alert(`Failed to delete timeline: ${result.error || 'unknown error'}`);
+        }
 
         // Reload timeline list
         const files = await window.electron.listTimelines();

@@ -1539,25 +1539,9 @@ function App() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!timelineData || viewMode === "spreadsheet") return undefined;
-    let idleCallback = null;
-    const timer = window.setTimeout(() => {
-      if (typeof window.requestIdleCallback === "function") {
-        idleCallback = window.requestIdleCallback(captureTimelineThumbnail, { timeout: 1200 });
-      } else {
-        captureTimelineThumbnail();
-      }
-    }, 900);
-    return () => {
-      window.clearTimeout(timer);
-      if (idleCallback !== null && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleCallback);
-      }
-    };
-  }, [timelineData, viewMode, captureTimelineThumbnail]);
-
-  const handleBackToHome = () => {
+  const handleBackToHome = async () => {
+    // Capture while the timeline DOM is still mounted; no-ops in spreadsheet view
+    await captureTimelineThumbnail();
     setTimelineData(null);
     setCurrentTimelineId(null);
     setSelectedId(null);

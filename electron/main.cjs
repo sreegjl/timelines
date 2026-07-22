@@ -50,6 +50,16 @@ const sanitizeTimelinePath = (value) => {
   return sanitized.length > 0 ? sanitized.join('/') : 'timeline';
 };
 
+// Existing files/folders keep their on-disk name verbatim; only traversal parts are stripped
+const existingTimelinePath = (value) => {
+  const parts = String(value || '').split(/[/\\]/).filter(p => p && p !== '.' && p !== '..');
+  return parts.length > 0 ? parts.join('/') : 'timeline';
+};
+
+const samePath = (a, b) => process.platform === 'win32'
+  ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
+  : path.resolve(a) === path.resolve(b);
+
 // Notes/assets folders are keyed by immutable file.uid; older timelines fall back to file.id
 const deriveStorageId = (file) => file?.uid || file?.id?.replace(/-timeline$/, '') || null;
 
@@ -109,13 +119,18 @@ const resolveNotePath = async (timelineId, notePath) => {
 
   return resolvedPath;
 };
+// Cached because the asset protocol reads settings on every image request; writers invalidate
+let appSettingsCache = null;
+const invalidateAppSettingsCache = () => { appSettingsCache = null; };
 const readAppSettings = async () => {
+  if (appSettingsCache) return appSettingsCache;
   try {
     const content = await fs.readFile(appSettingsPath(), 'utf8');
-    return JSON.parse(content);
+    appSettingsCache = JSON.parse(content);
   } catch (error) {
-    return {};
+    appSettingsCache = {};
   }
+  return appSettingsCache;
 };
 
 async function writeAppSettingsPartial(partial) {
@@ -125,6 +140,7 @@ async function writeAppSettingsPartial(partial) {
     existing = JSON.parse(await fs.readFile(filePath, 'utf8'));
   } catch {}
   await writeFileAtomic(filePath, JSON.stringify({ ...existing, ...partial }, null, 2));
+  invalidateAppSettingsCache();
 }
 
 async function loadGitSyncCredentials() {
@@ -447,10 +463,15 @@ app.whenReady().then(async () => {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
             'Content-Length': String(chunkSize),
+            'Cache-Control': 'public, max-age=3600',
           },
         });
       }
-      return await net.fetch(pathToFileURL(normalizedAssetPath).toString());
+      // Cache-Control lets Chromium reuse images across remounts instead of re-reading from disk
+      const fileResponse = await net.fetch(pathToFileURL(normalizedAssetPath).toString());
+      const headers = new Headers(fileResponse.headers);
+      headers.set('Cache-Control', 'public, max-age=3600');
+      return new Response(fileResponse.body, { status: fileResponse.status, headers });
     } catch (error) {
       console.error('Error serving asset:', error);
       return new Response('Not found', { status: 404 });
@@ -539,7 +560,7 @@ ipcMain.on('close-window', () => {
 ipcMain.handle('save-timeline', async (event, { data, filename, create }) => {
   try {
     const dataDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(filename);
+    const safePath = create ? sanitizeTimelinePath(filename) : existingTimelinePath(filename);
     const filePath = path.join(dataDir, `${safePath}.timeline`);
     if (create && fsSync.existsSync(filePath)) {
       return { success: false, error: 'EXISTS' };
@@ -629,7 +650,7 @@ ipcMain.handle('list-timelines', async () => {
 ipcMain.handle('load-timeline', async (event, filename) => {
   try {
     const userDataDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(filename);
+    const safePath = existingTimelinePath(filename);
     const filePath = path.join(userDataDir, `${safePath}.timeline`);
     const content = await fs.readFile(filePath, 'utf8');
     const data = JSON.parse(content);
@@ -903,6 +924,10 @@ async function installTimelineFromBuffer(buf, opts = {}) {
   }
 
   const existing = await findTimelineByUid(data.file.uid);
+  // The picked file already living in the library is not a duplicate of itself; just open it
+  if (existing && sourcePath && samePath(existing.fullPath, sourcePath)) {
+    return { success: true, openedExisting: true, id: existing.relativeId };
+  }
   if (existing) {
     if (resolution === 'open-existing') {
       return { success: true, openedExisting: true, id: existing.relativeId };
@@ -982,9 +1007,6 @@ async function installTimelineFromBuffer(buf, opts = {}) {
   await fs.mkdir(timelinesDir, { recursive: true });
 
   // A package sitting inside the library folder is converted in place (the bare timeline replaces the zip)
-  const samePath = (a, b) => process.platform === 'win32'
-    ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase()
-    : path.resolve(a) === path.resolve(b);
   let sourceInLibrary = false;
   let folderPrefix = '';
   if (sourcePath) {
@@ -1151,7 +1173,7 @@ ipcMain.handle('delete-timeline', async (event, payload) => {
     const deleteAssets = Boolean(request.deleteAssets);
     const filename = request.id ?? request.filename ?? request.timelineId;
     const userDataDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(filename);
+    const safePath = existingTimelinePath(filename);
     const filePath = path.join(userDataDir, `${safePath}.timeline`);
 
     // Storage key can differ from the filename, so read it before deleting the file
@@ -1200,7 +1222,7 @@ ipcMain.handle('delete-timeline', async (event, payload) => {
 ipcMain.handle('rename-folder', async (event, { folderPath, newName }) => {
   try {
     const baseDir = await getTimelinesDir();
-    const safeOld = sanitizeTimelinePath(folderPath);
+    const safeOld = existingTimelinePath(folderPath);
     const parts = safeOld.split('/');
     parts[parts.length - 1] = safeName(newName);
     const safeNew = parts.join('/');
@@ -1216,7 +1238,7 @@ ipcMain.handle('rename-folder', async (event, { folderPath, newName }) => {
 ipcMain.handle('update-timeline-title', async (event, { id, title }) => {
   try {
     const baseDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(id);
+    const safePath = existingTimelinePath(id);
     const parts = safePath.split('/');
     const folderPrefix = parts.length > 1 ? `${parts.slice(0, -1).join('/')}/` : '';
     const nextBaseName = safeName(title);
@@ -1259,7 +1281,7 @@ ipcMain.handle('set-timeline-never-sync', async (event, payload) => {
     const neverSync = Boolean(payload?.neverSync);
     if (!id) return { success: false, error: 'Missing timeline id' };
     const baseDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(id);
+    const safePath = existingTimelinePath(id);
     const filePath = path.join(baseDir, `${safePath}.timeline`);
     const raw = await fs.readFile(filePath);
     if (isZipBuffer(raw)) return { success: false, error: 'Packaged timelines cannot be flagged' };
@@ -1276,7 +1298,7 @@ ipcMain.handle('set-timeline-never-sync', async (event, payload) => {
 ipcMain.handle('delete-folder', async (event, { folderPath }) => {
   try {
     const baseDir = await getTimelinesDir();
-    const safe = sanitizeTimelinePath(folderPath);
+    const safe = existingTimelinePath(folderPath);
     await fs.rm(path.join(baseDir, safe), { recursive: true, force: true });
     markGitSyncStructureDirty();
     return { success: true };
@@ -1288,10 +1310,10 @@ ipcMain.handle('delete-folder', async (event, { folderPath }) => {
 ipcMain.handle('move-folder', async (event, { folderPath, targetFolder }) => {
   try {
     const baseDir = await getTimelinesDir();
-    const safeSrc = sanitizeTimelinePath(folderPath);
+    const safeSrc = existingTimelinePath(folderPath);
     const folderName = safeSrc.split('/').pop();
     const safeDest = targetFolder
-      ? `${sanitizeTimelinePath(targetFolder)}/${folderName}`
+      ? `${existingTimelinePath(targetFolder)}/${folderName}`
       : folderName;
     if (safeSrc === safeDest) return { success: true };
     // Prevent moving into own subtree
@@ -1309,7 +1331,7 @@ ipcMain.handle('create-folder', async (event, { folderName, parentFolder }) => {
   try {
     const baseDir = await getTimelinesDir();
     const safeFolderName = parentFolder
-      ? `${sanitizeTimelinePath(parentFolder)}/${safeName(folderName)}`
+      ? `${existingTimelinePath(parentFolder)}/${safeName(folderName)}`
       : sanitizeTimelinePath(folderName);
     if (!safeFolderName) return { success: false, error: 'Invalid folder name' };
     await fs.mkdir(path.join(baseDir, safeFolderName), { recursive: true });
@@ -1344,9 +1366,9 @@ ipcMain.handle('list-folders', async () => {
 ipcMain.handle('move-timeline', async (event, { id, targetFolder }) => {
   try {
     const baseDir = await getTimelinesDir();
-    const safePath = sanitizeTimelinePath(id);
+    const safePath = existingTimelinePath(id);
     const filename = safePath.split('/').pop();
-    const safeTarget = targetFolder ? sanitizeTimelinePath(targetFolder) : '';
+    const safeTarget = targetFolder ? existingTimelinePath(targetFolder) : '';
     const newRelId = safeTarget ? `${safeTarget}/${filename}` : filename;
     const oldFile = path.join(baseDir, `${safePath}.timeline`);
     const newFile = path.join(baseDir, `${newRelId}.timeline`);
@@ -1540,7 +1562,7 @@ ipcMain.handle('rename-timeline', async (event, { oldId, newId }) => {
   try {
     if (!oldId || !newId) return { success: false, error: 'Missing timeline ids' };
     const timelinesDir = await getTimelinesDir();
-    const safeOldPath = sanitizeTimelinePath(oldId);
+    const safeOldPath = existingTimelinePath(oldId);
     const safeNewPath = sanitizeTimelinePath(newId);
     if (safeOldPath === safeNewPath) return { success: true };
     const oldFilePath = path.join(timelinesDir, `${safeOldPath}.timeline`);
@@ -1615,6 +1637,7 @@ ipcMain.handle('set-app-settings', async (event, settings) => {
       }
     }
     await writeFileAtomic(filePath, JSON.stringify(merged, null, 2));
+    invalidateAppSettingsCache();
     return { success: true };
   } catch (error) {
     console.error('Error saving app settings:', error);
@@ -1791,108 +1814,6 @@ ipcMain.handle('choose-notes-dir', async () => {
     return { success: false, error: error.message };
   }
 });
-
-ipcMain.handle('choose-plugins-dir', async () => {
-  try {
-    const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory', 'createDirectory'],
-    });
-
-    if (canceled || filePaths.length === 0) {
-      return { success: false, canceled: true };
-    }
-
-    return { success: true, path: filePaths[0] };
-  } catch (error) {
-    console.error('Error choosing plugins directory:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-const pluginsRootDir = () => path.join(app.getPath('userData'), 'plugins');
-
-ipcMain.handle('open-plugins-folder', async (event, payload) => {
-  try {
-    const root = path.resolve(pluginsRootDir());
-    const dir = payload?.path ? path.resolve(payload.path) : root;
-    const relative = path.relative(root, dir);
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      return { success: false, error: 'PATH_OUTSIDE_PLUGINS_ROOT' };
-    }
-    await fs.mkdir(dir, { recursive: true });
-    await shell.openPath(dir);
-    return { success: true, path: dir };
-  } catch (error) {
-    console.error('Error opening plugins folder:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('list-plugins', async (event, payload) => {
-  try {
-    const root = path.resolve(pluginsRootDir());
-    const dir = payload?.path ? path.resolve(payload.path) : root;
-    const relative = path.relative(root, dir);
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      return { success: false, error: 'PATH_OUTSIDE_PLUGINS_ROOT', plugins: [] };
-    }
-    await fs.mkdir(dir, { recursive: true });
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    const plugins = [];
-
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const pluginDir = path.join(dir, entry.name);
-      const manifestPath = path.join(pluginDir, 'manifest.json');
-      try {
-        const raw = await fs.readFile(manifestPath, 'utf8');
-        const manifest = JSON.parse(raw);
-        if (!manifest?.id || !manifest?.name) continue;
-        const mainFile = manifest.main || 'main.js';
-        const entryPath = path.join(pluginDir, mainFile);
-        plugins.push({
-          id: manifest.id,
-          name: manifest.name,
-          version: manifest.version || '0.0.0',
-          description: manifest.description || '',
-          main: mainFile,
-          dir: pluginDir,
-          entryPath,
-        });
-      } catch (error) {
-        console.warn('Failed to load plugin manifest:', manifestPath, error.message);
-      }
-    }
-
-    return { success: true, root: dir, plugins };
-  } catch (error) {
-    console.error('Error listing plugins:', error);
-    return { success: false, error: error.message, plugins: [] };
-  }
-});
-
-ipcMain.handle('read-plugin-module', async (event, payload) => {
-  try {
-    const entryPath = String(payload?.entryPath || '');
-    if (!entryPath) {
-      return { success: false, error: 'MISSING_ENTRY_PATH' };
-    }
-
-    const root = path.resolve(pluginsRootDir());
-    const resolved = path.resolve(entryPath);
-    const relative = path.relative(root, resolved);
-    if (relative.startsWith('..') || path.isAbsolute(relative)) {
-      return { success: false, error: 'PLUGIN_PATH_OUTSIDE_ROOT' };
-    }
-
-    const code = await fs.readFile(resolved, 'utf8');
-    return { success: true, code, entryPath: resolved };
-  } catch (error) {
-    console.error('Error reading plugin module:', error);
-    return { success: false, error: error.message };
-  }
-});
-
 
 ipcMain.handle('relaunch-app', () => {
   app.relaunch();

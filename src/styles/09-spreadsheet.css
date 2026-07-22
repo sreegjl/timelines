@@ -167,7 +167,7 @@
   table-layout: fixed;
   font-size: var(--text-sm);
   color: var(--text-primary);
-  min-width: max-content;
+  /* min-width: max-content would resolve to infinity in Firefox on fixed-layout tables */
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
