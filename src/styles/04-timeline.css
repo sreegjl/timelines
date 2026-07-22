@@ -706,6 +706,7 @@
 }
 
 .eras-layer { position: absolute; inset: 0; z-index: 2; }
+.era-fuzz { position: absolute; pointer-events: none; }
 .era-item {
   position: absolute;
   height: 27px;

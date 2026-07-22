@@ -1488,7 +1488,7 @@ export default function RightPanel({
               summary={[
                 formData.thumbnail && "Image",
                 formData.icon && "Icon",
-                (formData.color || formData.spanSize || formData.eraSize || formData.eventLineStyle || formData.eventBorderStyle || formData.hideYears || formData.hideDetails) && "Styles",
+                (formData.color || formData.spanSize || formData.eraSize || formData.eventLineStyle || formData.eventBorderStyle || formData.hideYears || formData.hideDetails || formData.fuzzyStart || formData.fuzzyEnd) && "Styles",
               ].filter(Boolean).join(" · ") || "No display set"}
             />
 
@@ -1708,6 +1708,46 @@ export default function RightPanel({
                         onChange={(e) => {
                           const next = { ...formData };
                           if (e.target.checked) { next.hideDetails = true; } else { delete next.hideDetails; }
+                          setFormData(next);
+                          commitDraft(next);
+                        }}
+                      />
+                      <span className="settings-toggle-slider" />
+                    </label>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="edit-row">
+                    <label htmlFor="fuzzyStart">Fuzzy Start</label>
+                    <div className="edit-separator" />
+                    <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
+                      <input
+                        id="fuzzyStart"
+                        type="checkbox"
+                        checked={formData.fuzzyStart === true}
+                        onChange={(e) => {
+                          const next = { ...formData };
+                          if (e.target.checked) { next.fuzzyStart = true; } else { delete next.fuzzyStart; }
+                          setFormData(next);
+                          commitDraft(next);
+                        }}
+                      />
+                      <span className="settings-toggle-slider" />
+                    </label>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <div className="edit-row">
+                    <label htmlFor="fuzzyEnd">Fuzzy End</label>
+                    <div className="edit-separator" />
+                    <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
+                      <input
+                        id="fuzzyEnd"
+                        type="checkbox"
+                        checked={formData.fuzzyEnd === true}
+                        onChange={(e) => {
+                          const next = { ...formData };
+                          if (e.target.checked) { next.fuzzyEnd = true; } else { delete next.fuzzyEnd; }
                           setFormData(next);
                           commitDraft(next);
                         }}

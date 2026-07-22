@@ -1111,6 +1111,7 @@ const TimelineView = forwardRef(function TimelineView({
 
     const tlStartPx = file.start != null ? yearToPx(file.start) : null;
     const tlEndPx = file.end != null ? yearToPx(file.end) : null;
+    const ERA_FUZZ = 24; 
     const finalEras = adjustedEras.map((era) => {
       const rawLeft = yearToPx(era.start);
       const rawRight = yearToPx(era.end);
@@ -1122,14 +1123,40 @@ const TimelineView = forwardRef(function TimelineView({
       const left = Math.floor(clampedLeft);
       const width = Math.ceil(clampedRight) - left;
       const height = ERA_BAND_HEIGHT * sizeMultiplier;
+      const fuzzStart = era.fuzzyStart === true && clampedLeft === rawLeft ? ERA_FUZZ : 0;
+      const fuzzEnd = era.fuzzyEnd === true && clampedRight === rawRight ? ERA_FUZZ : 0;
+      let fuzz = null;
+      if (fuzzStart || fuzzEnd) {
+        const fuzzWidth = width + fuzzStart + fuzzEnd;
+        let fadeInPx = fuzzStart * 2;
+        let fadeOutPx = fuzzEnd * 2;
+        if (fadeInPx + fadeOutPx > fuzzWidth) {
+          const scale = fuzzWidth / (fadeInPx + fadeOutPx);
+          fadeInPx *= scale;
+          fadeOutPx *= scale;
+        }
+        fuzz = { left: left - fuzzStart, width: fuzzWidth, fadeInPx, fadeOutPx };
+      }
       return {
         ...era,
         height,
         left,
         width,
         top,
+        fuzz,
       };
     }).filter((era) => era.width > 0);
+    // abutting fuzzy edges: keep the earlier era solid under the later one's fade-in so the crossfade stays opaque
+    for (const era of finalEras) {
+      if (!era.fuzz?.fadeOutPx) continue;
+      const endPx = yearToPx(era.end);
+      const next = finalEras.find((o) => o !== era && o.fuzz?.fadeInPx > 0
+        && Math.abs(yearToPx(o.start) - endPx) < 0.5
+        && (eraOffsets.get(o.id) ?? 0) === (eraOffsets.get(era.id) ?? 0));
+      if (next) era.fuzz.fadeOutPx = 0;
+    }
+    // later fuzz layers paint on top so fade-ins blend over the solid underlap
+    finalEras.sort((a, b) => a.start - b.start);
 
     return {
       file,
@@ -3305,6 +3332,25 @@ const TimelineView = forwardRef(function TimelineView({
 
         <div className="eras-layer">
           {finalEras.map((era) => {
+            if (!era.fuzz) return null;
+            const fuzzMask = `linear-gradient(to right, transparent 0, #000 ${era.fuzz.fadeInPx}px, #000 calc(100% - ${era.fuzz.fadeOutPx}px), transparent 100%)`;
+            return (
+              <div
+                key={`fuzz-${era.id}`}
+                className="era-fuzz"
+                style={{
+                  left: `${era.fuzz.left}px`,
+                  width: `${era.fuzz.width}px`,
+                  height: `${era.height}px`,
+                  top: `${era.top}px`,
+                  background: `${era.color || "var(--light-bg)"}`,
+                  WebkitMaskImage: fuzzMask,
+                  maskImage: fuzzMask,
+                }}
+              />
+            );
+          })}
+          {finalEras.map((era) => {
             const isSelected = selectedId === era.id;
             const eraTextColor = getReadableTextColor(era.color || "var(--light-bg)");
             return (
@@ -3317,7 +3363,7 @@ const TimelineView = forwardRef(function TimelineView({
                   width: `${era.width}px`,
                   height: `${era.height}px`,
                   top: `${era.top}px`,
-                  background: `${era.color || "var(--light-bg)"}`,
+                  background: era.fuzz ? "transparent" : `${era.color || "var(--light-bg)"}`,
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
