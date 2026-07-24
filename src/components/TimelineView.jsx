@@ -15,7 +15,7 @@ import {
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
 import { withAlpha, blendColors } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
-import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Target, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History } from "lucide-react";
+import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
@@ -905,8 +905,14 @@ const TimelineView = forwardRef(function TimelineView({
       };
     });
 
-    const aboveLineRaw = tempGroupLayoutsRaw.filter((g) => !g.belowLine);
-    const belowLineRaw = tempGroupLayoutsRaw.filter((g) => g.belowLine);
+    // Auto-hide empty groups: drop groups with no spans/events so they take no
+    // vertical space and render no empty band on the timeline.
+    const visibleGroupLayoutsRaw = file?.autoHideEmptyGroups === true
+      ? tempGroupLayoutsRaw.filter((g) => g.hasItems)
+      : tempGroupLayoutsRaw;
+
+    const aboveLineRaw = visibleGroupLayoutsRaw.filter((g) => !g.belowLine);
+    const belowLineRaw = visibleGroupLayoutsRaw.filter((g) => g.belowLine);
 
     let cumulativeAbove = 0;
     const aboveLineLayouts = aboveLineRaw.map((group) => {
@@ -1801,11 +1807,6 @@ const TimelineView = forwardRef(function TimelineView({
       prev.some((c) => c.kind === "type" && c.value === value)
         ? prev.filter((c) => !(c.kind === "type" && c.value === value))
         : [...prev, { id: nextChipId(), kind: "type", value, negated: false, join: "and" }]);
-  const toggleTagChip = (tag) =>
-    setFilterChips((prev) =>
-      prev.some((c) => c.kind === "tag" && c.value.toLowerCase() === tag.toLowerCase())
-        ? prev.filter((c) => !(c.kind === "tag" && c.value.toLowerCase() === tag.toLowerCase()))
-        : [...prev, { id: nextChipId(), kind: "tag", value: tag, negated: false, join: "and" }]);
   const addDateChip = () => {
     const v = filterDateVal.trim();
     if (!v) return;
@@ -1990,7 +1991,7 @@ const TimelineView = forwardRef(function TimelineView({
       </div>
       <div className="fm-tags-header">
         <span className="fm-tags-title">TAGS</span>
-        <span className="fm-tags-subtitle">CLICK TO CHIP</span>
+        <span className="fm-tags-subtitle">CLICK TO FILTER</span>
         <span className="fm-tags-count">{allTags.length} tags</span>
       </div>
       <div className="filter-menu-dropdown">
@@ -1998,7 +1999,6 @@ const TimelineView = forwardRef(function TimelineView({
           <div className="filter-menu-empty">No tags found</div>
         )}
         {allTags.map((tag) => {
-          const hasTagChip = filterChips.some((c) => c.kind === "tag" && c.value.toLowerCase() === tag.toLowerCase());
           const isShown = activeTags.includes(tag);
           const isHidden = hiddenTags.includes(tag);
           const isPinned = pinnedTags.includes(tag);
@@ -2006,9 +2006,9 @@ const TimelineView = forwardRef(function TimelineView({
           return (
             <div
               key={tag}
-              className={`sb-tag-row${isHidden ? " is-hidden" : ""}${hasTagChip ? " is-selected" : ""}`}
-              onClick={() => toggleTagChip(tag)}
-              title={hasTagChip ? "Remove tag chip" : "Add tag chip"}
+              className={`sb-tag-row${isHidden ? " is-hidden" : ""}${isShown ? " is-selected" : ""}`}
+              onClick={() => onToggleTag?.(tag)}
+              title={isShown ? "Remove tag filter" : "Filter by this tag"}
             >
               <span className="sb-tag-name"><span className="sb-tag-hash">#</span>{tag}</span>
               <span className="sb-tag-count">{count}</span>
@@ -2020,14 +2020,6 @@ const TimelineView = forwardRef(function TimelineView({
                   title={isHidden ? "Show tag" : "Hide tag"}
                 >
                   {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
-                <button
-                  type="button"
-                  className={`filter-menu-icon-btn filter-menu-show-btn${isShown ? " is-active" : ""}`}
-                  onClick={(e) => { e.stopPropagation(); onToggleTag?.(tag); }}
-                  title={isShown ? "Disable spotlight filter" : "Spotlight this tag"}
-                >
-                  <Target size={12} />
                 </button>
                 <button
                   type="button"

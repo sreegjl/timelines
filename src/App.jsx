@@ -1196,6 +1196,7 @@ function App() {
     disableGroups,
     panelGroupMode,
     nestEraSubGroups,
+    autoHideEmptyGroups,
     showPopularTags,
     keepSelection,
     useSecondaryBg,
@@ -1257,6 +1258,7 @@ function App() {
         disableGroups,
         panelGroupMode,
         nestEraSubGroups,
+        autoHideEmptyGroups,
         showPopularTags,
         keepSelection,
         useSecondaryBg,
@@ -1300,6 +1302,7 @@ function App() {
       if (!disableGroups) delete nextFile.disableGroups;
       if (!panelGroupMode || panelGroupMode === "default") delete nextFile.panelGroupMode;
       if (!nestEraSubGroups) delete nextFile.nestEraSubGroups;
+      if (!autoHideEmptyGroups) delete nextFile.autoHideEmptyGroups;
       delete nextFile.useEraGroupsInPanel;
       delete nextFile.useSpanGroupsInPanel;
       if (!keepSelection) delete nextFile.keepSelection;

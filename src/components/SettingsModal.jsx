@@ -71,6 +71,7 @@ export default function SettingsModal({
   const [disableGroups, setDisableGroups] = useState(false);
   const [panelGroupMode, setPanelGroupMode] = useState("default");
   const [nestEraSubGroups, setNestEraSubGroups] = useState(false);
+  const [autoHideEmptyGroups, setAutoHideEmptyGroups] = useState(false);
   const [showPopularTags, setShowPopularTags] = useState(true);
   const [keepSelection, setKeepSelection] = useState(false);
   const [useSecondaryBg, setUseSecondaryBg] = useState(false);
@@ -245,6 +246,7 @@ export default function SettingsModal({
         setDisableGroups(Boolean(timelineData.file.disableGroups));
         setPanelGroupMode(timelineData.file.panelGroupMode || (timelineData.file.useEraGroupsInPanel ? "eras" : "default"));
         setNestEraSubGroups(Boolean(timelineData.file.nestEraSubGroups));
+        setAutoHideEmptyGroups(Boolean(timelineData.file.autoHideEmptyGroups));
         setShowPopularTags(timelineData.file.showPopularTags !== false);
         setKeepSelection(Boolean(timelineData.file.keepSelection));
         setUseSecondaryBg(Boolean(timelineData.file.useSecondaryBg));
@@ -365,6 +367,7 @@ export default function SettingsModal({
           disableGroups,
           panelGroupMode,
           nestEraSubGroups,
+          autoHideEmptyGroups,
           showPopularTags,
           keepSelection,
           useSecondaryBg,
@@ -416,6 +419,7 @@ export default function SettingsModal({
     disableGroups,
     panelGroupMode,
     nestEraSubGroups,
+    autoHideEmptyGroups,
     showPopularTags,
     keepSelection,
     useSecondaryBg,
@@ -1270,6 +1274,24 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={disableGroups}
                       onChange={(e) => setDisableGroups(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Auto Hide Empty Groups */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Auto Hide Empty Groups</div>
+                  <div className="settings-row-description">Hide groups that contain no events or spans from the timeline, so they take up no space instead of showing an empty band.</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={autoHideEmptyGroups}
+                      onChange={(e) => setAutoHideEmptyGroups(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
