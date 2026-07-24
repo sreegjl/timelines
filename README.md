@@ -1,4 +1,6 @@
 # 
+[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
+
 ![Temp Banner](docs/temp-banner-light.png)
 
 Timelines Studio is a free, open-source app for creating customizable, interactive timelines for worldbuilding and history. Organize events, spans, and eras with tags and groups, link Markdown notes or MediaWiki sources directly to elements, and visualize timelines geographically with map view and coordinate support.
