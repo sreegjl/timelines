@@ -36,6 +36,7 @@ import { countOldFormatThemes, isOldFormatTheme, migrateThemeColors } from "./ut
 import { getAppSettings, saveAppSettings } from "./utils/appSettings";
 import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keybinds";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid } from "./utils/dateUtils";
+import { parseFilterQuery } from "./utils/filterUtils";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -232,6 +233,8 @@ function App() {
   const [activeTags, setActiveTags] = useState([]);
   const [hiddenTags, setHiddenTags] = useState([]);
   const [pinnedTags, setPinnedTags] = useState([]);
+  const [chipQuery, setChipQuery] = useState("");
+  const parsedChipQuery = useMemo(() => parseFilterQuery(chipQuery), [chipQuery]);
   const [viewportYear, setViewportYear] = useState(null);
   const handleViewportYearChange = useCallback((year) => {
     startTransition(() => {
@@ -2306,6 +2309,7 @@ function App() {
               onSelect={handleSelect}
               timelineData={filteredTimelineData}
               allElements={timelineData.elements}
+              chipFilter={parsedChipQuery}
               activeTags={activeTags}
               hiddenTags={hiddenTags}
               onToggleTag={handleToggleTag}
@@ -2434,6 +2438,7 @@ function App() {
               pinnedTags={pinnedTags}
               onTogglePinnedTag={handleTogglePinnedTag}
               onViewportYearChange={handleViewportYearChange}
+              onChipQueryChange={setChipQuery}
               tagColors={timelineData.file?.tagColors || {}}
               keybinds={keybinds}
               onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}

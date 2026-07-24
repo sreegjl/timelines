@@ -358,6 +358,7 @@ const TimelineView = forwardRef(function TimelineView({
   pinnedTags = [],
   onTogglePinnedTag,
   onViewportYearChange,
+  onChipQueryChange,
   tagColors = {},
   keybinds = {},
   onSetViewMode,
@@ -401,6 +402,10 @@ const TimelineView = forwardRef(function TimelineView({
 
   const chipsQuery = useMemo(() => buildChipQuery(filterChips), [filterChips]);
   const parsedChipQuery = useMemo(() => parseFilterQuery(chipsQuery), [chipsQuery]);
+
+  useEffect(() => {
+    onChipQueryChange?.(chipsQuery);
+  }, [chipsQuery, onChipQueryChange]);
   const fullFilterQuery = useMemo(() => {
     const extraTags = activeTags
       .filter((t) => !filterChips.some((c) => c.kind === "tag" && !c.negated && c.value.toLowerCase() === t.toLowerCase()))

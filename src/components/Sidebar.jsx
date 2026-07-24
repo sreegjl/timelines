@@ -182,6 +182,7 @@ export default function Sidebar({
   onSelect,
   timelineData,
   allElements,
+  chipFilter = null,
   activeTags = [],
   hiddenTags = [],
   onToggleTag,
@@ -810,11 +811,14 @@ export default function Sidebar({
     [events]
   );
 
-  const searchActive = searchQuery.trim().length > 0;
+  const hasChipFilter = !!chipFilter;
+  const searchActive = searchQuery.trim().length > 0 || hasChipFilter;
   const q = searchQuery.trim().toLowerCase();
   const matchesSearch = (value) => (value || "").toLowerCase().includes(q);
   const parsedFilter = useMemo(() => parseFilterQuery(searchQuery), [searchQuery]);
-  const elMatches = (el) => matchesFilter(el, parsedFilter);
+  // Combine the sidebar's own search with the timeline's active chip filter (AND semantics).
+  const elMatches = (el) =>
+    matchesFilter(el, parsedFilter) && (!hasChipFilter || matchesFilter(el, chipFilter));
   const searchPlaceholder = sidebarTab === "timeline"
     ? "Search spans, events, eras..."
     : sidebarTab === "tags"
