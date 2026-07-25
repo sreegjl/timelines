@@ -13,7 +13,7 @@ import {
   MONTH_LABELS,
 } from "../utils/timelineUtils";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
-import { withAlpha, blendColors } from "../utils/colorUtils";
+import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
@@ -3685,6 +3685,7 @@ const TimelineView = forwardRef(function TimelineView({
               const bandBackground = withAlpha(group.bgColor || resolvedActiveBg, 0.34);
               const bandBorderColor = withAlpha(group.bgColor || resolvedActiveBg, 0.86);
               const bandBorder = `var(--timeline-line-thickness) solid ${bandBorderColor}`;
+              const bandLabelTextColor = getReadableTextColor(normalizeColor(group.bgColor || resolvedActiveBg));
               return (
                 <div
                   key={`group-bg-${group.id}`}
@@ -3695,7 +3696,16 @@ const TimelineView = forwardRef(function TimelineView({
                     backgroundColor: bandBackground,
                     border: bandBorder,
                   }}
-                />
+                >
+                  {group.title && (
+                    <span
+                      className="group-band-label"
+                      style={{ backgroundColor: bandBorderColor, color: bandLabelTextColor }}
+                    >
+                      {group.title}
+                    </span>
+                  )}
+                </div>
               );
             })}
         </div>
