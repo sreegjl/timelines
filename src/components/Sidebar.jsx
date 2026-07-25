@@ -196,6 +196,7 @@ export default function Sidebar({
   onUpdateGroup,
   onUpdateGroups,
   onDeleteGroup,
+  onCenterGroup,
   onAddEvent,
   onAddSpan,
   onAddEra,
@@ -1839,8 +1840,8 @@ export default function Sidebar({
                     >
                     <div
                       className={`sb-group-header${isGroupOpen ? " is-open" : ""}`}
-                      onClick={() => itemsInGroup.length > 0 && toggleGroupContents(group.id)}
-                      style={{ cursor: itemsInGroup.length > 0 ? "pointer" : "default" }}
+                      onClick={() => { onCenterGroup?.(group.id); if (itemsInGroup.length > 0) toggleGroupContents(group.id); }}
+                      style={{ cursor: "pointer" }}
                     >
                       {readOnly ? (
                         <span className="sb-group-swatch" style={{ background: groupTint }} />

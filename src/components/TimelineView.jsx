@@ -3089,7 +3089,18 @@ const TimelineView = forwardRef(function TimelineView({
       translateRef.current.x = Math.min(maxX, Math.max(minX, newX));
       applyTransform();
     },
-  }), [calculatedHeight, yearToPx, timelineWidth, file, TIMELINE_PADDING, PX_PER_YEAR, compressedMin, compressedMax, decompressYear, timelineData]);
+
+    scrollToGroup: (groupId) => {
+      const container = containerRef.current;
+      if (!container) return;
+      const box = groupBandBoxes.find((b) => b.groupId === groupId);
+      if (!box) return;
+      const scale = scaleRef.current;
+      const centerY = box.top + box.height / 2;
+      translateRef.current.y = container.clientHeight / 2 - centerY * scale;
+      applyTransform();
+    },
+  }), [calculatedHeight, yearToPx, timelineWidth, file, TIMELINE_PADDING, PX_PER_YEAR, compressedMin, compressedMax, decompressYear, timelineData, groupBandBoxes]);
 
   // Reapply transform when timeline DOM is recreated after switching back from map view
   useLayoutEffect(() => {

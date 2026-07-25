@@ -702,6 +702,10 @@ function App() {
     });
   };
 
+  const handleCenterGroup = (groupId) => {
+    timelineViewRef.current?.scrollToGroup(groupId);
+  };
+
   useEffect(() => {
     if (!selectedId && isRightMaximized && rightLockState !== "open") {
       setIsRightMaximized(false);
@@ -2324,6 +2328,7 @@ function App() {
               onUpdateGroup={handleUpdateGroup}
               onUpdateGroups={handleUpdateGroups}
               onDeleteGroup={handleDeleteGroup}
+              onCenterGroup={handleCenterGroup}
               tagColors={timelineData.file?.tagColors || {}}
               onUpdateTagColor={handleUpdateTagColor}
               onAddEvent={handleAddEvent}
