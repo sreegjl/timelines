@@ -21,46 +21,45 @@ const dateToFractionalYear = (date) => {
 
 // current date as a fractional year on the same day grid as parseTimelineInput
 export const todayFractionalYear = () => dateToFractionalYear(new Date());
-
-// dynamic keywords: today, now, yesterday, tomorrow, with optional offset like today-30d / now+2w / today-6m / today-1y
-const DATE_KEYWORD_RE = /^(today|now|yesterday|tomorrow)(?:\s*([+-])\s*(\d+)\s*([dwmy]))?$/i;
+const DATE_KEYWORD_RE = /^(current|current-month|current-year|today|now)$/i;
 
 export const parseDateKeyword = (raw) => {
-  const match = DATE_KEYWORD_RE.exec(raw);
-  if (!match) return null;
-  const [, keyword, sign, amountRaw, unit] = match;
-  const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  const kw = keyword.toLowerCase();
-  if (kw === "yesterday") date.setDate(date.getDate() - 1);
-  if (kw === "tomorrow") date.setDate(date.getDate() + 1);
-  if (sign) {
-    const amount = Number(amountRaw) * (sign === "-" ? -1 : 1);
-    const u = unit.toLowerCase();
-    if (u === "d") date.setDate(date.getDate() + amount);
-    if (u === "w") date.setDate(date.getDate() + amount * 7);
-    if (u === "m" || u === "y") {
-      // clamp the day so month/year offsets never roll into the next month
-      const day = date.getDate();
-      date.setDate(1);
-      if (u === "m") date.setMonth(date.getMonth() + amount);
-      else date.setFullYear(date.getFullYear() + amount);
-      date.setDate(Math.min(day, daysInMonth(date.getFullYear(), date.getMonth() + 1)));
-    }
-  }
-  return dateToFractionalYear(date);
+  if (typeof raw !== "string" || !DATE_KEYWORD_RE.test(raw.trim())) return null;
+  const kw = raw.trim().toLowerCase();
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  if (kw === "current-year") return { value: year, precision: "year" };
+  if (kw === "current-month") return { value: year + (month - 1) / 12, precision: "month" };
+  return {
+    value: year + (month - 1) / 12 + (day - 1) / (daysInMonth(year, month) * 12),
+    precision: "day",
+  };
 };
 
-// display form for dynamic labels: "Today (07/22/2026)"; non-dynamic labels pass through unchanged
+const DYNAMIC_LABEL_NAMES = {
+  current: "Today",
+  today: "Today",
+  now: "Today",
+  "current-month": "This month",
+  "current-year": "This year",
+};
+
+// display form for dynamic labels: "This year (2026)"; non-dynamic labels pass through unchanged
 export const displayDateLabel = (label) => {
   if (typeof label !== "string") return label ?? null;
-  const value = parseDateKeyword(label);
-  if (value === null) return label;
-  const { year, month, day } = fractionalYearToDate(value);
-  const m = String(month).padStart(2, "0");
-  const d = String(day).padStart(2, "0");
-  const pretty = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase();
-  return `${pretty} (${m}/${d}/${year})`;
+  const parsed = parseDateKeyword(label);
+  if (parsed === null) return label;
+  const { year, month, day } = fractionalYearToDate(parsed.value);
+  const pad = (n) => String(n).padStart(2, "0");
+  const resolved = parsed.precision === "year"
+    ? `${year}`
+    : parsed.precision === "month"
+      ? `${pad(month)}/${year}`
+      : `${pad(month)}/${pad(day)}/${year}`;
+  const name = DYNAMIC_LABEL_NAMES[label.trim().toLowerCase()] || "Today";
+  return `${name} (${resolved})`;
 };
 
 export const parseTimelineInput = (value) => {
@@ -75,9 +74,9 @@ export const parseTimelineInput = (value) => {
   if (!raw) return { value: null, label: null, precision: null };
 
   // dynamic keywords stay labels so they re-resolve to the current date on every load
-  const keywordValue = parseDateKeyword(raw);
-  if (keywordValue !== null) {
-    return { value: keywordValue, label: raw.toLowerCase().replace(/\s+/g, ""), precision: "day" };
+  const keyword = parseDateKeyword(raw);
+  if (keyword !== null) {
+    return { value: keyword.value, label: raw.trim().toLowerCase(), precision: keyword.precision };
   }
 
   if (raw.includes("/")) {

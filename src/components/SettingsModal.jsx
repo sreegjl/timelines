@@ -980,7 +980,7 @@ export default function SettingsModal({
               <div className="settings-row">
                 <div className="settings-row-left">
                   <div className="settings-row-label">Today Marker</div>
-                  <div className="settings-row-description">Display a vertical line at the current date. Tip: date fields also accept dynamic values like "today", "now", "yesterday", "tomorrow", and offsets such as "today-30d", "now+2w", "today-6m", "today-1y".</div>
+                  <div className="settings-row-description">Display a vertical line at the current date.</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">

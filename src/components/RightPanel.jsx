@@ -9,12 +9,9 @@ import { ICON_MAP } from "../config/elementIcons";
 import { parseTimelineInput, fractionalYearToDate, displayDateLabel } from "../utils/dateUtils";
 
 const DYNAMIC_DATE_OPTIONS = [
-  { label: "Today", value: "today" },
-  { label: "Yesterday", value: "yesterday" },
-  { label: "Tomorrow", value: "tomorrow" },
-  { label: "1 week ago", value: "today-1w" },
-  { label: "1 month ago", value: "today-1m" },
-  { label: "1 year ago", value: "today-1y" },
+  { label: "Today", value: "current" },
+  { label: "This month", value: "current-month" },
+  { label: "This year", value: "current-year" },
 ];
 import { formatYear } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";

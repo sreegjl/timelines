@@ -19,52 +19,44 @@ test("parseTimelineInput resolves 'today' to the current date and keeps the labe
   assert.strictEqual(day, now.getDate());
 });
 
-test("parseTimelineInput supports keyword aliases and date-math offsets", async () => {
-  const { parseTimelineInput, todayFractionalYear, fractionalYearToDate } = await load();
-  const today = todayFractionalYear();
-
-  assert.strictEqual(parseTimelineInput("now").value, today);
-  assert.strictEqual(parseTimelineInput("NOW").label, "now");
-
-  const atNoon = (offsetDays) => {
-    const d = new Date();
-    d.setHours(12, 0, 0, 0);
-    d.setDate(d.getDate() + offsetDays);
-    return d;
-  };
-  const expectDay = (parsed, expected) => {
-    const { year, month, day } = fractionalYearToDate(parsed.value);
-    assert.strictEqual(year, expected.getFullYear());
-    assert.strictEqual(month, expected.getMonth() + 1);
-    assert.strictEqual(day, expected.getDate());
-  };
-
-  expectDay(parseTimelineInput("yesterday"), atNoon(-1));
-  expectDay(parseTimelineInput("tomorrow"), atNoon(1));
-  expectDay(parseTimelineInput("today-30d"), atNoon(-30));
-  expectDay(parseTimelineInput("now + 2w"), atNoon(14));
-
-  const parsedOffset = parseTimelineInput("Today - 30 d");
-  assert.strictEqual(parsedOffset.label, "today-30d");
-  assert.strictEqual(parsedOffset.precision, "day");
-
-  const yearAgo = fractionalYearToDate(parseTimelineInput("today-1y").value);
+test("parseTimelineInput resolves current / current-month / current-year at the right precision", async () => {
+  const { parseTimelineInput, todayFractionalYear } = await load();
   const now = new Date();
-  assert.strictEqual(yearAgo.year, now.getFullYear() - 1);
-  assert.strictEqual(yearAgo.month, now.getMonth() + 1);
 
-  const monthsAgo = parseTimelineInput("today-6m");
-  assert.ok(Number.isFinite(monthsAgo.value));
-  assert.ok(monthsAgo.value < today);
+  const current = parseTimelineInput("Current");
+  assert.strictEqual(current.label, "current");
+  assert.strictEqual(current.precision, "day");
+  assert.strictEqual(current.value, todayFractionalYear());
+
+  const month = parseTimelineInput("current-month");
+  assert.strictEqual(month.label, "current-month");
+  assert.strictEqual(month.precision, "month");
+  assert.strictEqual(month.value, now.getFullYear() + now.getMonth() / 12);
+
+  const year = parseTimelineInput("current-year");
+  assert.strictEqual(year.label, "current-year");
+  assert.strictEqual(year.precision, "year");
+  assert.strictEqual(year.value, now.getFullYear());
+
+  // today / now stay as day-precision aliases for backward compatibility
+  assert.strictEqual(parseTimelineInput("today").value, todayFractionalYear());
+  assert.strictEqual(parseTimelineInput("now").precision, "day");
+
+  // offsets and yesterday/tomorrow are no longer keywords
+  assert.strictEqual(parseTimelineInput("today-30d").value, null);
+  assert.strictEqual(parseTimelineInput("yesterday").value, null);
 });
 
-test("displayDateLabel expands dynamic labels and passes others through", async () => {
+test("displayDateLabel expands dynamic labels by precision and passes others through", async () => {
   const { displayDateLabel } = await load();
   const now = new Date();
+  const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  assert.strictEqual(displayDateLabel("today"), `Today (${mm}/${dd}/${now.getFullYear()})`);
-  assert.ok(displayDateLabel("today-1y").startsWith("Today-1y ("));
+  assert.strictEqual(displayDateLabel("current"), `Today (${mm}/${dd}/${yyyy})`);
+  assert.strictEqual(displayDateLabel("current-month"), `This month (${mm}/${yyyy})`);
+  assert.strictEqual(displayDateLabel("current-year"), `This year (${yyyy})`);
+  assert.strictEqual(displayDateLabel("today"), `Today (${mm}/${dd}/${yyyy})`);
   assert.strictEqual(displayDateLabel("7/4/1776"), "7/4/1776");
   assert.strictEqual(displayDateLabel(null), null);
   assert.strictEqual(displayDateLabel(undefined), null);
