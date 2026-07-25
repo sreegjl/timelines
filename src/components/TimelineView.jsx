@@ -1523,6 +1523,12 @@ const TimelineView = forwardRef(function TimelineView({
     const scale = scaleRef.current;
     timelineEl.style.transformOrigin = "0 0";
     timelineEl.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    // Counter-scale group band labels
+    const GROUP_LABEL_MAX_INV_SCALE = 2;
+    timelineEl.style.setProperty(
+      "--group-label-inv-scale",
+      String(Math.min(1 / scale, GROUP_LABEL_MAX_INV_SCALE))
+    );
     const overlay = gridLabelsRef.current;
     if (overlay) {
       overlay.style.transform = `translateX(${x}px)`;

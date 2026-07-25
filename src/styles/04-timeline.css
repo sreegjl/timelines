@@ -243,6 +243,8 @@
   border-top-left-radius: 3px;
   border-bottom-right-radius: 6px;
   pointer-events: none;
+  transform-origin: top left;
+  transform: scale(var(--group-label-inv-scale, 1));
 }
 
 .event-lines-layer { position: relative; z-index: 3; }
