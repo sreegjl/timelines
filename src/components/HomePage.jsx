@@ -654,6 +654,9 @@ export default function HomePage({
     else onSelectTimeline(file.id);
   };
 
+  const anyModalOpen = isNewTimelineModalOpen || newFolderDialogOpen || !!moveDialogFile
+    || isMarketplaceOpen || !!deleteDialogFile || !!gitSyncShareDialog || !!gitSyncHistoryDialog;
+
   // preventDefault on window keeps Electron from navigating to dropped files
   useEffect(() => {
     if (settingsOnly) return undefined;
@@ -661,6 +664,7 @@ export default function HomePage({
     const onDragOver = (e) => {
       if (!isFileDrag(e)) return;
       e.preventDefault();
+      if (anyModalOpen) return;
       setIsDragOver(true);
     };
     const onDragLeave = (e) => {
@@ -669,6 +673,7 @@ export default function HomePage({
     const onDrop = (e) => {
       e.preventDefault();
       setIsDragOver(false);
+      if (anyModalOpen) return;
       const file = e.dataTransfer?.files?.[0];
       if (!file || !/\.(timeline|json)$/i.test(file.name)) return;
       const sourcePath = window.electron?.getPathForFile?.(file);
@@ -682,7 +687,7 @@ export default function HomePage({
       window.removeEventListener("dragleave", onDragLeave);
       window.removeEventListener("drop", onDrop);
     };
-  }, [settingsOnly, onImportTimeline]);
+  }, [settingsOnly, onImportTimeline, anyModalOpen]);
 
   const handleContextMenu = (e, file) => {
     e.preventDefault();
