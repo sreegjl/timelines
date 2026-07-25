@@ -9,6 +9,7 @@ import { loadThemeConfig } from "../utils/themeLoader";
 import { isZipBuffer, readPackage } from "../utils/packageReader";
 import { setViewerPackage, getPackageNote, resolvePackageAssetSrc } from "../utils/viewerPackageStore";
 import { ensureUniqueElementIds } from "../utils/idUtils";
+import { setActiveDateFormat, getActiveDateFormat, normalizeLegacyDateLabel } from "../utils/dateUtils";
 
 const DEFAULT_GROUP_ID = "g-main";
 const SIDEBAR_WIDTH = 350;
@@ -142,6 +143,12 @@ function applyViewerTheme(themes, key, fileFont) {
 function sanitizeForBrowser(data) {
   const elements = ensureUniqueElementIds(data.elements ?? []).map((el) => {
     let next = el;
+    if (typeof next.dateLabel === "string" || typeof next.startLabel === "string" || typeof next.endLabel === "string") {
+      next = { ...next };
+      if (typeof next.dateLabel === "string") next.dateLabel = normalizeLegacyDateLabel(next.dateLabel);
+      if (typeof next.startLabel === "string") next.startLabel = normalizeLegacyDateLabel(next.startLabel);
+      if (typeof next.endLabel === "string") next.endLabel = normalizeLegacyDateLabel(next.endLabel);
+    }
     const thumb = next.thumbnail ? String(next.thumbnail) : "";
     if (thumb && !/^https?:\/\//i.test(thumb) && !thumb.startsWith("data:")) {
       const packaged = thumb.includes("://") ? null : resolvePackageAssetSrc(thumb);
@@ -158,11 +165,17 @@ function sanitizeForBrowser(data) {
     }
     return next;
   });
-  return { ...data, file: data.file ?? {}, elements };
+  const file = { ...(data.file ?? {}) };
+  if (typeof file.startLabel === "string") file.startLabel = normalizeLegacyDateLabel(file.startLabel);
+  if (typeof file.endLabel === "string") file.endLabel = normalizeLegacyDateLabel(file.endLabel);
+  return { ...data, file, elements };
 }
 
 export default function ViewerApp() {
   const [timelineData, setTimelineData] = useState(null);
+  // Sync the date-format lens with the loaded timeline before children render.
+  const viewerDateFormat = timelineData?.file?.dateFormat || "MDY";
+  if (getActiveDateFormat() !== viewerDateFormat) setActiveDateFormat(viewerDateFormat);
   const [loadError, setLoadError] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [ghInput, setGhInput] = useState("");

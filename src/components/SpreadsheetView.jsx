@@ -5,7 +5,7 @@ import {
   Eye, EyeOff, Tag, Check, FileText, ImageIcon,
   Search, Plus, ArrowLeft, Download,
 } from "lucide-react";
-import { parseTimelineInput } from "../utils/dateUtils";
+import { parseTimelineInput, formatDateForInput } from "../utils/dateUtils";
 import { formatYear } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
 import { ICON_MAP } from "../config/elementIcons";
@@ -176,13 +176,13 @@ export default function SpreadsheetView({
 
   const getDateDisplay = useCallback((el) =>
     el.type === "event"
-      ? (el.dateLabel ?? fmtDate(el.date))
-      : (el.startLabel ?? fmtDate(el.start)),
+      ? (formatDateForInput(el.dateLabel) || fmtDate(el.date))
+      : (formatDateForInput(el.startLabel) || fmtDate(el.start)),
     [fmtDate]
   );
 
   const getEndDisplay = useCallback((el) =>
-    el.type === "event" ? null : (el.endLabel ?? fmtDate(el.end)),
+    el.type === "event" ? null : (formatDateForInput(el.endLabel) || fmtDate(el.end)),
     [fmtDate]
   );
 

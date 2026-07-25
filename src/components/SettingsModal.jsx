@@ -1,6 +1,6 @@
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { parseTimelineInput, snapToMonthGrid } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
 import { themeOptionLabel } from "../utils/themeLoader";
@@ -52,6 +52,7 @@ export default function SettingsModal({
   const [theme, setTheme] = useState(defaultThemeKey || "");
   const [fontFamily, setFontFamily] = useState("default");
   const [useCalendar, setUseCalendar] = useState(false);
+  const [dateFormat, setDateFormat] = useState("MDY");
   const [scaleSections, setScaleSections] = useState([]);
   const [scaleType, setScaleType] = useState("default");
   const [logScaleFactor, setLogScaleFactor] = useState(10);
@@ -208,8 +209,8 @@ export default function SettingsModal({
       } else {
         setTitle(timelineData.file.title || "");
         setCommittedTitle(timelineData.file.title || "");
-        setStart(String(timelineData.file.startLabel ?? timelineData.file.start ?? ""));
-        setEnd(String(timelineData.file.endLabel ?? timelineData.file.end ?? ""));
+        setStart(formatDateForInput(timelineData.file.startLabel) || String(timelineData.file.start ?? ""));
+        setEnd(formatDateForInput(timelineData.file.endLabel) || String(timelineData.file.end ?? ""));
         const rawDetail = Number(timelineData.file.detailLevel);
         const nextDetailLevel = Number.isFinite(rawDetail) ? rawDetail : 1;
         const clampedDetail = clamp(nextDetailLevel, DETAIL_MIN, DETAIL_MAX);
@@ -224,6 +225,7 @@ export default function SettingsModal({
         setFontFamily(timelineData.file.font || "default");
         setLayout(timelineData.file.layout || "Horizontal");
         setUseCalendar(Boolean(timelineData.file.useCalendar ?? timelineData.file.useDays ?? timelineData.file.useMonths));
+        setDateFormat(timelineData.file.dateFormat || "MDY");
         setScaleSections(loadScaleSections(timelineData.file.scaleSections, timelineData.file.breaks));
         setScaleType(timelineData.file.scaleType || "default");
         setLogScaleFactor(Number.isFinite(Number(timelineData.file.logScaleFactor)) && Number(timelineData.file.logScaleFactor) >= 1 ? Number(timelineData.file.logScaleFactor) : 10);
@@ -349,6 +351,7 @@ export default function SettingsModal({
           startLabel: parsedStart.label,
           endLabel: parsedEnd.label,
           useCalendar: useCalendar || undefined,
+          dateFormat: dateFormat !== "MDY" ? dateFormat : undefined,
           scaleSections: parsedScaleSections,
           scaleType: scaleType !== "default" ? scaleType : undefined,
           logScaleFactor: scaleType === "logarithmic" ? logScaleFactor : undefined,
@@ -401,6 +404,7 @@ export default function SettingsModal({
     theme,
     fontFamily,
     useCalendar,
+    dateFormat,
     layout,
     scaleSections,
     scaleType,
@@ -1147,7 +1151,7 @@ export default function SettingsModal({
               {/* Maps */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Maps</div>
+                  <div className="settings-row-label">Map View</div>
                   <div className="settings-row-description">Enable adding coordinates to events, eras, and spans to view them on a map.</div>
                 </div>
                 <div className="settings-row-right">
@@ -1162,6 +1166,25 @@ export default function SettingsModal({
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
+                </div>
+              </div>
+
+              {/* Date Format */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Date Format</div>
+                  <div className="settings-row-description">How month and day dates are shown and typed across all panels.</div>
+                </div>
+                <div className="settings-row-right">
+                  <select
+                    className="settings-select"
+                    value={dateFormat}
+                    onChange={(e) => setDateFormat(e.target.value)}
+                  >
+                    <option value="MDY">MM/DD/YYYY</option>
+                    <option value="DMY">DD/MM/YYYY</option>
+                    <option value="ISO">YYYY-MM-DD</option>
+                  </select>
                 </div>
               </div>
 

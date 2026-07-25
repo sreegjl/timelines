@@ -21,6 +21,69 @@ const dateToFractionalYear = (date) => {
 
 // current date as a fractional year on the same day grid as parseTimelineInput
 export const todayFractionalYear = () => dateToFractionalYear(new Date());
+
+// Format is a display + input lens only; stored labels stay canonical ISO.
+let activeDateFormat = "MDY"; // "MDY" | "DMY" | "ISO"
+export const setActiveDateFormat = (fmt) => {
+  activeDateFormat = fmt === "DMY" || fmt === "ISO" ? fmt : "MDY";
+};
+export const getActiveDateFormat = () => activeDateFormat;
+
+const pad2 = (n) => String(n).padStart(2, "0");
+const normalizeYear = (y) => (Number.isFinite(y) && y >= 0 && y <= 99 ? y + 2000 : y);
+
+// Canonical ISO stored label; year precision needs no label.
+const canonicalDateLabel = (year, month, day, precision) => {
+  if (precision === "year") return null;
+  if (precision === "month") return `${year}-${pad2(month)}`;
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+};
+
+export const formatCalendarDate = (year, month, day, precision, fmt = activeDateFormat) => {
+  if (precision === "year") return `${year}`;
+  if (precision === "month") return fmt === "ISO" ? `${year}-${pad2(month)}` : `${pad2(month)}/${year}`;
+  if (fmt === "ISO") return `${year}-${pad2(month)}-${pad2(day)}`;
+  if (fmt === "DMY") return `${pad2(day)}/${pad2(month)}/${year}`;
+  return `${pad2(month)}/${pad2(day)}/${year}`;
+};
+
+const buildCalendarDate = (year, month, day, precision) => {
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return null;
+  if (month < 1 || month > 12) return null;
+  const maxDay = daysInMonth(year, month);
+  if (day < 1 || day > maxDay) return null;
+  return {
+    value: year + (month - 1) / 12 + (day - 1) / (maxDay * 12),
+    precision,
+    label: canonicalDateLabel(year, month, day, precision),
+    year,
+    month,
+    day,
+  };
+};
+
+// ISO (dash) is auto-detected regardless of format; slash order follows the format.
+const parseCalendarDate = (raw, fmt = activeDateFormat) => {
+  const iso = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/.exec(raw);
+  if (iso) {
+    const hasDay = iso[3] !== undefined;
+    return buildCalendarDate(Number(iso[1]), Number(iso[2]), hasDay ? Number(iso[3]) : 1, hasDay ? "day" : "month");
+  }
+  if (raw.includes("/")) {
+    const parts = raw.split("/").map((p) => p.trim());
+    if (parts.length === 2) {
+      return buildCalendarDate(normalizeYear(Number(parts[1])), Number(parts[0]), 1, "month");
+    }
+    if (parts.length === 3) {
+      const [a, b, c] = parts.map(Number);
+      return fmt === "DMY"
+        ? buildCalendarDate(normalizeYear(c), b, a, "day")
+        : buildCalendarDate(normalizeYear(c), a, b, "day");
+    }
+  }
+  return null;
+};
+
 const DATE_KEYWORD_RE = /^(current|current-month|current-year|today|now)$/i;
 
 export const parseDateKeyword = (raw) => {
@@ -46,20 +109,34 @@ const DYNAMIC_LABEL_NAMES = {
   "current-year": "This year",
 };
 
-// display form for dynamic labels: "This year (2026)"; non-dynamic labels pass through unchanged
+// Read-only display: keywords -> "This year (2026)", fixed dates -> active format.
 export const displayDateLabel = (label) => {
   if (typeof label !== "string") return label ?? null;
-  const parsed = parseDateKeyword(label);
-  if (parsed === null) return label;
-  const { year, month, day } = fractionalYearToDate(parsed.value);
-  const pad = (n) => String(n).padStart(2, "0");
-  const resolved = parsed.precision === "year"
-    ? `${year}`
-    : parsed.precision === "month"
-      ? `${pad(month)}/${year}`
-      : `${pad(month)}/${pad(day)}/${year}`;
-  const name = DYNAMIC_LABEL_NAMES[label.trim().toLowerCase()] || "Today";
-  return `${name} (${resolved})`;
+  const kw = parseDateKeyword(label);
+  if (kw !== null) {
+    const { year, month, day } = fractionalYearToDate(kw.value);
+    const resolved = formatCalendarDate(year, month, day, kw.precision);
+    return `${DYNAMIC_LABEL_NAMES[label.trim().toLowerCase()] || "Today"} (${resolved})`;
+  }
+  const cal = parseCalendarDate(label);
+  if (cal) return formatCalendarDate(cal.year, cal.month, cal.day, cal.precision);
+  return label;
+};
+
+// Editable-field form: keywords stay literal so they can be re-typed.
+export const formatDateForInput = (label) => {
+  if (typeof label !== "string" || !label.trim()) return "";
+  if (parseDateKeyword(label) !== null) return label.trim().toLowerCase();
+  const cal = parseCalendarDate(label);
+  if (cal) return formatCalendarDate(cal.year, cal.month, cal.day, cal.precision);
+  return label;
+};
+
+// Legacy slash labels were always MM/DD/YYYY; upgrade to ISO regardless of active format.
+export const normalizeLegacyDateLabel = (label) => {
+  if (typeof label !== "string" || !label.includes("/")) return label;
+  const cal = parseCalendarDate(label, "MDY");
+  return cal ? cal.label : label;
 };
 
 export const parseTimelineInput = (value) => {
@@ -79,30 +156,9 @@ export const parseTimelineInput = (value) => {
     return { value: keyword.value, label: raw.trim().toLowerCase(), precision: keyword.precision };
   }
 
-  if (raw.includes("/")) {
-    const parts = raw.split("/");
-    if (parts.length !== 2 && parts.length !== 3) return { value: null, label: null, precision: null };
-    const [monthRaw, midRaw, yearRaw] = parts.map((part) => part.trim());
-    const month = Number(monthRaw);
-    const rawYear = Number(parts.length === 2 ? midRaw : yearRaw);
-    const year = (Number.isFinite(rawYear) && rawYear >= 0 && rawYear <= 99) ? rawYear + 2000 : rawYear;
-    const day = parts.length === 2 ? 1 : Number(midRaw);
-
-    if (!Number.isFinite(month) || !Number.isFinite(day) || !Number.isFinite(year)) {
-      return { value: null, label: null, precision: null };
-    }
-    if (month < 1 || month > 12) return { value: null, label: null, precision: null };
-    const maxDay = daysInMonth(year, month);
-    if (day < 1 || day > maxDay) return { value: null, label: null, precision: null };
-
-    const monthBase = (month - 1) / 12;
-    const monthDays = daysInMonth(year, month);
-    const dayOffset = (day - 1) / (monthDays * 12);
-    return {
-      value: year + monthBase + dayOffset,
-      label: raw,
-      precision: parts.length === 2 ? "month" : "day",
-    };
+  const cal = parseCalendarDate(raw);
+  if (cal) {
+    return { value: cal.value, label: cal.label, precision: cal.precision };
   }
 
   const num = Number(raw);

@@ -47,8 +47,9 @@ test("parseTimelineInput resolves current / current-month / current-year at the 
   assert.strictEqual(parseTimelineInput("yesterday").value, null);
 });
 
-test("displayDateLabel expands dynamic labels by precision and passes others through", async () => {
-  const { displayDateLabel } = await load();
+test("displayDateLabel expands dynamic labels by precision (default MDY)", async () => {
+  const { displayDateLabel, setActiveDateFormat } = await load();
+  setActiveDateFormat("MDY");
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -57,9 +58,60 @@ test("displayDateLabel expands dynamic labels by precision and passes others thr
   assert.strictEqual(displayDateLabel("current-month"), `This month (${mm}/${yyyy})`);
   assert.strictEqual(displayDateLabel("current-year"), `This year (${yyyy})`);
   assert.strictEqual(displayDateLabel("today"), `Today (${mm}/${dd}/${yyyy})`);
-  assert.strictEqual(displayDateLabel("7/4/1776"), "7/4/1776");
   assert.strictEqual(displayDateLabel(null), null);
   assert.strictEqual(displayDateLabel(undefined), null);
+});
+
+test("parseTimelineInput stores canonical ISO labels and respects the active format order", async () => {
+  const { parseTimelineInput, setActiveDateFormat } = await load();
+
+  setActiveDateFormat("MDY");
+  const mdy = parseTimelineInput("3/4/2020");
+  assert.strictEqual(mdy.value, 2020 + 2 / 12 + 3 / (31 * 12)); // March 4
+  assert.strictEqual(mdy.label, "2020-03-04");
+  assert.strictEqual(mdy.precision, "day");
+
+  setActiveDateFormat("DMY");
+  const dmy = parseTimelineInput("3/4/2020"); // day 3, month 4 => April 3
+  assert.strictEqual(dmy.label, "2020-04-03");
+
+  // ISO input is auto-detected regardless of the active format
+  const iso = parseTimelineInput("2020-03-04");
+  assert.strictEqual(iso.label, "2020-03-04");
+  assert.strictEqual(iso.precision, "day");
+
+  setActiveDateFormat("MDY");
+});
+
+test("format is a display lens: canonical labels render per active format, value unchanged", async () => {
+  const { displayDateLabel, formatDateForInput, setActiveDateFormat } = await load();
+  const iso = "2020-03-04";
+
+  setActiveDateFormat("MDY");
+  assert.strictEqual(displayDateLabel(iso), "03/04/2020");
+  assert.strictEqual(formatDateForInput(iso), "03/04/2020");
+
+  setActiveDateFormat("DMY");
+  assert.strictEqual(displayDateLabel(iso), "04/03/2020");
+
+  setActiveDateFormat("ISO");
+  assert.strictEqual(displayDateLabel(iso), "2020-03-04");
+  assert.strictEqual(formatDateForInput("current"), "current"); // keywords stay literal
+
+  setActiveDateFormat("MDY");
+});
+
+test("normalizeLegacyDateLabel upgrades old MM/DD/YYYY labels to ISO, leaves the rest", async () => {
+  const { normalizeLegacyDateLabel, setActiveDateFormat } = await load();
+  // Always parses slash labels as MDY, independent of the active format.
+  setActiveDateFormat("DMY");
+  assert.strictEqual(normalizeLegacyDateLabel("03/04/2020"), "2020-03-04"); // March 4, not April 3
+  assert.strictEqual(normalizeLegacyDateLabel("07/2020"), "2020-07");
+  // ISO, keywords, and non-dates pass through untouched.
+  assert.strictEqual(normalizeLegacyDateLabel("2020-03-04"), "2020-03-04");
+  assert.strictEqual(normalizeLegacyDateLabel("current"), "current");
+  assert.strictEqual(normalizeLegacyDateLabel(undefined), undefined);
+  setActiveDateFormat("MDY");
 });
 
 test("parseTimelineInput still parses plain and calendar dates", async () => {

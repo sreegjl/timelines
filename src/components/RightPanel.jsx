@@ -6,7 +6,7 @@ import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
-import { parseTimelineInput, fractionalYearToDate, displayDateLabel } from "../utils/dateUtils";
+import { parseTimelineInput, fractionalYearToDate, displayDateLabel, formatDateForInput, formatCalendarDate } from "../utils/dateUtils";
 
 const DYNAMIC_DATE_OPTIONS = [
   { label: "Today", value: "current" },
@@ -218,7 +218,7 @@ export default function RightPanel({
   ]);
 
   const formatEditableDateInput = useCallback((value, label) => {
-    if (label != null && label !== "") return stripEditableEraSuffix(label);
+    if (label != null && label !== "") return stripEditableEraSuffix(formatDateForInput(label));
     if (!Number.isFinite(value)) return value ?? "";
     return stripEditableEraSuffix(formatYear(
       value,
@@ -263,7 +263,7 @@ export default function RightPanel({
     const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) return "";
     const [, year, month, day] = match;
-    return `${month}/${day}/${year}`;
+    return formatCalendarDate(Number(year), Number(month), Number(day), "day");
   }, []);
 
   const handleCalendarPick = useCallback((field, isoValue) => {

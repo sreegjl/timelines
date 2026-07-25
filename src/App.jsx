@@ -35,7 +35,7 @@ import { loadThemeConfig } from "./utils/themeLoader";
 import { countOldFormatThemes, isOldFormatTheme, migrateThemeColors } from "./utils/themeMigration";
 import { getAppSettings, saveAppSettings } from "./utils/appSettings";
 import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keybinds";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid } from "./utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, setActiveDateFormat, getActiveDateFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
 import { parseFilterQuery } from "./utils/filterUtils";
 import "./styles/index.css";
 
@@ -148,6 +148,9 @@ function App() {
 
     const nextElements = elements.map((element) => {
       const next = { ...element };
+      if (typeof next.dateLabel === "string") next.dateLabel = normalizeLegacyDateLabel(next.dateLabel);
+      if (typeof next.startLabel === "string") next.startLabel = normalizeLegacyDateLabel(next.startLabel);
+      if (typeof next.endLabel === "string") next.endLabel = normalizeLegacyDateLabel(next.endLabel);
       const needsGroupId = next.type === "event" || next.type === "span";
       if (needsGroupId && !groupIdSet.has(next.groupId)) {
         const parentGroupId = next.type === "event" && Array.isArray(next.parents)
@@ -174,6 +177,8 @@ function App() {
     });
 
     const file = { ...(data.file || {}), groups };
+    if (typeof file.startLabel === "string") file.startLabel = normalizeLegacyDateLabel(file.startLabel);
+    if (typeof file.endLabel === "string") file.endLabel = normalizeLegacyDateLabel(file.endLabel);
     if (file.useWikipedia && !file.useWiki) {
       file.useWiki = file.useWikipedia;
     }
@@ -208,6 +213,9 @@ function App() {
   const [deleteElementWithImage, setDeleteElementWithImage] = useState(false);
   const [downloadPngTrigger, setDownloadPngTrigger] = useState(0);
   const [timelineData, setTimelineData] = useState(null);
+  // Sync the date-format lens with the open timeline before children render.
+  const fileDateFormat = timelineData?.file?.dateFormat || "MDY";
+  if (getActiveDateFormat() !== fileDateFormat) setActiveDateFormat(fileDateFormat);
   const [currentTimelineId, setCurrentTimelineId] = useState(null);
   const currentTimelineIdRef = useRef(null);
   const [isNewTimelineModalOpen, setIsNewTimelineModalOpen] = useState(false);
@@ -1214,7 +1222,9 @@ function App() {
     mapEraMarker,
     scaleType,
     logScaleFactor,
+    dateFormat,
   }) => {
+    setActiveDateFormat(dateFormat || "MDY");
     const parsedStart = parseTimelineInput(start);
     const parsedEnd = parseTimelineInput(end);
     setTimelineData((prevData) => {
@@ -1276,6 +1286,7 @@ function App() {
         mapEraMarker,
         scaleType,
         logScaleFactor,
+        dateFormat,
       };
 
       // Clean up legacy breaks field when saving with new scaleSections
@@ -1290,6 +1301,7 @@ function App() {
       if (!scaleSections || scaleSections.length === 0) delete nextFile.scaleSections;
       if (!scaleType || scaleType === "default") delete nextFile.scaleType;
       if (!logScaleFactor || scaleType !== "logarithmic") delete nextFile.logScaleFactor;
+      if (!dateFormat || dateFormat === "MDY") delete nextFile.dateFormat;
       if (!layout) delete nextFile.layout;
       if (!branchOrdering) delete nextFile.branchOrdering;
       if (!fixedEventHeight) delete nextFile.fixedEventHeight;

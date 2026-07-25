@@ -1,4 +1,4 @@
-import { daysInMonth, displayDateLabel } from "./dateUtils";
+import { daysInMonth, displayDateLabel, getActiveDateFormat, formatCalendarDate } from "./dateUtils";
 
 export const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -21,15 +21,17 @@ export function formatYear(year, negID, posID, useCalendar = false, hideDecimals
       const month = monthIndex + 1;
       const monthFraction = Math.max(0, fraction * 12 - monthIndex);
       const isMonthPrecision = Math.abs(monthFraction) < 1e-9;
+      const isIso = getActiveDateFormat() === "ISO";
       if (isMonthPrecision) {
-        const label = `${MONTH_LABELS[monthIndex]} ${yearInt}`;
+        // Keep the month-name form for slash formats; ISO gets YYYY-MM.
+        const label = isIso
+          ? formatCalendarDate(yearInt, month, 1, "month", "ISO")
+          : `${MONTH_LABELS[monthIndex]} ${yearInt}`;
         return posID ? `${label} ${posID}` : label;
       }
       const days = daysInMonth(yearInt, month);
       const day = Math.min(days, Math.max(1, Math.floor(monthFraction * days + 1e-9) + 1));
-      const m = String(month).padStart(2, "0");
-      const d = String(day).padStart(2, "0");
-      const label = `${m}/${d}/${yearInt}`;
+      const label = formatCalendarDate(yearInt, month, day, "day");
       return posID ? `${label} ${posID}` : label;
     }
 
@@ -732,8 +734,6 @@ export function layoutEvents({
       if (thumbnail) {
         return { boxHeight: singleLineHeight, isMultiLine: false, boxWidth: EVENT_WIDTH };
       }
-      const visibleTags = getVisiblePinnedTags(tags);
-      const showDateRow = hideYears !== true || visibleTags.length > 0;
       let h = singleLineHeight;
       if (eventBorderStyle === "none") h -= probeBorderSize;
       return { boxHeight: h, isMultiLine: false, boxWidth: EVENT_WIDTH };
