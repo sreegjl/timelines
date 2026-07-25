@@ -12,6 +12,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
   const [detailSlider, setDetailSlider] = useState(50);
   const [useSpreadsheet, setUseSpreadsheet] = useState(false);
   const [useMaps, setUseMaps] = useState(false);
+  const [useWiki, setUseWiki] = useState(false);
   const [showDetailTooltip, setShowDetailTooltip] = useState(false);
   const [detailTooltipLeft, setDetailTooltipLeft] = useState(0);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -99,6 +100,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
       endLabel: parsedEnd.label,
       useSpreadsheet,
       useMaps,
+      useWiki,
     });
 
     if (result?.error) {
@@ -115,6 +117,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
     setDetailSlider(50);
     setUseSpreadsheet(false);
     setUseMaps(false);
+    setUseWiki(false);
     setValidationErrors([]);
   };
 
@@ -127,6 +130,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
     setDetailSlider(50);
     setUseSpreadsheet(false);
     setUseMaps(false);
+    setUseWiki(false);
     setValidationErrors([]);
     onClose();
   };
@@ -282,7 +286,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Maps</div>
+              <div className="settings-row-label">Map View</div>
               <div className="settings-row-description">Enable adding coordinates to events, eras, and spans to view them on a map.</div>
             </div>
             <div className="settings-row-right">
@@ -291,6 +295,23 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
                   type="checkbox"
                   checked={useMaps}
                   onChange={(e) => setUseMaps(e.target.checked)}
+                />
+                <span className="settings-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div className="settings-row">
+            <div className="settings-row-left">
+              <div className="settings-row-label">Wiki Integration</div>
+              <div className="settings-row-description">Enable attaching MediaWiki articles to timeline elements.</div>
+            </div>
+            <div className="settings-row-right">
+              <label className="settings-toggle">
+                <input
+                  type="checkbox"
+                  checked={useWiki}
+                  onChange={(e) => setUseWiki(e.target.checked)}
                 />
                 <span className="settings-toggle-slider"></span>
               </label>

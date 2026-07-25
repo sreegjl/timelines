@@ -1592,6 +1592,7 @@ function App() {
           branchOrdering: timelineConfig.branchOrdering || "later-first",
           useSpreadsheet: timelineConfig.useSpreadsheet || undefined,
           useMaps: timelineConfig.useMaps || undefined,
+          useWiki: timelineConfig.useWiki || undefined,
           groups: [DEFAULT_GROUP],
         },
         elements: []
