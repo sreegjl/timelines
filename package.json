@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "dompurify": "^3.4.11",
-    "electron-updater": "^6.3.9",
+    "electron-updater": "^6.8.9",
     "fflate": "^0.8.3",
     "html2canvas": "^1.4.1",
     "isomorphic-git": "^1.38.6",
@@ -83,7 +83,7 @@
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "electron": "^40.8.5",
-    "electron-builder": "^26.8.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
