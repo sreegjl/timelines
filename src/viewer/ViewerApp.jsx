@@ -10,6 +10,7 @@ import { isZipBuffer, readPackage } from "../utils/packageReader";
 import { setViewerPackage, getPackageNote, resolvePackageAssetSrc } from "../utils/viewerPackageStore";
 import { ensureUniqueElementIds } from "../utils/idUtils";
 import { setActiveDateFormat, getActiveDateFormat, normalizeLegacyDateLabel } from "../utils/dateUtils";
+import { parseFilterQuery } from "../utils/filterUtils";
 
 const DEFAULT_GROUP_ID = "g-main";
 const SIDEBAR_WIDTH = 350;
@@ -20,6 +21,34 @@ const MIN_CANVAS_WIDTH = 280;
 // Written by the site's theme picker (same origin); only the landing screen follows it
 const WEBSITE_THEME_KEY = "timelines-website-theme";
 const GH_RAW_BASE = "https://raw.githubusercontent.com/";
+
+// The app stores these on the file; the viewer can't write files, so they live in localStorage
+const PANEL_PREFS_KEY = "timelines-viewer-panel-prefs";
+const PANEL_PREF_KEYS = ["panelSortField", "panelSortOrder", "panelGroupMode", "nestEraSubGroups"];
+
+const panelPrefsId = (file) => String(file?.uid || file?.id || file?.title || "");
+
+function readAllPanelPrefs() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PANEL_PREFS_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function readPanelPrefs(id) {
+  if (!id) return null;
+  const stored = readAllPanelPrefs()[id];
+  return stored && typeof stored === "object" ? stored : null;
+}
+
+function writePanelPrefs(id, prefs) {
+  if (!id) return;
+  try {
+    window.localStorage.setItem(PANEL_PREFS_KEY, JSON.stringify({ ...readAllPanelPrefs(), [id]: prefs }));
+  } catch { /* storage unavailable or full */ }
+}
 
 // Accepts raw.githubusercontent.com and github.com blob/raw links; returns
 // [user, repo, ref, ...path] or null
@@ -188,7 +217,12 @@ export default function ViewerApp() {
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightMaximized, setIsRightMaximized] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const [chipQuery, setChipQuery] = useState(null);
   const fileInputRef = useRef(null);
+  const timelineViewRef = useRef(null);
+  const restoredPanelKeyRef = useRef(null);
+
+  const parsedChipQuery = useMemo(() => parseFilterQuery(chipQuery), [chipQuery]);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -372,6 +406,35 @@ export default function ViewerApp() {
   const handlePatchFile = useCallback((patch) => {
     setTimelineData((prev) => prev ? { ...prev, file: { ...(prev.file ?? {}), ...patch } } : prev);
   }, []);
+
+  const handleCenterGroup = useCallback((groupId) => {
+    timelineViewRef.current?.scrollToGroup(groupId);
+  }, []);
+
+  const panelPrefsKey = panelPrefsId(timelineData?.file);
+  const {
+    panelSortField,
+    panelSortOrder,
+    panelGroupMode,
+    nestEraSubGroups,
+  } = timelineData?.file ?? {};
+
+  useEffect(() => {
+    if (!panelPrefsKey || restoredPanelKeyRef.current === panelPrefsKey) return;
+    restoredPanelKeyRef.current = panelPrefsKey;
+    const stored = readPanelPrefs(panelPrefsKey);
+    if (stored && Object.keys(stored).length > 0) handlePatchFile(stored);
+  }, [panelPrefsKey, handlePatchFile]);
+
+  // Guarded on the restore above, or the first pass saves defaults over the stored prefs
+  useEffect(() => {
+    if (!panelPrefsKey || restoredPanelKeyRef.current !== panelPrefsKey) return;
+    const prefs = {};
+    for (const [key, value] of Object.entries({ panelSortField, panelSortOrder, panelGroupMode, nestEraSubGroups })) {
+      if (value !== undefined) prefs[key] = value;
+    }
+    writePanelPrefs(panelPrefsKey, prefs);
+  }, [panelPrefsKey, panelSortField, panelSortOrder, panelGroupMode, nestEraSubGroups]);
 
   const handleUpdateGroup = useCallback((groupId, patch) => {
     setTimelineData((prev) => {
@@ -571,6 +634,7 @@ export default function ViewerApp() {
               onSelect={handleSelect}
               timelineData={filteredTimelineData}
               allElements={timelineData.elements}
+              chipFilter={parsedChipQuery}
               activeTags={activeTags}
               hiddenTags={hiddenTags}
               onToggleTag={handleToggleTag}
@@ -581,6 +645,7 @@ export default function ViewerApp() {
               tagColors={tagColors}
               onPatchFile={handlePatchFile}
               onUpdateGroup={handleUpdateGroup}
+              onCenterGroup={handleCenterGroup}
             />
           </ErrorBoundary>
         </aside>
@@ -613,6 +678,7 @@ export default function ViewerApp() {
           <ErrorBoundary name="Timeline">
             <TimelineView
               readOnly
+              ref={timelineViewRef}
               selectedId={selectedId}
               onSelect={handleSelect}
               timelineData={filteredTimelineData}
@@ -629,6 +695,7 @@ export default function ViewerApp() {
               pinnedTags={pinnedTags}
               onTogglePinnedTag={handleTogglePinnedTag}
               tagColors={tagColors}
+              onChipQueryChange={setChipQuery}
               onSetViewMode={timelineData.file?.useSpreadsheet ? setViewMode : undefined}
             />
           </ErrorBoundary>
