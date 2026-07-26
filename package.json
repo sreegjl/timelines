@@ -1,7 +1,7 @@
 {
   "name": "timelines",
   "private": true,
-  "version": "0.6.0-alpha.2",
+  "version": "0.7.0-alpha.1",
   "description": "A free, open-source app for creating interactive timelines for worldbuilding and history.",
   "author": "sreegjl",
   "type": "module",

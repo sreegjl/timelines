@@ -1773,7 +1773,7 @@ export default function HomePage({
                   <>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Version 0.6.0-alpha.2</div>
+                        <div className="settings-row-label">Version 0.7.0-alpha.1</div>
                         <div className="settings-row-description">
                           {updateStatus === 'available'
                             ? 'A new update is available. Would you like to download it?'
@@ -1783,7 +1783,7 @@ export default function HomePage({
                             ? 'Update check failed'
                             : updateStatus === 'not-available'
                             ? 'You have the latest version installed.'
-                            : <>See what's new in <a href="https://github.com/sreegjl/timelines/releases/tag/v0.6.0-alpha.2" target="_blank" rel="noopener noreferrer">v0.6.0-alpha.2</a>.</>}
+                            : <>See what's new in <a href="https://github.com/sreegjl/timelines/releases/tag/v0.7.0-alpha.1" target="_blank" rel="noopener noreferrer">v0.7.0-alpha.1</a>.</>}
                         </div>
                       </div>
                       <div className="settings-row-right">

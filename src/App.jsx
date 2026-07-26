@@ -1511,7 +1511,7 @@ function App() {
           uid: generateStorageUid(timelineId),
           type: "timeline",
         title: timelineConfig.title,
-        appVersion: "0.6.0-alpha.2",
+        appVersion: "0.7.0-alpha.1",
         start: timelineConfig.start,
         end: timelineConfig.end,
           detailLevel: timelineConfig.detailLevel,
@@ -2145,7 +2145,7 @@ function App() {
   if (!timelineData) {
     return (
       <>
-        <TopBar title="Timelines" version="v0.6.0-alpha.2" />
+        <TopBar title="Timelines" version="v0.7.0-alpha.1" />
         <div className={`app-shell ${isElectron ? 'with-title-bar' : ''}`}>
           <HomePage
             onSelectTimeline={handleLoadTimeline}
@@ -2209,7 +2209,6 @@ function App() {
         title={timelineData.file?.title || "Timelines"}
         isLeftCollapsed={isLeftCollapsed}
         onToggleLeft={viewMode !== "spreadsheet" ? () => setIsLeftCollapsed((v) => !v) : undefined}
-        showRightToggle={Boolean(selectedId) && viewMode !== "spreadsheet"}
         isRightCollapsed={!isRightPanelVisible}
         onToggleRight={viewMode !== "spreadsheet" ? () => {
           if (rightLockState === "closed") setRightLockState(null);

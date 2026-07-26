@@ -5,7 +5,6 @@ export default function TopBar({
   version,
   isLeftCollapsed,
   onToggleLeft,
-  showRightToggle,
   isRightCollapsed,
   onToggleRight,
   rightLockState,
