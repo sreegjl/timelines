@@ -96,6 +96,49 @@ export default function SettingsModal({
   const lastFilePathRef = useRef(null);
   const backdropPointerDownRef = useRef(false);
   const onUpdateTimelineRef = useRef(onUpdateTimeline);
+  // Baseline snapshot taken when the modal opens; saves diff against it.
+  const optionBaselineRef = useRef(null);
+
+  const collectOptionSettings = () => ({
+    detailLevel: Number(detailLevel),
+    tickDensity: Number(tickDensity) !== 1 ? Number(tickDensity) : undefined,
+    negID,
+    posID,
+    theme,
+    font: fontFamily,
+    useCalendar: useCalendar || undefined,
+    dateFormat: dateFormat !== "MDY" ? dateFormat : undefined,
+    scaleType: scaleType !== "default" ? scaleType : undefined,
+    logScaleFactor: scaleType === "logarithmic" ? logScaleFactor : undefined,
+    layout,
+    branchOrdering,
+    fixedEventHeight,
+    eventWidth,
+    eventFontSize,
+    thinConnectors,
+    hideSpanConnectors,
+    eventLinesToGroupBottom,
+    hideDecimals,
+    showGrid,
+    showTodayLine,
+    spanColorEvents,
+    disableGroups,
+    panelGroupMode,
+    nestEraSubGroups,
+    autoHideEmptyGroups,
+    showPopularTags,
+    keepSelection,
+    useSecondaryBg,
+    useWiki,
+    useSpreadsheet,
+    useMaps,
+    mapTileUrl,
+    mapLimitToViewportYear,
+    mapEventMarker,
+    mapSpanMarker,
+    mapEraMarker,
+    __scaleKey: JSON.stringify(scaleSections),
+  });
 
   // Convert editable scale sections (strings) to numeric for saving
   const saveScaleSections = (editable = []) => {
@@ -286,6 +329,13 @@ export default function SettingsModal({
     }
   }, [layoutOptions, layout]);
 
+  useEffect(() => {
+    if (isOpen && isInitialized) {
+      optionBaselineRef.current = collectOptionSettings();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isInitialized]);
+
   // Debounced auto-save whenever values change (but not on initial load)
   useEffect(() => {
     if (!isOpen || !isInitialized) return;
@@ -338,51 +388,23 @@ export default function SettingsModal({
           : parsedEnd.value;
       const parsedScaleSections = saveScaleSections(scaleSections);
       if (onUpdateTimelineRef.current) {
-        onUpdateTimelineRef.current({
+        // Core fields (rename/parsing) are always sent; the rest only when changed.
+        const patch = {
           title: committedTitle,
           start: startValue,
           end: endValue,
-          detailLevel: Number(detailLevel),
-          tickDensity: Number(tickDensity) !== 1 ? Number(tickDensity) : undefined,
-          negID,
-          posID,
-          theme,
-          font: fontFamily,
           startLabel: parsedStart.label,
           endLabel: parsedEnd.label,
-          useCalendar: useCalendar || undefined,
-          dateFormat: dateFormat !== "MDY" ? dateFormat : undefined,
-          scaleSections: parsedScaleSections,
-          scaleType: scaleType !== "default" ? scaleType : undefined,
-          logScaleFactor: scaleType === "logarithmic" ? logScaleFactor : undefined,
-          layout,
-          branchOrdering,
-          fixedEventHeight,
-          eventWidth,
-          eventFontSize,
-          thinConnectors,
-          hideSpanConnectors,
-          eventLinesToGroupBottom,
-          hideDecimals,
-          showGrid,
-          showTodayLine,
-          spanColorEvents,
-          disableGroups,
-          panelGroupMode,
-          nestEraSubGroups,
-          autoHideEmptyGroups,
-          showPopularTags,
-          keepSelection,
-          useSecondaryBg,
-          useWiki,
-          useSpreadsheet,
-          useMaps,
-          mapTileUrl,
-          mapLimitToViewportYear,
-          mapEventMarker,
-          mapSpanMarker,
-          mapEraMarker,
-        });
+        };
+        const current = collectOptionSettings();
+        const baseline = optionBaselineRef.current || {};
+        for (const key of Object.keys(current)) {
+          if (key === "__scaleKey") continue;
+          if (!Object.is(current[key], baseline[key])) patch[key] = current[key];
+        }
+        if (current.__scaleKey !== baseline.__scaleKey) patch.scaleSections = parsedScaleSections;
+        onUpdateTimelineRef.current(patch);
+        optionBaselineRef.current = current;
       }
     }, 300);
 

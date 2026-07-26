@@ -1179,52 +1179,10 @@ function App() {
     setSelectedId(null);
   };
 
-  const handleUpdateTimeline = useCallback(({
-    title,
-    start,
-    end,
-    detailLevel,
-    tickDensity,
-    negID,
-    posID,
-    theme,
-    font,
-    startLabel,
-    endLabel,
-    useCalendar,
-    scaleSections,
-    layout,
-    branchOrdering,
-    fixedEventHeight,
-    eventWidth,
-    eventFontSize,
-    thinConnectors,
-    hideSpanConnectors,
-    eventLinesToGroupBottom,
-    hideDecimals,
-    showGrid,
-    showTodayLine,
-    spanColorEvents,
-    disableGroups,
-    panelGroupMode,
-    nestEraSubGroups,
-    autoHideEmptyGroups,
-    showPopularTags,
-    keepSelection,
-    useSecondaryBg,
-    useWiki,
-    useSpreadsheet,
-    useMaps,
-    mapTileUrl,
-    mapLimitToViewportYear,
-    mapEventMarker,
-    mapSpanMarker,
-    mapEraMarker,
-    scaleType,
-    logScaleFactor,
-    dateFormat,
-  }) => {
-    setActiveDateFormat(dateFormat || "MDY");
+  const handleUpdateTimeline = useCallback((patch) => {
+    // Patch: only the settings the user changed are present, so untouched fields aren't clobbered.
+    const { title, start, end } = patch;
+    if ("dateFormat" in patch) setActiveDateFormat(patch.dateFormat || "MDY");
     const parsedStart = parseTimelineInput(start);
     const parsedEnd = parseTimelineInput(end);
     setTimelineData((prevData) => {
@@ -1232,105 +1190,65 @@ function App() {
       const nextTimelineId = title
         ? generateIdFromTitle(title, "timeline").replace(/^timeline-/, "")
         : oldTimelineId;
-      const applyMonthSnap = useCalendar === true;
+      const effUseCalendar = ("useCalendar" in patch ? patch.useCalendar : prevData.file?.useCalendar) === true;
       const startValue = parsedStart.value ?? prevData.file.start;
       const endValue = parsedEnd.value ?? prevData.file.end;
       const nextFile = {
         ...prevData.file,
+        ...patch,
         id: `${nextTimelineId}-timeline`,
-        title,
         start:
-          applyMonthSnap && parsedStart.precision !== "day"
+          effUseCalendar && parsedStart.precision !== "day"
             ? snapToMonthGrid(startValue)
             : startValue,
         end:
-          applyMonthSnap && parsedEnd.precision !== "day"
+          effUseCalendar && parsedEnd.precision !== "day"
             ? snapToMonthGrid(endValue)
             : endValue,
-        detailLevel,
-        tickDensity,
-        negID,
-        posID,
-        theme,
-        font,
-        startLabel,
-        endLabel,
-        useCalendar: useCalendar || undefined,
-        scaleSections,
-        layout,
-        branchOrdering,
-        fixedEventHeight,
-        eventWidth,
-        eventFontSize,
-        thinConnectors,
-        hideSpanConnectors,
-        eventLinesToGroupBottom,
-        hideDecimals,
-        showGrid,
-        showTodayLine,
-        spanColorEvents,
-        disableGroups,
-        panelGroupMode,
-        nestEraSubGroups,
-        autoHideEmptyGroups,
-        showPopularTags,
-        keepSelection,
-        useSecondaryBg,
-        useWiki,
-        useSpreadsheet,
-        useMaps,
-        mapTileUrl,
-        mapLimitToViewportYear,
-        mapEventMarker,
-        mapSpanMarker,
-        mapEraMarker,
-        scaleType,
-        logScaleFactor,
-        dateFormat,
       };
 
-      // Clean up legacy breaks field when saving with new scaleSections
+      // Normalize the merged file; operate on nextFile so untouched fields are preserved.
       delete nextFile.breaks;
-      if (!startLabel) delete nextFile.startLabel;
-      if (!endLabel) delete nextFile.endLabel;
+      if (!nextFile.startLabel) delete nextFile.startLabel;
+      if (!nextFile.endLabel) delete nextFile.endLabel;
       delete nextFile.useMonths;
       delete nextFile.useDays;
       delete nextFile.datePrecision;
       if (!nextFile.useCalendar) delete nextFile.useCalendar;
-      if (!tickDensity || tickDensity === 1) delete nextFile.tickDensity;
-      if (!scaleSections || scaleSections.length === 0) delete nextFile.scaleSections;
-      if (!scaleType || scaleType === "default") delete nextFile.scaleType;
-      if (!logScaleFactor || scaleType !== "logarithmic") delete nextFile.logScaleFactor;
-      if (!dateFormat || dateFormat === "MDY") delete nextFile.dateFormat;
-      if (!layout) delete nextFile.layout;
-      if (!branchOrdering) delete nextFile.branchOrdering;
-      if (!fixedEventHeight) delete nextFile.fixedEventHeight;
+      if (!nextFile.tickDensity || nextFile.tickDensity === 1) delete nextFile.tickDensity;
+      if (!nextFile.scaleSections || nextFile.scaleSections.length === 0) delete nextFile.scaleSections;
+      if (!nextFile.scaleType || nextFile.scaleType === "default") delete nextFile.scaleType;
+      if (!nextFile.logScaleFactor || nextFile.scaleType !== "logarithmic") delete nextFile.logScaleFactor;
+      if (!nextFile.dateFormat || nextFile.dateFormat === "MDY") delete nextFile.dateFormat;
+      if (!nextFile.layout) delete nextFile.layout;
+      if (!nextFile.branchOrdering) delete nextFile.branchOrdering;
+      if (!nextFile.fixedEventHeight) delete nextFile.fixedEventHeight;
       delete nextFile.compactEvents;
       delete nextFile.eventHeight;
-      if (!eventWidth || eventWidth === 150) delete nextFile.eventWidth;
-      if (!eventFontSize || eventFontSize === 10) delete nextFile.eventFontSize;
-      if (!thinConnectors) delete nextFile.thinConnectors;
-      if (!eventLinesToGroupBottom) delete nextFile.eventLinesToGroupBottom;
-      if (!hideDecimals) delete nextFile.hideDecimals;
-      if (!showGrid) delete nextFile.showGrid;
-      if (!showTodayLine) delete nextFile.showTodayLine;
-      if (!spanColorEvents) delete nextFile.spanColorEvents;
-      if (!disableGroups) delete nextFile.disableGroups;
-      if (!panelGroupMode || panelGroupMode === "default") delete nextFile.panelGroupMode;
-      if (!nestEraSubGroups) delete nextFile.nestEraSubGroups;
-      if (!autoHideEmptyGroups) delete nextFile.autoHideEmptyGroups;
+      if (!nextFile.eventWidth || nextFile.eventWidth === 150) delete nextFile.eventWidth;
+      if (!nextFile.eventFontSize || nextFile.eventFontSize === 10) delete nextFile.eventFontSize;
+      if (!nextFile.thinConnectors) delete nextFile.thinConnectors;
+      if (!nextFile.eventLinesToGroupBottom) delete nextFile.eventLinesToGroupBottom;
+      if (!nextFile.hideDecimals) delete nextFile.hideDecimals;
+      if (!nextFile.showGrid) delete nextFile.showGrid;
+      if (!nextFile.showTodayLine) delete nextFile.showTodayLine;
+      if (!nextFile.spanColorEvents) delete nextFile.spanColorEvents;
+      if (!nextFile.disableGroups) delete nextFile.disableGroups;
+      if (!nextFile.panelGroupMode || nextFile.panelGroupMode === "default") delete nextFile.panelGroupMode;
+      if (!nextFile.nestEraSubGroups) delete nextFile.nestEraSubGroups;
+      if (!nextFile.autoHideEmptyGroups) delete nextFile.autoHideEmptyGroups;
       delete nextFile.useEraGroupsInPanel;
       delete nextFile.useSpanGroupsInPanel;
-      if (!keepSelection) delete nextFile.keepSelection;
-      if (!useWiki) delete nextFile.useWiki;
-      if (!useSpreadsheet) delete nextFile.useSpreadsheet;
-      if (!useMaps) delete nextFile.useMaps;
-      if (!mapTileUrl) delete nextFile.mapTileUrl;
-      if (!mapLimitToViewportYear) delete nextFile.mapLimitToViewportYear;
-      if (!mapEventMarker || mapEventMarker === "pin") delete nextFile.mapEventMarker;
-      if (!mapSpanMarker || mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
-      if (!mapEraMarker || mapEraMarker === "diamond") delete nextFile.mapEraMarker;
-      if (!font || String(font).toLowerCase() === "default") delete nextFile.font;
+      if (!nextFile.keepSelection) delete nextFile.keepSelection;
+      if (!nextFile.useWiki) delete nextFile.useWiki;
+      if (!nextFile.useSpreadsheet) delete nextFile.useSpreadsheet;
+      if (!nextFile.useMaps) delete nextFile.useMaps;
+      if (!nextFile.mapTileUrl) delete nextFile.mapTileUrl;
+      if (!nextFile.mapLimitToViewportYear) delete nextFile.mapLimitToViewportYear;
+      if (!nextFile.mapEventMarker || nextFile.mapEventMarker === "pin") delete nextFile.mapEventMarker;
+      if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
+      if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
+      if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
 
       const updatedData = {
         ...prevData,
