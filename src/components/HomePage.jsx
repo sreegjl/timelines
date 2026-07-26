@@ -99,6 +99,26 @@ function formatDateTime(value) {
   return new Date(ms).toLocaleString();
 }
 
+// Version history stamps: minutes/hours today, "Yesterday", then a short date
+function formatHistoryTime(value) {
+  if (!value) return "";
+  const ms = Date.parse(value);
+  if (!Number.isFinite(ms)) return "";
+  const mins = Math.floor((Date.now() - ms) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  const date = new Date(ms);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, sameYear
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+}
+
 function formatMirrorBytes(n) {
   if (n == null) return "";
   const kb = 1024;
@@ -2799,7 +2819,11 @@ export default function HomePage({
       {gitSyncHistoryDialog && (
         <div className="settings-backdrop" onClick={() => setGitSyncHistoryDialog(null)}>
           <div className="folder-modal git-sync-modal git-sync-history-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="git-sync-modal-title">Version History: {gitSyncHistoryDialog.file?.name}</div>
+            <div className="git-sync-modal-title git-sync-history-title">
+              <History size={16} />
+              <span>Version History</span>
+            </div>
+            <div className="git-sync-history-subtitle">{gitSyncHistoryDialog.file?.name}</div>
             {gitSyncHistoryDialog.loading && (
               <p className="folder-modal-text">Loading history…</p>
             )}
@@ -2814,10 +2838,14 @@ export default function HomePage({
                   <div className="git-sync-history-list">
                     {gitSyncHistoryDialog.history.entries.map((entry) => (
                       <div key={entry.oid} className="git-sync-history-item">
+                        <span className="git-sync-history-dot" aria-hidden="true" />
                         <div className="git-sync-history-main">
                           <div className="git-sync-history-subject">{entry.subject || entry.oid.slice(0, 7)}</div>
-                          <div className="git-sync-history-meta">
-                            {formatDateTime(entry.committedAt)} · {entry.authorName || "Unknown author"} · {entry.oid.slice(0, 7)}
+                          <div
+                            className="git-sync-history-meta"
+                            title={`${entry.oid.slice(0, 7)} · ${formatDateTime(entry.committedAt)}`}
+                          >
+                            {entry.authorName || "Unknown author"} · {formatHistoryTime(entry.committedAt)}
                           </div>
                           {entry.summary && (
                             <div className="git-sync-history-summary">{entry.summary}</div>

@@ -364,16 +364,35 @@
   text-transform: uppercase;
 }
 
-.git-sync-modal {
+/* Two classes so these beat .folder-modal's 320px width regardless of source order */
+.folder-modal.git-sync-modal {
   width: min(760px, calc(100vw - 32px));
   max-width: 760px;
   max-height: min(78vh, 760px);
   overflow: auto;
 }
 
-.git-sync-history-modal {
-  width: min(860px, calc(100vw - 32px));
-  max-width: 860px;
+.git-sync-modal::-webkit-scrollbar,
+.git-sync-history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.git-sync-modal::-webkit-scrollbar-thumb,
+.git-sync-history-list::-webkit-scrollbar-thumb {
+  background-color: var(--accent-color);
+  border-radius: 3px;
+}
+
+.git-sync-modal::-webkit-scrollbar-track,
+.git-sync-history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* The card clips; the entry list is what scrolls, so the bar stays inside the padding */
+.folder-modal.git-sync-history-modal {
+  width: min(1040px, calc(100vw - 32px));
+  max-width: 1040px;
+  overflow: hidden;
 }
 
 .git-sync-modal-title {
@@ -410,22 +429,48 @@
   color: var(--text-primary);
 }
 
+.git-sync-history-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.git-sync-history-title svg {
+  color: var(--link-color);
+  flex-shrink: 0;
+}
+
+.git-sync-history-subtitle {
+  margin-top: -6px;
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
+}
+
 .git-sync-history-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 16px;
+  margin-top: 4px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .git-sync-history-item {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border-color);
+  gap: 10px;
+}
+
+/* Timeline bullet, aligned to the cap height of the subject line */
+.git-sync-history-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--link-color);
+  flex-shrink: 0;
 }
 
 .git-sync-history-main {
@@ -433,7 +478,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .git-sync-history-subject {
