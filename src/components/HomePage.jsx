@@ -2125,7 +2125,7 @@ export default function HomePage({
                               <div className="git-sync-step-main">
                                 <div className="git-sync-step-title">Create a repository</div>
                                 <div className="git-sync-step-text">
-                                  Create an empty repository on GitHub or another Git host. This is where your synced library will live.
+                                  Create an empty repository on GitHub. This is where your synced library will live.
                                 </div>
                               </div>
                             </div>
