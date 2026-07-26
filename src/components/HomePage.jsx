@@ -2365,7 +2365,7 @@ export default function HomePage({
                             <div className="settings-row">
                               <div className="settings-row-left">
                                 <div className="settings-row-label">Generate README</div>
-                                <div className="settings-row-description">Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only.</div>
+                                <div className="settings-row-description">Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only. A README you wrote yourself is never touched.</div>
                               </div>
                               <div className="settings-row-right">
                                 <label className="settings-toggle">
