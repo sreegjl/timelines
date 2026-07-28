@@ -602,6 +602,8 @@ export function layoutEvents({
   belowLine = false,
   useCalendar = false,
   hideDecimals = false,
+  probeContainer = null,
+  fontEpoch = 0,
 }) {
   const laidOut = [...events]
     .sort((a, b) => a.date - b.date)
@@ -705,7 +707,9 @@ export function layoutEvents({
   if (fontFamily) {
     probe.style.fontFamily = fontFamily;
   }
-  document.body.appendChild(probe);
+  // Measure inside the timeline container so ancestor-scoped and theme CSS applies
+  const probeHost = probeContainer || document.body;
+  probeHost.appendChild(probe);
 
   // Measure the fixed single-line height from CSS
   probeTitle.textContent = "X";
@@ -849,9 +853,11 @@ export function layoutEvents({
   }
 
   // Cache by measurement inputs; probe-derived heights in the config key catch CSS/theme changes
+  // fontEpoch catches webfonts that change glyph widths without changing line height
   const configKey = JSON.stringify([
     fixedEventHeight, eventWidth, eventFontSize, fontFamily || "", pinnedTags,
     singleLineHeight, noYearSingleLineHeight, textContentHeight, probeBorderSize,
+    fontEpoch, probeContainer ? 1 : 0,
   ]);
   if (configKey !== measureCacheConfig) {
     measureCacheConfig = configKey;
@@ -932,7 +938,7 @@ export function layoutEvents({
     };
   });
 
-  document.body.removeChild(probe);
+  probeHost.removeChild(probe);
 
   return finalEvents;
 }
