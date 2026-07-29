@@ -12,6 +12,7 @@ import {
   getReadableTextColor,
   MONTH_LABELS,
 } from "../utils/timelineUtils";
+import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
@@ -20,6 +21,15 @@ import { ICON_MAP } from "../config/elementIcons";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
 const FILTER_HISTORY_MAX = 8;
+
+const FONT_FALLBACK_STACK = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const FONT_WAIT_MS = 3000;
+
+const readAppFontStack = () => {
+  const root = document.documentElement;
+  return root.style.getPropertyValue("--app-font-family").trim()
+    || getComputedStyle(root).getPropertyValue("--app-font-family").trim();
+};
 
 const FILTER_TYPE_TERMS = ["is:event", "is:span", "is:era", "has:coords"];
 const FILTER_DATE_OPS = [[">", ">"], [">=", "≥"], ["<", "<"], ["<=", "≤"]];
@@ -463,6 +473,34 @@ const TimelineView = forwardRef(function TimelineView({
     );
   }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery]);
 
+  const [appFontStack, setAppFontStack] = useState(() => readAppFontStack());
+  useEffect(() => {
+    const sync = () => setAppFontStack((prev) => {
+      const next = readAppFontStack();
+      return next === prev ? prev : next;
+    });
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const fileFontSetting = timelineData?.file?.font;
+  const resolvedFont = useMemo(() => {
+    if (fileFontSetting && String(fileFontSetting).toLowerCase() !== "default") {
+      const safeName = String(fileFontSetting).replace(/([\\"])/g, "\\$1");
+      return `"${safeName}", ${FONT_FALLBACK_STACK}`;
+    }
+    return appFontStack || FONT_FALLBACK_STACK;
+  }, [fileFontSetting, appFontStack]);
+
+  const [fontReady, setFontReady] = useState(() => isFontReady(document.fonts, resolvedFont));
+  useEffect(() => {
+    if (isFontReady(document.fonts, resolvedFont)) { setFontReady(true); return undefined; }
+    setFontReady(false);
+    return watchFontLoad(document.fonts, resolvedFont, () => setFontReady(true), FONT_WAIT_MS);
+  }, [resolvedFont]);
+
   const {
     file,
     groupLayouts,
@@ -709,7 +747,7 @@ const TimelineView = forwardRef(function TimelineView({
     const yearToPx = (year) =>
       (compressYear(year) - compressedMin) * PX_PER_YEAR + TIMELINE_PADDING;
 
-    if (showMap) {
+    if (showMap || !fontReady) {
       return {
         file,
         groupLayouts: [],
@@ -782,17 +820,6 @@ const TimelineView = forwardRef(function TimelineView({
     // eras
     const ERA_OFFSET = 34;
     const ERA_BAND_HEIGHT = 27; // must match .era-item height so fill/stack math lines up exactly
-
-    // Resolve the font for event measurement (file.font overrides theme/default)
-    const fileFontSetting = file.font;
-    const fallbackFont = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    let resolvedFont;
-    if (fileFontSetting && String(fileFontSetting).toLowerCase() !== "default") {
-      const safeName = String(fileFontSetting).replace(/([\\"])/g, "\\$1");
-      resolvedFont = `"${safeName}", ${fallbackFont}`;
-    } else {
-      resolvedFont = getComputedStyle(document.documentElement).getPropertyValue("--app-font-family").trim() || fallbackFont;
-    }
 
     const groupsByStack = groups
       .filter((group) => group.visible !== false)
@@ -1189,7 +1216,7 @@ const TimelineView = forwardRef(function TimelineView({
       decompressYear,
       evFontSize,
     };
-  }, [timelineData, pinnedTags, showMap, parsedChipQuery]);
+  }, [timelineData, pinnedTags, showMap, parsedChipQuery, resolvedFont, fontReady]);
 
   const ticks = useMemo(() => {
     const minYear = file?.start;
@@ -3218,6 +3245,7 @@ const TimelineView = forwardRef(function TimelineView({
       onClick={(e) => { if (!file?.keepSelection && (e.target === e.currentTarget || e.target.closest(".timeline, .grid-year-labels-overlay"))) handleSelect(null); }}
       onContextMenu={handleContextMenu}
     >
+      {!fontReady && !showMap && <div className="timeline-loading">Loading…</div>}
       {!showMap && (
         <>
           {(file.showGrid || todayMarkerPx != null) && (

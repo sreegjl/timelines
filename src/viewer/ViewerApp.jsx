@@ -165,6 +165,20 @@ function applyViewerTheme(themes, key, fileFont) {
   document.documentElement.style.setProperty("--app-font-family", stack);
 }
 
+export function applyLandingTheme() {
+  const themeConfig = loadThemeConfig();
+  const bundled = themeConfig.themes || {};
+  const defaultKey = getInitialThemeKey(themeConfig);
+  // URL override beats the website theme so deep links don't flash the site theme while loading
+  const urlLower = String(urlThemeOverride() || "").toLowerCase();
+  const urlMatch = Object.keys(bundled).find((k) => k.toLowerCase() === urlLower);
+  let siteTheme = null;
+  try {
+    siteTheme = window.localStorage.getItem(WEBSITE_THEME_KEY);
+  } catch { /* storage unavailable */ }
+  applyViewerTheme(bundled, urlMatch || (siteTheme && bundled[siteTheme] ? siteTheme : defaultKey), null);
+}
+
 // Local thumbnails and notes live in desktop-only folders and can't resolve in
 // the browser. When a packaged .timeline is loaded they're served from the
 // in-memory package store (blob URLs / zipped markdown); otherwise those
@@ -236,14 +250,7 @@ export default function ViewerApp() {
     const defaultKey = getInitialThemeKey(themeConfig);
 
     if (!timelineData) {
-      // URL override beats the website theme so deep links don't flash the site theme while loading
-      const urlLower = String(urlThemeOverride() || "").toLowerCase();
-      const urlMatch = Object.keys(bundled).find((k) => k.toLowerCase() === urlLower);
-      let siteTheme = null;
-      try {
-        siteTheme = window.localStorage.getItem(WEBSITE_THEME_KEY);
-      } catch { /* storage unavailable */ }
-      applyViewerTheme(bundled, urlMatch || (siteTheme && bundled[siteTheme] ? siteTheme : defaultKey), null);
+      applyLandingTheme();
       return;
     }
 

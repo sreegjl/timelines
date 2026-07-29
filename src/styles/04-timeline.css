@@ -1091,3 +1091,15 @@
   border-radius: 4px;
   padding: 1px 5px;
 }
+
+.timeline-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: var(--text-sm, 13px);
+  pointer-events: none;
+}
