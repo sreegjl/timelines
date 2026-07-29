@@ -6,6 +6,16 @@
   background: var(--app-bg, var(--surface));
 }
 
+.viewer-loading {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: var(--app-bg, var(--surface));
+  font-size: var(--text-sm, 13px);
+}
+
 .viewer-landing-card {
   max-width: 420px;
   padding: 40px 44px;
@@ -89,4 +99,3 @@ textarea::placeholder {
   font-size: 12px;
   color: var(--danger, #e05561);
 }
-

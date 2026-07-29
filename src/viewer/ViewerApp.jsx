@@ -165,7 +165,7 @@ function applyViewerTheme(themes, key, fileFont) {
   document.documentElement.style.setProperty("--app-font-family", stack);
 }
 
-export function applyLandingTheme() {
+function applyLandingTheme() {
   const themeConfig = loadThemeConfig();
   const bundled = themeConfig.themes || {};
   const defaultKey = getInitialThemeKey(themeConfig);
@@ -178,6 +178,8 @@ export function applyLandingTheme() {
   } catch { /* storage unavailable */ }
   applyViewerTheme(bundled, urlMatch || (siteTheme && bundled[siteTheme] ? siteTheme : defaultKey), null);
 }
+
+applyLandingTheme();
 
 // Local thumbnails and notes live in desktop-only folders and can't resolve in
 // the browser. When a packaged .timeline is loaded they're served from the
@@ -216,6 +218,7 @@ function sanitizeForBrowser(data) {
 
 export default function ViewerApp() {
   const [timelineData, setTimelineData] = useState(null);
+  const [isThemeReady, setIsThemeReady] = useState(true);
   // Sync the date-format lens with the loaded timeline before children render.
   const viewerDateFormat = timelineData?.file?.dateFormat || "MDY";
   if (getActiveDateFormat() !== viewerDateFormat) setActiveDateFormat(viewerDateFormat);
@@ -251,15 +254,18 @@ export default function ViewerApp() {
 
     if (!timelineData) {
       applyLandingTheme();
+      setIsThemeReady(true);
       return;
     }
 
+    setIsThemeReady(false);
     const fileFont = timelineData.file?.font;
     const requested = urlThemeOverride() || timelineData.file?.theme;
     const lower = requested ? String(requested).toLowerCase() : "";
     const bundledMatch = Object.keys(bundled).find((k) => k.toLowerCase() === lower);
     if (!requested || lower === "default" || bundledMatch) {
       applyViewerTheme(bundled, bundledMatch || defaultKey, fileFont);
+      setIsThemeReady(true);
       return;
     }
 
@@ -272,11 +278,17 @@ export default function ViewerApp() {
         if (!entry?.paths?.theme) throw new Error("not in marketplace");
         const theme = await (await fetch(MARKETPLACE_BASE + entry.paths.theme)).json();
         if (!theme?.colors) throw new Error("unsupported theme format");
-        if (!cancelled) applyViewerTheme({ [requested]: theme }, requested, fileFont);
+        if (!cancelled) {
+          applyViewerTheme({ [requested]: theme }, requested, fileFont);
+          setIsThemeReady(true);
+        }
       } catch {
         const fileLower = String(timelineData.file?.theme || "").toLowerCase();
         const fileBundled = Object.keys(bundled).find((k) => k.toLowerCase() === fileLower);
-        if (!cancelled) applyViewerTheme(bundled, fileBundled || defaultKey, fileFont);
+        if (!cancelled) {
+          applyViewerTheme(bundled, fileBundled || defaultKey, fileFont);
+          setIsThemeReady(true);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -286,6 +298,7 @@ export default function ViewerApp() {
     if (!data || !Array.isArray(data.elements)) {
       throw new Error("no elements array found");
     }
+    setIsThemeReady(false);
     setTimelineData(sanitizeForBrowser(data));
     setSelectedId(null);
     setViewMode("timeline");
@@ -618,6 +631,10 @@ export default function ViewerApp() {
         </div>
       </div>
     );
+  }
+
+  if (!isThemeReady) {
+    return <div className="viewer-loading">Loading…</div>;
   }
 
   const selectedElement = timelineData.elements.find((el) => el.id === selectedId);
