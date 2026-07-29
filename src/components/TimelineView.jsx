@@ -21,11 +21,6 @@ import { ICON_MAP } from "../config/elementIcons";
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
 const FILTER_HISTORY_MAX = 8;
 
-const FONT_FALLBACK_STACK = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-
-const readAppFontStack = () =>
-  getComputedStyle(document.documentElement).getPropertyValue("--app-font-family").trim();
-
 const FILTER_TYPE_TERMS = ["is:event", "is:span", "is:era", "has:coords"];
 const FILTER_DATE_OPS = [[">", ">"], [">=", "≥"], ["<", "<"], ["<=", "≤"]];
 const FILTER_OP_GLYPH = { ">": ">", ">=": "≥", "<": "<", "<=": "≤" };
@@ -468,59 +463,6 @@ const TimelineView = forwardRef(function TimelineView({
     );
   }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery]);
 
-  // Heights are measured, so relayout on font changes; the theme layer sets this imperatively
-  const [appFontStack, setAppFontStack] = useState(() => readAppFontStack());
-  useEffect(() => {
-    const sync = () => setAppFontStack((prev) => {
-      const next = readAppFontStack();
-      return next === prev ? prev : next;
-    });
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
-    return () => observer.disconnect();
-  }, []);
-
-  const fileFontSetting = timelineData?.file?.font;
-  const resolvedFont = useMemo(() => {
-    if (fileFontSetting && String(fileFontSetting).toLowerCase() !== "default") {
-      const safeName = String(fileFontSetting).replace(/([\\"])/g, "\\$1");
-      return `"${safeName}", ${FONT_FALLBACK_STACK}`;
-    }
-    return appFontStack || FONT_FALLBACK_STACK;
-  }, [fileFontSetting, appFontStack]);
-
-  // Webfonts land after first paint, so the first measurement uses the fallback face
-  const [fontEpoch, setFontEpoch] = useState(0);
-  useEffect(() => {
-    if (!document.fonts) return undefined;
-    let cancelled = false;
-    let pending = false;
-    // ready/load/loadingdone often fire together; collapse a burst into one relayout
-    const bump = () => {
-      if (cancelled || pending) return;
-      pending = true;
-      requestAnimationFrame(() => {
-        pending = false;
-        if (!cancelled) setFontEpoch((n) => n + 1);
-      });
-    };
-    document.fonts.addEventListener("loadingdone", bump);
-    // loadingdone can fire before this family is even requested, so ask for it directly
-    const family = String(resolvedFont).split(",")[0].trim();
-    if (family) {
-      // throws synchronously on a malformed family, which theme data can supply
-      try {
-        document.fonts.load(`16px ${family}`).then(bump).catch(() => {});
-      } catch {}
-    }
-    document.fonts.ready.then(bump).catch(() => {});
-    return () => {
-      cancelled = true;
-      document.fonts.removeEventListener("loadingdone", bump);
-    };
-  }, [resolvedFont]);
-
   const {
     file,
     groupLayouts,
@@ -841,7 +783,16 @@ const TimelineView = forwardRef(function TimelineView({
     const ERA_OFFSET = 34;
     const ERA_BAND_HEIGHT = 27; // must match .era-item height so fill/stack math lines up exactly
 
-    const probeContainer = containerRef.current;
+    // Resolve the font for event measurement (file.font overrides theme/default)
+    const fileFontSetting = file.font;
+    const fallbackFont = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    let resolvedFont;
+    if (fileFontSetting && String(fileFontSetting).toLowerCase() !== "default") {
+      const safeName = String(fileFontSetting).replace(/([\\"])/g, "\\$1");
+      resolvedFont = `"${safeName}", ${fallbackFont}`;
+    } else {
+      resolvedFont = getComputedStyle(document.documentElement).getPropertyValue("--app-font-family").trim() || fallbackFont;
+    }
 
     const groupsByStack = groups
       .filter((group) => group.visible !== false)
@@ -909,8 +860,6 @@ const TimelineView = forwardRef(function TimelineView({
         eventWidth: evWidth,
         eventFontSize: evFontSize,
         fontFamily: resolvedFont,
-        probeContainer,
-        fontEpoch,
         pinnedTags,
         negID: file.negID,
         posID: file.posID,
@@ -1051,8 +1000,6 @@ const TimelineView = forwardRef(function TimelineView({
         eventWidth: evWidth,
         eventFontSize: evFontSize,
         fontFamily: resolvedFont,
-        probeContainer,
-        fontEpoch,
         pinnedTags,
         negID: file.negID,
         posID: file.posID,
@@ -1242,7 +1189,7 @@ const TimelineView = forwardRef(function TimelineView({
       decompressYear,
       evFontSize,
     };
-  }, [timelineData, pinnedTags, showMap, parsedChipQuery, resolvedFont, fontEpoch]);
+  }, [timelineData, pinnedTags, showMap, parsedChipQuery]);
 
   const ticks = useMemo(() => {
     const minYear = file?.start;
