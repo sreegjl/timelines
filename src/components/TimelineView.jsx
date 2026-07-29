@@ -12,7 +12,6 @@ import {
   getReadableTextColor,
   MONTH_LABELS,
 } from "../utils/timelineUtils";
-import { watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
@@ -24,12 +23,8 @@ const FILTER_HISTORY_MAX = 8;
 
 const FONT_FALLBACK_STACK = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-// Inline read avoids a style recalc; the theme layer writes this property
-const readAppFontStack = () => {
-  const root = document.documentElement;
-  return root.style.getPropertyValue("--app-font-family").trim()
-    || getComputedStyle(root).getPropertyValue("--app-font-family").trim();
-};
+const readAppFontStack = () =>
+  getComputedStyle(document.documentElement).getPropertyValue("--app-font-family").trim();
 
 const FILTER_TYPE_TERMS = ["is:event", "is:span", "is:era", "has:coords"];
 const FILTER_DATE_OPS = [[">", ">"], [">=", "≥"], ["<", "<"], ["<=", "≤"]];
@@ -473,7 +468,7 @@ const TimelineView = forwardRef(function TimelineView({
     );
   }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery]);
 
-  // Heights are measured, so relayout on font changes
+  // Heights are measured, so relayout on font changes; the theme layer sets this imperatively
   const [appFontStack, setAppFontStack] = useState(() => readAppFontStack());
   useEffect(() => {
     const sync = () => setAppFontStack((prev) => {
@@ -495,11 +490,36 @@ const TimelineView = forwardRef(function TimelineView({
     return appFontStack || FONT_FALLBACK_STACK;
   }, [fileFontSetting, appFontStack]);
 
+  // Webfonts land after first paint, so the first measurement uses the fallback face
   const [fontEpoch, setFontEpoch] = useState(0);
-  useEffect(
-    () => watchFontLoad(document.fonts, resolvedFont, () => setFontEpoch((n) => n + 1)),
-    [resolvedFont]
-  );
+  useEffect(() => {
+    if (!document.fonts) return undefined;
+    let cancelled = false;
+    let pending = false;
+    // ready/load/loadingdone often fire together; collapse a burst into one relayout
+    const bump = () => {
+      if (cancelled || pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        if (!cancelled) setFontEpoch((n) => n + 1);
+      });
+    };
+    document.fonts.addEventListener("loadingdone", bump);
+    // loadingdone can fire before this family is even requested, so ask for it directly
+    const family = String(resolvedFont).split(",")[0].trim();
+    if (family) {
+      // throws synchronously on a malformed family, which theme data can supply
+      try {
+        document.fonts.load(`16px ${family}`).then(bump).catch(() => {});
+      } catch {}
+    }
+    document.fonts.ready.then(bump).catch(() => {});
+    return () => {
+      cancelled = true;
+      document.fonts.removeEventListener("loadingdone", bump);
+    };
+  }, [resolvedFont]);
 
   const {
     file,
@@ -821,6 +841,8 @@ const TimelineView = forwardRef(function TimelineView({
     const ERA_OFFSET = 34;
     const ERA_BAND_HEIGHT = 27; // must match .era-item height so fill/stack math lines up exactly
 
+    const probeContainer = containerRef.current;
+
     const groupsByStack = groups
       .filter((group) => group.visible !== false)
       .sort((a, b) => {
@@ -887,6 +909,7 @@ const TimelineView = forwardRef(function TimelineView({
         eventWidth: evWidth,
         eventFontSize: evFontSize,
         fontFamily: resolvedFont,
+        probeContainer,
         fontEpoch,
         pinnedTags,
         negID: file.negID,
@@ -1028,6 +1051,7 @@ const TimelineView = forwardRef(function TimelineView({
         eventWidth: evWidth,
         eventFontSize: evFontSize,
         fontFamily: resolvedFont,
+        probeContainer,
         fontEpoch,
         pinnedTags,
         negID: file.negID,
