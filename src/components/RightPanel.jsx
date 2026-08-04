@@ -1135,7 +1135,7 @@ export default function RightPanel({
               <>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="start">Start Year</label>
+                    <label htmlFor="start">Start Date</label>
                     <div className="edit-separator" />
                   <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon has-dynamic-icon" : ""}`}>
                     {showCalendarInputIcon && (
@@ -1182,7 +1182,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="end">End Year</label>
+                    <label htmlFor="end">End Date</label>
                     <div className="edit-separator" />
                   <div className={`edit-input-shell${showCalendarInputIcon ? " has-left-icon has-dynamic-icon" : ""}`}>
                     {showCalendarInputIcon && (
@@ -1707,7 +1707,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideSpanYears">Hide Year</label>
+                    <label htmlFor="hideSpanYears">Hide Date</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -2040,7 +2040,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideEventYears">Hide Year</label>
+                    <label htmlFor="hideEventYears">Hide Date</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -2092,7 +2092,7 @@ export default function RightPanel({
                               </button>
                             </div>
                             <div className="break-field">
-                              <label>year</label>
+                              <label>date</label>
                               <input
                                 type="text"
                                 inputMode="numeric"

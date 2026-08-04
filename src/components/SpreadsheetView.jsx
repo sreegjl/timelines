@@ -140,7 +140,7 @@ export default function SpreadsheetView({
       { key: "group",      label: "Group"        },
       { key: "tags",       label: "Tags"         },
       { key: "icon",        label: "Icon"         },
-      { key: "hideYear",    label: "Hide Year"    },
+      { key: "hideYear",    label: "Hide Date"    },
       { key: "hideDetails", label: "Hide Details" },
       { key: "color",       label: "Color"        },
       { key: "size",        label: "Size"         },

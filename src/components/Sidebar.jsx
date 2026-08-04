@@ -1284,7 +1284,7 @@ export default function Sidebar({
                 <div className="sb-sort-menu timeline-context-menu">
                   <div className="sb-sort-menu-header">Sort by</div>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "year" }); setSortMenuOpen(false); }}>
-                    <span>Year</span>
+                    <span>Date</span>
                     {sortField === "year" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "name" }); setSortMenuOpen(false); }}>
