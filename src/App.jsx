@@ -225,6 +225,7 @@ function App() {
   const [exportPngOptions, setExportPngOptions] = useState(null);
   const [isExportVideoModalOpen, setIsExportVideoModalOpen] = useState(false);
   const [editRequestId, setEditRequestId] = useState(null);
+  const [editRequestFocusTitle, setEditRequestFocusTitle] = useState(false);
   const defaultThemeKey = useMemo(() => getInitialThemeKey(themeConfig), [themeConfig]);
   const [themeKey, setThemeKey] = useState(defaultThemeKey);
   const [appThemeKey, setAppThemeKey] = useState(defaultThemeKey);
@@ -910,6 +911,7 @@ function App() {
 
   const handleEditElement = (id) => {
     setSelectedId(id);
+    setEditRequestFocusTitle(false);
     setEditRequestId(id);
   };
 
@@ -1011,6 +1013,7 @@ function App() {
     });
 
     setSelectedId(newEvent.id);
+    setEditRequestFocusTitle(true);
     setEditRequestId(newEvent.id);
   };
 
@@ -1052,6 +1055,7 @@ function App() {
     });
 
     setSelectedId(newSpan.id);
+    setEditRequestFocusTitle(true);
     setEditRequestId(newSpan.id);
   };
 
@@ -1108,6 +1112,7 @@ function App() {
     });
 
     setSelectedId(newEra.id);
+    setEditRequestFocusTitle(true);
     setEditRequestId(newEra.id);
   };
 
@@ -2495,7 +2500,8 @@ function App() {
                 onUpdate={handleUpdate}
                 timelineData={timelineData}
                 editRequestId={editRequestId}
-                onEditRequestHandled={() => setEditRequestId(null)}
+                editRequestFocusTitle={editRequestFocusTitle}
+                onEditRequestHandled={() => { setEditRequestId(null); setEditRequestFocusTitle(false); }}
                 isMaximized={isRightMaximized}
                 onToggleMaximize={() => setIsRightMaximized((prev) => !prev)}
                 onFilterByTag={handleFilterByTag}

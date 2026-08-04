@@ -45,6 +45,7 @@ export default function RightPanel({
   onUpdate,
   timelineData,
   editRequestId,
+  editRequestFocusTitle = false,
   onEditRequestHandled,
   isMaximized,
   onToggleMaximize,
@@ -91,6 +92,7 @@ export default function RightPanel({
   } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate });
   const prevSelectedIdRef = useRef(null);
   const titleTextareaRef = useRef(null);
+  const pendingTitleFocusRef = useRef(false);
 
   useLayoutEffect(() => {
     const el = titleTextareaRef.current;
@@ -387,8 +389,22 @@ export default function RightPanel({
     if (!selectedElement || !editRequestId) return;
     if (selectedElement.id !== editRequestId) return;
     setIsEditMode(true);
+    if (editRequestFocusTitle) {
+      pendingTitleFocusRef.current = true;
+      setIsDetailsOpen(true);
+    }
     onEditRequestHandled?.();
-  }, [selectedElement, editRequestId, onEditRequestHandled, readOnly]);
+  }, [selectedElement, editRequestId, editRequestFocusTitle, onEditRequestHandled, readOnly]);
+
+  // focus and preselect the name field once the edit form for a new element is mounted
+  useEffect(() => {
+    if (!isEditMode || !pendingTitleFocusRef.current) return;
+    const el = titleTextareaRef.current;
+    if (!el) return;
+    pendingTitleFocusRef.current = false;
+    el.focus();
+    el.select();
+  }, [isEditMode, isDetailsOpen, formData?.id]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
