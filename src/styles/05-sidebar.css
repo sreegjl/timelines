@@ -734,13 +734,6 @@
 }
 
 
-.sidebar-group-inline-color-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* Era-grouped timeline tab */
 .sb-era-groups {
   display: flex;

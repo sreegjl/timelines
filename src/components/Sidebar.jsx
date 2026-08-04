@@ -4,6 +4,7 @@ import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Ima
 import { formatYear } from "../utils/timelineUtils";
 import { displayDateLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
+import ColorPicker from "./ColorPicker";
 import "../styles/07-modals-menus.css";
 
 const DEFAULT_GROUP_COLOR = "#d9d9d9";
@@ -264,8 +265,6 @@ export default function Sidebar({
   const submenuCloseTimer = useRef(null);
   const listRef = useRef(null);
   const lastScrollTopRef = useRef(0);
-  const groupColorInputRefs = useRef({});
-  const tagColorInputRefs = useRef({});
   const themeGroupColor = resolveThemeGroupColor() || DEFAULT_GROUP_COLOR;
   const sidebarBgHex = resolveSecondaryBg();
 
@@ -771,16 +770,6 @@ export default function Sidebar({
       updateGroupPatch(groupId, { title: trimmedTitle });
     }
     cancelGroupTitleEdit();
-  };
-
-  const openGroupColorPicker = (groupId) => {
-    const input = groupColorInputRefs.current[groupId];
-    if (input) input.click();
-  };
-
-  const openTagColorPicker = (tag) => {
-    const input = tagColorInputRefs.current[tag];
-    if (input) input.click();
   };
 
   const toggleGroupContents = (groupId) => {
@@ -1653,23 +1642,14 @@ export default function Sidebar({
                         style={{ background: tagColor || "var(--accent-color)" }}
                       />
                     ) : (
-                      <button
-                        type="button"
+                      <ColorPicker
                         className="sb-tag-swatch"
                         style={{ background: tagColor || "var(--accent-color)" }}
-                        onClick={(e) => { e.stopPropagation(); openTagColorPicker(tag); }}
+                        value={tagColor || "#808080"}
+                        onChange={(hex) => onUpdateTagColor?.(tag, hex)}
                         title="Set tag color"
-                      >
-                        <input
-                          ref={(node) => { tagColorInputRefs.current[tag] = node; }}
-                          className="sidebar-group-inline-color-input"
-                          type="color"
-                          value={tagColor || "#808080"}
-                          onChange={(e) => onUpdateTagColor?.(tag, e.target.value)}
-                          tabIndex={-1}
-                          aria-hidden="true"
-                        />
-                      </button>
+                        ariaLabel={`Set color for tag ${tag}`}
+                      />
                     )}
                     <span className="sb-tag-name"><span className="sb-tag-hash">#</span>{tag}</span>
                     <span className="sb-tag-count">{count}</span>
@@ -1846,23 +1826,14 @@ export default function Sidebar({
                       {readOnly ? (
                         <span className="sb-group-swatch" style={{ background: groupTint }} />
                       ) : (
-                        <button
-                          type="button"
+                        <ColorPicker
                           className="sb-group-swatch"
                           style={{ background: groupTint }}
-                          onClick={(e) => { e.stopPropagation(); openGroupColorPicker(group.id); }}
+                          value={normalizeColorForInput(group.bgColor) || themeGroupColor}
+                          onChange={(hex) => updateGroupPatch(group.id, { bgColor: hex })}
                           title="Group color"
-                        >
-                          <input
-                            ref={(node) => { groupColorInputRefs.current[group.id] = node; }}
-                            className="sidebar-group-inline-color-input"
-                            type="color"
-                            value={normalizeColorForInput(group.bgColor) || themeGroupColor}
-                            onChange={(e) => updateGroupPatch(group.id, { bgColor: e.target.value })}
-                            tabIndex={-1}
-                            aria-hidden="true"
-                          />
-                        </button>
+                          ariaLabel={`Set color for group ${group.title || group.id}`}
+                        />
                       )}
                       {editingGroupId === group.id ? (
                         <input

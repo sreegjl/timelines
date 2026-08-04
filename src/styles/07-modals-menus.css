@@ -2325,3 +2325,106 @@
     left: var(--pan-left-end, 0%);
   }
 }
+
+/* In-app color picker */
+.cp-trigger {
+  cursor: pointer;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cp-trigger:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.cp-trigger.is-open {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--link-color), transparent 55%);
+}
+
+.cp-popover {
+  position: fixed;
+  z-index: 9500;
+  width: 216px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--accent-color);
+  border-radius: 10px;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.26), 0 2px 8px rgba(0, 0, 0, 0.14);
+  animation: fm-pop-in 0.12s ease;
+}
+
+.cp-area {
+  position: relative;
+  height: 132px;
+  border-radius: 6px;
+  cursor: crosshair;
+  touch-action: none;
+  outline: none;
+}
+
+.cp-area:focus-visible,
+.cp-hue:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--link-color), transparent 40%);
+}
+
+.cp-area-thumb,
+.cp-hue-thumb {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cp-hue {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  touch-action: none;
+  outline: none;
+  background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+}
+
+.cp-hue-thumb {
+  top: 50%;
+}
+
+.cp-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  border: 1px solid var(--accent-color);
+}
+
+.cp-hex {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--accent-color);
+  border: none;
+  border-radius: 5px;
+  outline: none;
+  text-transform: lowercase;
+}

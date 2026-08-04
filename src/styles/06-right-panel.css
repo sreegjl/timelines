@@ -1393,21 +1393,11 @@
 .edit-color-picker {
   width: 26px;
   height: 26px;
+  flex-shrink: 0;
   border: 1px solid var(--accent-color);
   border-radius: 4px;
   cursor: pointer;
-  background: none;
   padding: 0;
-  direction: rtl;
-}
-
-.edit-color-picker::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.edit-color-picker::-webkit-color-swatch {
-  border: none;
-  border-radius: 4px;
 }
 
 .edit-color-text {

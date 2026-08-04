@@ -16,6 +16,7 @@ const DYNAMIC_DATE_OPTIONS = [
 import { formatYear } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
 import { normalizeColor } from "../utils/colorUtils";
+import ColorPicker from "./ColorPicker";
 
 
 
@@ -1583,13 +1584,13 @@ export default function RightPanel({
                       ) : (
                         <Link size={11} className="event-color-chain" />
                       )}
-                      <input
-                        type="color"
+                      <ColorPicker
                         className="edit-color-picker"
                         value={swatchColor}
-                        onChange={(e) => {
-                          if (e.target.value === effectiveBase) return;
-                          const next = { ...formData, color: e.target.value };
+                        ariaLabel="Pick event color"
+                        onChange={(hex) => {
+                          if (hex === effectiveBase) return;
+                          const next = { ...formData, color: hex };
                           setFormData(next);
                           commitDraft(next);
                         }}
@@ -1621,16 +1622,15 @@ export default function RightPanel({
                   <label htmlFor="color">Color</label>
                   <div className="edit-separator" />
                   <div className="edit-color-wrap">
-                    <input
+                    <ColorPicker
                       id="color"
-                      type="color"
                       value={formData.color}
-                      onChange={(e) => {
-                        handleChange("color", e.target.value);
-                        commitDraft({ ...formData, color: e.target.value });
+                      onChange={(hex) => {
+                        handleChange("color", hex);
+                        commitDraft({ ...formData, color: hex });
                       }}
                       className="edit-color-picker"
-                      aria-label="Pick color"
+                      ariaLabel="Pick color"
                     />
                     <input
                       type="text"
@@ -2131,14 +2131,14 @@ export default function RightPanel({
                             <div className="break-field">
                               <label>color</label>
                               <div className="break-color-wrap">
-                                <input
-                                  type="color"
+                                <ColorPicker
                                   value={brk.color || formData.color || "#808080"}
-                                  onChange={(e) => {
+                                  ariaLabel="Pick break color"
+                                  onChange={(hex) => {
                                     const nextBreaks = [...formData.breaks];
-                                    nextBreaks[idx] = { ...nextBreaks[idx], color: e.target.value };
+                                    nextBreaks[idx] = { ...nextBreaks[idx], color: hex };
                                     handleChange("breaks", nextBreaks);
-                                    commitDraft({ ...formData, breaks: nextBreaks.map((b, i) => i === idx ? { ...b, color: e.target.value } : b) });
+                                    commitDraft({ ...formData, breaks: nextBreaks.map((b, i) => i === idx ? { ...b, color: hex } : b) });
                                   }}
                                   className="edit-color-picker"
                                 />
