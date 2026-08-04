@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Upload, X, Download, Check, Trash2, FolderOpen, Search, Moon, Sun, ChevronDown, MoreVertical, RefreshCw } from "lucide-react";
 import { saveUserTheme, deleteUserTheme } from "../utils/electronApi";
 import { formatCollectionName } from "../utils/themeLoader";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const MARKETPLACE_BASE = "https://raw.githubusercontent.com/sreegjl/timelines-marketplace/refs/heads/main/";
 
@@ -192,6 +193,16 @@ export default function MarketplaceModal({
       setMarketplaceBusyId("");
     }
   };
+
+  // let Escape dismiss an open dropdown before it closes the modal itself
+  useEscapeKey(isOpen, () => {
+    if (moreMenuOpen || bulkMenuOpen) {
+      setMoreMenuOpen(false);
+      setBulkMenuOpen(false);
+      return;
+    }
+    onClose();
+  });
 
   if (!isOpen) return null;
 

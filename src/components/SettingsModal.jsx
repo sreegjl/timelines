@@ -4,6 +4,7 @@ import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../util
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
 import { themeOptionLabel } from "../utils/themeLoader";
+import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
 const MAP_MARKER_OPTIONS = [
@@ -228,12 +229,7 @@ export default function SettingsModal({
     onUpdateTimelineRef.current = onUpdateTimeline;
   }, [onUpdateTimeline]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => { if (e.key === "Escape") handleClose(); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, handleClose]);
+  useEscapeKey(isOpen && !isCovered, handleClose);
 
   useEffect(() => {
     updateDetailTooltipPosition();

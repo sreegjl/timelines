@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { formatYear } from "../utils/timelineUtils";
+import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
 const RESOLUTION_OPTIONS = [
@@ -136,12 +137,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
     });
   }, [clampPreviewOffset]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  useEscapeKey(isOpen, onClose);
 
   useEffect(() => {
     const container = previewContainerRef.current;

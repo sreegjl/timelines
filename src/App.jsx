@@ -37,6 +37,7 @@ import { getAppSettings, saveAppSettings } from "./utils/appSettings";
 import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keybinds";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, setActiveDateFormat, getActiveDateFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
 import { parseFilterQuery } from "./utils/filterUtils";
+import useEscapeKey from "./hooks/useEscapeKey";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -257,6 +258,10 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [diskReloadNotice, setDiskReloadNotice] = useState(false);
   const [thumbnailRefreshSignal, setThumbnailRefreshSignal] = useState(0);
+
+  useEscapeKey(!!importConflict, () => setImportConflict(null));
+  useEscapeKey(!!skippedFilesNotice, () => setSkippedFilesNotice(null));
+  useEscapeKey(!!deleteElementDialog, () => setDeleteElementDialog(null));
 
   const HISTORY_LIMIT = 100;
   const historyRef = useRef({ past: [], future: [] });

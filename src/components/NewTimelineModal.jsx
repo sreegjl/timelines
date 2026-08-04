@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { parseTimelineInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, detailToSlider, sliderToDetail } from "../utils/sliderUtils";
+import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
 export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
@@ -19,12 +20,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
   const detailSliderRef = useRef(null);
   const titleInputRef = useRef(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  useEscapeKey(isOpen, onClose);
 
   useEffect(() => {
     const updateTooltip = () => {

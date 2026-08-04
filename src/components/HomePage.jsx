@@ -185,6 +185,7 @@ import themeConfig from "../config/theme.json";
 import { loadThemeConfig, themeOptionLabel } from "../utils/themeLoader";
 import { DEFAULT_KEYBINDS, cloneDefaultKeybinds, saveKeybinds } from "../utils/keybinds";
 import MarketplaceModal from "./MarketplaceModal";
+import useEscapeKey from "../hooks/useEscapeKey";
 
 const RECENT_TIMELINES_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 // Sidebar resize bounds mirror the timeline-view left panel (App.jsx)
@@ -676,6 +677,21 @@ export default function HomePage({
 
   const anyModalOpen = isNewTimelineModalOpen || newFolderDialogOpen || !!moveDialogFile
     || isMarketplaceOpen || !!deleteDialogFile || !!gitSyncShareDialog || !!gitSyncHistoryDialog;
+
+  useEscapeKey(!!contextMenu, () => setContextMenu(null));
+  useEscapeKey(!!folderContextMenu, () => setFolderContextMenu(null));
+  useEscapeKey(!!renameTarget, closeRenameDialog);
+  useEscapeKey(!!deleteFolderTarget, () => setDeleteFolderTarget(null));
+  useEscapeKey(!!moveFolderTarget, () => setMoveFolderTarget(null));
+  useEscapeKey(newFolderDialogOpen, () => setNewFolderDialogOpen(false));
+  useEscapeKey(!!moveDialogFile, () => setMoveDialogFile(null));
+  useEscapeKey(!!deleteDialogFile, () => setDeleteDialogFile(null));
+  useEscapeKey(!!gitSyncShareDialog, () => setGitSyncShareDialog(null));
+  useEscapeKey(!!gitSyncHistoryDialog, () => setGitSyncHistoryDialog(null));
+  useEscapeKey(view === "settings" && !isMarketplaceOpen, () => {
+    if (settingsOnly) onAppSettingsClosed?.();
+    else setView("home");
+  });
 
   // preventDefault on window keeps Electron from navigating to dropped files
   useEffect(() => {

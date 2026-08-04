@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import { formatYear } from "../utils/timelineUtils";
+import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
 const RESOLUTION_OPTIONS = [
@@ -51,12 +52,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
   const backdropPointerDownRef = useRef(false);
   const exportCancelRef = useRef(false);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => { if (e.key === "Escape" && !isExporting) onClose(); };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isExporting, onClose]);
+  useEscapeKey(isOpen && !isExporting, onClose);
 
   // Reset state when modal opens
   useEffect(() => {
