@@ -839,6 +839,10 @@ const TimelineView = forwardRef(function TimelineView({
     const interGroupGap = 14;
     const GROUP_BAND_PADDING_Y = 8;
     const EMPTY_GROUP_HEIGHT = EVENT_MIN_HEIGHT;
+    // wide enough for the tick labels below the line
+    const GROUP_LINE_CLEARANCE = 34;
+    const EMPTY_GROUP_OFFSET_BELOW = GROUP_LINE_CLEARANCE;
+    const EMPTY_GROUP_OFFSET_ABOVE = GROUP_LINE_CLEARANCE;
     const tempGroupLayoutsRaw = groupsByStack.map((group, index) => {
       const spansInGroup = visibleAdjustedSpans.filter((span) => span.groupId === group.id);
       const eventsInGroup = visibleAdjustedEvents.filter((event) => event.groupId === group.id);
@@ -901,13 +905,22 @@ const TimelineView = forwardRef(function TimelineView({
       const hasItems = itemTops.length > 0 && itemBottoms.length > 0;
       const contentTop = hasItems
         ? Math.min(...itemTops)
-        : isBelowLine ? TEMP_BASE_LINE_Y + 20 : TEMP_BASE_LINE_Y - (EMPTY_GROUP_HEIGHT + 20);
+        : isBelowLine
+          ? TEMP_BASE_LINE_Y + EMPTY_GROUP_OFFSET_BELOW
+          : TEMP_BASE_LINE_Y - (EMPTY_GROUP_HEIGHT + EMPTY_GROUP_OFFSET_ABOVE);
       const contentBottom = hasItems
         ? Math.max(...itemBottoms)
-        : isBelowLine ? TEMP_BASE_LINE_Y + EMPTY_GROUP_HEIGHT + 20 : TEMP_BASE_LINE_Y - 20;
+        : isBelowLine
+          ? TEMP_BASE_LINE_Y + EMPTY_GROUP_OFFSET_BELOW + EMPTY_GROUP_HEIGHT
+          : TEMP_BASE_LINE_Y - EMPTY_GROUP_OFFSET_ABOVE;
       const contentHeight = hasItems
         ? Math.max(EVENT_MIN_HEIGHT, (contentBottom - contentTop) + GROUP_BAND_PADDING_Y * 2)
         : EMPTY_GROUP_HEIGHT;
+      // mirrors getGroupExtent so anchoring works off the rendered band box
+      const paddedHeight = (contentBottom - contentTop) + GROUP_BAND_PADDING_Y * 2;
+      const bandTop = hasItems
+        ? contentTop - GROUP_BAND_PADDING_Y - (contentHeight - paddedHeight) / 2
+        : contentTop;
 
       return {
         id: group.id,
@@ -929,6 +942,7 @@ const TimelineView = forwardRef(function TimelineView({
         contentTop,
         contentBottom,
         contentHeight,
+        bandTop,
       };
     });
 
@@ -938,28 +952,38 @@ const TimelineView = forwardRef(function TimelineView({
       ? tempGroupLayoutsRaw.filter((g) => g.hasItems)
       : tempGroupLayoutsRaw;
 
-    const aboveLineRaw = visibleGroupLayoutsRaw.filter((g) => !g.belowLine);
-    const belowLineRaw = visibleGroupLayoutsRaw.filter((g) => g.belowLine);
+    // below the line the stack runs the other way, matching the panel list
+    const belowStackSort = (a, b) => {
+      const stackDiff = (b.stack ?? 0) - (a.stack ?? 0);
+      if (stackDiff !== 0) return stackDiff;
+      return (a.order ?? 0) - (b.order ?? 0);
+    };
 
-    let cumulativeAbove = 0;
+    const aboveLineRaw = visibleGroupLayoutsRaw.filter((g) => !g.belowLine);
+    const belowLineRaw = visibleGroupLayoutsRaw.filter((g) => g.belowLine).sort(belowStackSort);
+
+    // anchor by band edge so empty and filled groups sit the same distance from the line
+    let aboveBandCursor = GROUP_LINE_CLEARANCE;
     const aboveLineLayouts = aboveLineRaw.map((group) => {
+      const desiredBandBottom = TEMP_BASE_LINE_Y - aboveBandCursor;
       const next = {
         ...group,
-        yOffset: -cumulativeAbove,
-        topExtent: group.contentTop - cumulativeAbove,
+        yOffset: desiredBandBottom - (group.bandTop + group.contentHeight),
+        topExtent: desiredBandBottom - group.contentHeight,
       };
-      cumulativeAbove += group.contentHeight + interGroupGap;
+      aboveBandCursor += group.contentHeight + interGroupGap;
       return next;
     });
 
-    let cumulativeBelow = 0;
+    let belowBandCursor = GROUP_LINE_CLEARANCE;
     const belowLineLayouts = belowLineRaw.map((group) => {
+      const desiredBandTop = TEMP_BASE_LINE_Y + belowBandCursor;
       const next = {
         ...group,
-        yOffset: +cumulativeBelow,
-        bottomExtent: group.contentBottom + cumulativeBelow,
+        yOffset: desiredBandTop - group.bandTop,
+        bottomExtent: desiredBandTop + group.contentHeight,
       };
-      cumulativeBelow += group.contentHeight + interGroupGap;
+      belowBandCursor += group.contentHeight + interGroupGap;
       return next;
     });
 
@@ -1064,11 +1088,10 @@ const TimelineView = forwardRef(function TimelineView({
         ...group.finalEvents.map((event) => event.top + (event._boxHeight || 29)),
       ];
       if (tops.length === 0 || bottoms.length === 0) {
-        const center = group.belowLine
-          ? BASE_LINE_Y + group.yOffset + 20
-          : BASE_LINE_Y + group.yOffset - 20;
-        const half = Math.round(EVENT_MIN_HEIGHT / 2);
-        return { top: center - half, bottom: center + half };
+        const top = group.belowLine
+          ? BASE_LINE_Y + group.yOffset + EMPTY_GROUP_OFFSET_BELOW
+          : BASE_LINE_Y + group.yOffset - EMPTY_GROUP_OFFSET_ABOVE - MIN_GROUP_BAND_HEIGHT;
+        return { top, bottom: top + MIN_GROUP_BAND_HEIGHT };
       }
       const rawTop = Math.min(...tops) - GROUP_BAND_PADDING_Y;
       const rawBottom = Math.max(...bottoms) + GROUP_BAND_PADDING_Y;
@@ -1089,7 +1112,7 @@ const TimelineView = forwardRef(function TimelineView({
       return (a.order ?? 0) - (b.order ?? 0);
     };
     const aboveByStack = groupLayoutsRaw.filter((g) => !g.belowLine).sort(stackSort);
-    const belowByStack = groupLayoutsRaw.filter((g) => g.belowLine).sort(stackSort);
+    const belowByStack = groupLayoutsRaw.filter((g) => g.belowLine).sort(belowStackSort);
 
     const extentById = new Map(
       groupLayoutsRaw.map((group) => [group.id, getGroupExtent(group)])
