@@ -120,3 +120,46 @@ test("parseTimelineInput still parses plain and calendar dates", async () => {
   assert.strictEqual(parseTimelineInput("7/1/2020").value, 2020.5);
   assert.strictEqual(parseTimelineInput("someday").value, null);
 });
+
+test("written-out years under 1000 stay literal; only 1-2 digit years are 2000s shorthand", async () => {
+  const { parseTimelineInput, setActiveDateFormat } = await load();
+  setActiveDateFormat("MDY");
+
+  assert.strictEqual(parseTimelineInput("1/1/0004").label, "0004-01-01");
+  assert.strictEqual(parseTimelineInput("1/1/004").label, "0004-01-01");
+  assert.strictEqual(parseTimelineInput("1/1/1004").label, "1004-01-01");
+  assert.strictEqual(parseTimelineInput("01/0004").label, "0004-01");
+  assert.strictEqual(parseTimelineInput("0004-01-01").label, "0004-01-01");
+  assert.strictEqual(parseTimelineInput("4-1-1").label, "0004-01-01");
+  assert.strictEqual(parseTimelineInput("0004").value, 4);
+  assert.strictEqual(parseTimelineInput("1/1/0004").value, 4);
+
+  assert.strictEqual(parseTimelineInput("1/1/04").label, "2004-01-01");
+  assert.strictEqual(parseTimelineInput("1/1/4").label, "2004-01-01");
+
+  setActiveDateFormat("DMY");
+  assert.strictEqual(parseTimelineInput("1/1/0004").label, "0004-01-01");
+  setActiveDateFormat("MDY");
+});
+
+test("low years round-trip through the input field without jumping to the 2000s", async () => {
+  const { parseTimelineInput, formatDateForInput, displayDateLabel, setActiveDateFormat } = await load();
+
+  for (const fmt of ["MDY", "DMY", "ISO"]) {
+    setActiveDateFormat(fmt);
+    const first = parseTimelineInput("1/1/0004");
+    const shown = formatDateForInput(first.label);
+    assert.strictEqual(parseTimelineInput(shown).label, first.label, `${fmt} day round-trip`);
+
+    const month = parseTimelineInput("01/0004");
+    const shownMonth = formatDateForInput(month.label);
+    assert.strictEqual(parseTimelineInput(shownMonth).label, month.label, `${fmt} month round-trip`);
+  }
+
+  setActiveDateFormat("MDY");
+  assert.strictEqual(formatDateForInput("0004-01-01"), "01/01/0004");
+  assert.strictEqual(displayDateLabel("0004-01-01"), "01/01/0004");
+  setActiveDateFormat("ISO");
+  assert.strictEqual(displayDateLabel("0004-01-01"), "0004-01-01");
+  setActiveDateFormat("MDY");
+});

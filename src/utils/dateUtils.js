@@ -30,21 +30,27 @@ export const setActiveDateFormat = (fmt) => {
 export const getActiveDateFormat = () => activeDateFormat;
 
 const pad2 = (n) => String(n).padStart(2, "0");
-const normalizeYear = (y) => (Number.isFinite(y) && y >= 0 && y <= 99 ? y + 2000 : y);
+const pad4 = (n) => (Number.isFinite(n) && n >= 0 && n < 1000 ? String(n).padStart(4, "0") : `${n}`);
+// "1/1/24" is 2024 shorthand, but a written-out "0024" stays year 24.
+const normalizeYear = (raw) => {
+  const y = Number(raw);
+  if (!Number.isFinite(y)) return NaN;
+  return String(raw).trim().length <= 2 && y >= 0 && y <= 99 ? y + 2000 : y;
+};
 
 // Canonical ISO stored label; year precision needs no label.
 const canonicalDateLabel = (year, month, day, precision) => {
   if (precision === "year") return null;
-  if (precision === "month") return `${year}-${pad2(month)}`;
-  return `${year}-${pad2(month)}-${pad2(day)}`;
+  if (precision === "month") return `${pad4(year)}-${pad2(month)}`;
+  return `${pad4(year)}-${pad2(month)}-${pad2(day)}`;
 };
 
 export const formatCalendarDate = (year, month, day, precision, fmt = activeDateFormat) => {
   if (precision === "year") return `${year}`;
-  if (precision === "month") return fmt === "ISO" ? `${year}-${pad2(month)}` : `${pad2(month)}/${year}`;
-  if (fmt === "ISO") return `${year}-${pad2(month)}-${pad2(day)}`;
-  if (fmt === "DMY") return `${pad2(day)}/${pad2(month)}/${year}`;
-  return `${pad2(month)}/${pad2(day)}/${year}`;
+  if (precision === "month") return fmt === "ISO" ? `${pad4(year)}-${pad2(month)}` : `${pad2(month)}/${pad4(year)}`;
+  if (fmt === "ISO") return `${pad4(year)}-${pad2(month)}-${pad2(day)}`;
+  if (fmt === "DMY") return `${pad2(day)}/${pad2(month)}/${pad4(year)}`;
+  return `${pad2(month)}/${pad2(day)}/${pad4(year)}`;
 };
 
 const buildCalendarDate = (year, month, day, precision) => {
@@ -64,7 +70,7 @@ const buildCalendarDate = (year, month, day, precision) => {
 
 // ISO (dash) is auto-detected regardless of format; slash order follows the format.
 const parseCalendarDate = (raw, fmt = activeDateFormat) => {
-  const iso = /^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?$/.exec(raw);
+  const iso = /^(\d{1,4})-(\d{1,2})(?:-(\d{1,2}))?$/.exec(raw);
   if (iso) {
     const hasDay = iso[3] !== undefined;
     return buildCalendarDate(Number(iso[1]), Number(iso[2]), hasDay ? Number(iso[3]) : 1, hasDay ? "day" : "month");
@@ -72,13 +78,13 @@ const parseCalendarDate = (raw, fmt = activeDateFormat) => {
   if (raw.includes("/")) {
     const parts = raw.split("/").map((p) => p.trim());
     if (parts.length === 2) {
-      return buildCalendarDate(normalizeYear(Number(parts[1])), Number(parts[0]), 1, "month");
+      return buildCalendarDate(normalizeYear(parts[1]), Number(parts[0]), 1, "month");
     }
     if (parts.length === 3) {
-      const [a, b, c] = parts.map(Number);
+      const [a, b, c] = parts;
       return fmt === "DMY"
-        ? buildCalendarDate(normalizeYear(c), b, a, "day")
-        : buildCalendarDate(normalizeYear(c), a, b, "day");
+        ? buildCalendarDate(normalizeYear(c), Number(b), Number(a), "day")
+        : buildCalendarDate(normalizeYear(c), Number(a), Number(b), "day");
     }
   }
   return null;
