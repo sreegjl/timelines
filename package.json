@@ -82,7 +82,7 @@
     "baseline-browser-mapping": "^2.9.14",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
-    "electron": "^40.8.5",
+    "electron": "^41.10.3",
     "electron-builder": "^26.15.3",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
