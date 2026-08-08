@@ -114,39 +114,54 @@ const normalizeHtml2CanvasColors = (clonedDocument, clonedRoot) => {
   }
 };
 
-const simplifyTimelinePreview = (clonedDocument, clonedTimeline) => {
-  const walker = clonedDocument.createTreeWalker(
-    clonedTimeline,
-    clonedDocument.defaultView?.NodeFilter?.SHOW_TEXT ?? 4,
-  );
-  const textNodes = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode);
-  for (const node of textNodes) node.nodeValue = "";
+// Event contents are noise at card size
+const CARD_LEAF_SELECTOR = ".event";
+const TRANSPARENT_COLOR = /,\s*0\)$/;
 
-  for (const element of clonedTimeline.querySelectorAll(
-    "img, svg, .event-thumbnail-tile, .event-thumbnail-banner, .event-thumbnail-square, .event-thumbnail-circle",
-  )) {
-    element.remove();
-  }
+const isPaintedColor = (value) => Boolean(value) && value !== "transparent" && !TRANSPARENT_COLOR.test(value);
 
-  for (const item of clonedTimeline.querySelectorAll(".event, .span-item, .era-item")) {
-    item.replaceChildren();
-    item.classList.remove(
-      "is-selected",
-      "has-source-link",
-      "has-thumbnail",
-      "has-thumbnail-banner",
-      "has-thumbnail-square",
-      "has-thumbnail-circle",
-    );
-  }
+// Card thumbnails are just colored boxes, so read them off the live layout
+const readCardSnapshot = (root, scale, width, height, background) => {
+  const rootRect = root.getBoundingClientRect();
+  const safeScale = scale > 0 ? scale : 1;
+  const boxes = [];
+  // DOM order is paint order here
+  const stack = [];
+  for (let i = root.children.length - 1; i >= 0; i -= 1) stack.push(root.children[i]);
 
-  for (const element of [clonedTimeline, ...clonedTimeline.querySelectorAll("*")]) {
-    const backgroundImage = clonedDocument.defaultView?.getComputedStyle(element).backgroundImage;
-    if (backgroundImage?.includes("url(")) {
-      element.style.setProperty("background-image", "none", "important");
+  while (stack.length > 0) {
+    const element = stack.pop();
+    if (!element.matches(CARD_LEAF_SELECTOR)) {
+      for (let i = element.children.length - 1; i >= 0; i -= 1) stack.push(element.children[i]);
     }
+
+    const styles = getComputedStyle(element);
+    if (styles.visibility === "hidden") continue;
+    // Computed colors are absolute rgb(), so color-mix() never reaches the canvas
+    const fill = styles.backgroundColor;
+    const stroke = styles.borderTopColor;
+    const strokeWidth = Number.parseFloat(styles.borderTopWidth) || 0;
+    const hasFill = isPaintedColor(fill);
+    const hasStroke = strokeWidth > 0 && isPaintedColor(stroke);
+    if (!hasFill && !hasStroke) continue;
+
+    const rect = element.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) continue;
+    const opacity = Number.parseFloat(styles.opacity);
+    // Untransformed space, so pan/zoom doesn't leak in
+    boxes.push({
+      x: (rect.left - rootRect.left) / safeScale,
+      y: (rect.top - rootRect.top) / safeScale,
+      w: rect.width / safeScale,
+      h: rect.height / safeScale,
+      fill: hasFill ? fill : null,
+      stroke: hasStroke ? stroke : null,
+      strokeWidth: hasStroke ? strokeWidth : 0,
+      radius: Number.parseFloat(styles.borderTopLeftRadius) || 0,
+      opacity: Number.isFinite(opacity) ? opacity : 1,
+    });
   }
+  return { width, height, background, boxes };
 };
 
 const filterChipTerm = (chip) => {
@@ -3037,6 +3052,17 @@ const TimelineView = forwardRef(function TimelineView({
   }, [downloadPngTrigger]);
 
   useImperativeHandle(ref, () => ({
+    captureCardSnapshot: (options) => {
+      const timelineEl = timelineRef.current;
+      if (!timelineEl) return null;
+      return readCardSnapshot(
+        timelineEl,
+        scaleRef.current,
+        timelineEl.scrollWidth,
+        calculatedHeight + 100,
+        options?.background,
+      );
+    },
     generatePreview: async (options) => {
       const timelineEl = timelineRef.current;
       if (!timelineEl) return null;
@@ -3081,9 +3107,6 @@ const TimelineView = forwardRef(function TimelineView({
               clonedDocument.documentElement.style.setProperty('--app-bg', 'transparent');
             } else if (options?.customBg) {
               clonedDocument.documentElement.style.setProperty('--app-bg', options.customBg);
-            }
-            if (options?.simplifyContent) {
-              simplifyTimelinePreview(clonedDocument, clonedTimeline);
             }
             normalizeHtml2CanvasColors(clonedDocument, clonedTimeline);
           },

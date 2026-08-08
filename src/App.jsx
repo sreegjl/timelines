@@ -59,31 +59,56 @@ const SELECTION_NAV_REPEAT_INTERVAL_MS = 140;
 const CARD_THUMBNAIL_WIDTH = 640;
 const CARD_THUMBNAIL_HEIGHT = 240;
 
-const createCardThumbnail = (imageUrl) => new Promise((resolve, reject) => {
-  const image = new Image();
-  image.onload = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = CARD_THUMBNAIL_WIDTH;
-    canvas.height = CARD_THUMBNAIL_HEIGHT;
-    const context = canvas.getContext("2d");
-    if (!context) {
-      reject(new Error("Could not create thumbnail canvas"));
-      return;
+const MIN_CARD_BOX_PX = 0.75;
+const MIN_CARD_STROKE_PX = 0.4;
+
+const renderCardThumbnail = (snapshot) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_THUMBNAIL_WIDTH;
+  canvas.height = CARD_THUMBNAIL_HEIGHT;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not create thumbnail canvas");
+
+  context.fillStyle = snapshot.background || "#fffaf4";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!(snapshot.width > 0) || !(snapshot.height > 0)) return canvas.toDataURL("image/jpeg", 0.82);
+
+  const scale = Math.min(canvas.width / snapshot.width, canvas.height / snapshot.height);
+  const offsetX = (canvas.width - snapshot.width * scale) / 2;
+  const offsetY = (canvas.height - snapshot.height * scale) / 2;
+
+  for (const box of snapshot.boxes) {
+    const rawW = box.w * scale;
+    const rawH = box.h * scale;
+    const w = Math.max(rawW, MIN_CARD_BOX_PX);
+    const h = Math.max(rawH, MIN_CARD_BOX_PX);
+    const x = offsetX + box.x * scale;
+    const y = offsetY + box.y * scale;
+    if (x > canvas.width || y > canvas.height || x + w < 0 || y + h < 0) continue;
+
+    // Fade widened sub-pixel boxes the way downsampling would
+    const coverage = Math.min(1, (rawW / w) * (rawH / h));
+    const radius = Math.min(box.radius * scale, w / 2, h / 2);
+    context.beginPath();
+    if (radius > 0.5 && context.roundRect) context.roundRect(x, y, w, h, radius);
+    else context.rect(x, y, w, h);
+    if (box.fill) {
+      context.globalAlpha = box.opacity * coverage;
+      context.fillStyle = box.fill;
+      context.fill();
     }
+    if (box.stroke) {
+      context.globalAlpha = box.opacity * coverage;
+      context.lineWidth = Math.max(box.strokeWidth * scale, MIN_CARD_STROKE_PX);
+      context.strokeStyle = box.stroke;
+      context.stroke();
+    }
+  }
+  context.globalAlpha = 1;
 
-    const rootStyles = getComputedStyle(document.documentElement);
-    context.fillStyle = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-
-    const scale = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
-    const width = image.naturalWidth * scale;
-    const height = image.naturalHeight * scale;
-    context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
-    resolve(canvas.toDataURL("image/jpeg", 0.82));
-  };
-  image.onerror = () => reject(new Error("Could not load generated timeline preview"));
-  image.src = imageUrl;
-});
+  return canvas.toDataURL("image/jpeg", 0.82);
+};
 
 // Bare filename of a local thumbnail; null for external URLs
 const getLocalThumbnailFilename = (thumbnail) => {
@@ -264,6 +289,7 @@ function App() {
   useEscapeKey(!!deleteElementDialog, () => setDeleteElementDialog(null));
 
   const HISTORY_LIMIT = 100;
+  const thumbnailExistsRef = useRef(false);
   const historyRef = useRef({ past: [], future: [] });
   const historyLockRef = useRef(false);
   const prevTimelineRef = useRef(null);
@@ -1451,13 +1477,14 @@ function App() {
     setIsExportVideoModalOpen(true);
   };
 
-  const handleLoadTimeline = async (timelineId) => {
+  const handleLoadTimeline = async (timelineId, hasThumbnail = false) => {
     try {
       if (!window.electron?.loadTimeline) {
         throw new Error("Timeline loading is only available in the desktop app.");
       }
       const loadedTimeline = await window.electron.loadTimeline(timelineId);
 
+      thumbnailExistsRef.current = hasThumbnail;
       setTimelineData(normalizeTimelineData(loadedTimeline));
       setPinnedTags(Array.isArray(loadedTimeline.file?.pinnedTags) ? loadedTimeline.file.pinnedTags : []);
       setCurrentTimelineId(timelineId);
@@ -1469,32 +1496,44 @@ function App() {
     }
   };
 
-  const captureTimelineThumbnail = useCallback(async () => {
+  // Must run before the timeline unmounts
+  const captureTimelineSnapshot = useCallback(() => {
     const timelineId = getStorageId(timelineDataRef.current?.file);
-    if (!timelineId || !timelineViewRef.current?.generatePreview || !window.electron?.saveTimelineThumbnail) return;
+    if (!timelineId || !timelineViewRef.current?.captureCardSnapshot || !window.electron?.saveTimelineThumbnail) return null;
+    // Nothing edited since load, so the stored card still matches
+    if (thumbnailExistsRef.current && historyRef.current.past.length === 0) return null;
 
     try {
       const rootStyles = getComputedStyle(document.documentElement);
-      const secondaryBg = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
-      const preview = await timelineViewRef.current.generatePreview({
-        customBg: secondaryBg,
-        maxWidth: 1280,
-        maxHeight: 480,
-        simplifyContent: true,
-      });
-      if (!preview?.imageUrl) return;
-      const dataUrl = await createCardThumbnail(preview.imageUrl);
+      const background = rootStyles.getPropertyValue("--surface").trim() || "#fffaf4";
+      const snapshot = timelineViewRef.current.captureCardSnapshot({ background });
+      return snapshot ? { timelineId, snapshot } : null;
+    } catch (error) {
+      console.warn("Could not read timeline card snapshot:", error);
+      return null;
+    }
+  }, []);
+
+  const saveTimelineCard = useCallback(async ({ timelineId, snapshot }) => {
+    try {
+      const dataUrl = renderCardThumbnail(snapshot);
       const result = await window.electron.saveTimelineThumbnail({ timelineId, dataUrl });
       if (result?.success === false) throw new Error(result.error || "Thumbnail save failed");
+      thumbnailExistsRef.current = true;
       setThumbnailRefreshSignal((value) => value + 1);
     } catch (error) {
       console.warn("Could not update timeline card thumbnail:", error);
     }
   }, []);
 
-  const handleBackToHome = async () => {
-    // Capture while the timeline DOM is still mounted; no-ops in spreadsheet view
-    await captureTimelineThumbnail();
+  const handleBackToHome = () => {
+    // Snapshot needs the live DOM; drawing waits until home has painted
+    const pending = captureTimelineSnapshot();
+    if (pending) {
+      const run = () => saveTimelineCard(pending);
+      if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });
+      else setTimeout(run, 0);
+    }
     setTimelineData(null);
     setCurrentTimelineId(null);
     setSelectedId(null);
@@ -1555,6 +1594,7 @@ function App() {
       // Load the newly created timeline
       setIsNewTimelineModalOpen(false);
       currentTimelineIdRef.current = saveId;
+      thumbnailExistsRef.current = false;
       setTimelineData(newTimeline);
       setCurrentTimelineId(saveId);
       setSelectedId(null);
@@ -1603,6 +1643,7 @@ function App() {
 
       // Load the newly created duplicate
       currentTimelineIdRef.current = saveId;
+      thumbnailExistsRef.current = false;
       setTimelineData(duplicateData);
       setCurrentTimelineId(saveId);
       setSelectedId(null);

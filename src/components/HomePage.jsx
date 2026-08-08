@@ -672,7 +672,7 @@ export default function HomePage({
 
   const openTimelineFile = (file) => {
     if (file.isPackage) onImportTimeline?.(file.packagePath);
-    else onSelectTimeline(file.id);
+    else onSelectTimeline(file.id, Boolean(file.thumbnailUrl));
   };
 
   const anyModalOpen = isNewTimelineModalOpen || newFolderDialogOpen || !!moveDialogFile
