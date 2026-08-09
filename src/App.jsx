@@ -1284,6 +1284,7 @@ function App() {
       if (!nextFile.mapEventMarker || nextFile.mapEventMarker === "pin") delete nextFile.mapEventMarker;
       if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
       if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
+      if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
 
       const updatedData = {

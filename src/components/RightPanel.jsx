@@ -13,7 +13,7 @@ const DYNAMIC_DATE_OPTIONS = [
   { label: "This month", value: "current-month" },
   { label: "This year", value: "current-year" },
 ];
-import { formatYear } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel, DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
 import { normalizeColor } from "../utils/colorUtils";
 import ColorPicker from "./ColorPicker";
@@ -795,6 +795,7 @@ export default function RightPanel({
   };
 
   const showLegacyBreaks = timelineData?.file?.allowLegacyBreaks === true;
+  const approxMarker = (timelineData?.file?.approxID || "").trim() || DEFAULT_APPROX_LABEL;
 
   if (!selectedElement || !formData) {
     return (
@@ -864,8 +865,11 @@ export default function RightPanel({
                   <label>Date</label>
                   <div className="view-separator" />
                   <p>
-                    {displayDateLabel(formData.dateLabel) ??
-                      formatDisplayYear(formData.date)}
+                    {withApproxLabel(
+                      displayDateLabel(formData.dateLabel) ?? formatDisplayYear(formData.date),
+                      timelineData?.file?.approxID,
+                      formData.approximate === true
+                    )}
                   </p>
                 </div>
             ) : (
@@ -873,9 +877,11 @@ export default function RightPanel({
                 <label>Date</label>
                 <div className="view-separator" />
                 <p>
-                  {(displayDateLabel(formData.startLabel) ?? formatDisplayYear(formData.start))}
-                  {" – "}
-                  {(displayDateLabel(formData.endLabel) ?? formatDisplayYear(formData.end))}
+                  {withApproxLabel(
+                    `${displayDateLabel(formData.startLabel) ?? formatDisplayYear(formData.start)} – ${displayDateLabel(formData.endLabel) ?? formatDisplayYear(formData.end)}`,
+                    timelineData?.file?.approxID,
+                    formData.approximate === true
+                  )}
                 </p>
               </div>
             )}
@@ -1246,6 +1252,28 @@ export default function RightPanel({
                 </div>
               </>
             )}
+
+            {/* Approximate date marker */}
+            <div className="form-group">
+              <div className="edit-row" title={`Prefixes the displayed date with "${approxMarker}"`}>
+                <label htmlFor="approximate">Approximate</label>
+                <div className="edit-separator" />
+                <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
+                  <input
+                    id="approximate"
+                    type="checkbox"
+                    checked={formData.approximate === true}
+                    onChange={(e) => {
+                      const next = { ...formData };
+                      if (e.target.checked) { next.approximate = true; } else { delete next.approximate; }
+                      setFormData(next);
+                      commitDraft(next);
+                    }}
+                  />
+                  <span className="settings-toggle-slider" />
+                </label>
+              </div>
+            </div>
 
             {/* Relations */}
             {(formData.type === "event" || formData.type === "span") && (

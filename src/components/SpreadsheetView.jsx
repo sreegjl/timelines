@@ -16,7 +16,7 @@ const TYPE_LABEL = { event: "Event", span: "Span", era: "Era" };
 
 const DEFAULT_WIDTHS = {
   type: 72, title: 200, description: 180, parent: 130, parentType: 90, date: 90, end: 85, mergeInto: 130,
-  group: 85, tags: 160, icon: 80, hideYear: 75, color: 110, size: 100,
+  group: 85, tags: 160, icon: 80, hideYear: 75, approximate: 90, color: 110, size: 100,
   hideDetails: 90, lineStyle: 100, borderStyle: 105,
   coords: 150, wiki: 160, note: 110, sources: 110, thumbnail: 180, thumbnailStyle: 120,
 };
@@ -59,7 +59,7 @@ export default function SpreadsheetView({
   const [colWidths, setColWidths] = useState({});
   const scrollRef = useRef(null);
   const [hiddenCols, setHiddenCols] = useState(
-    new Set(["icon", "hideYear", "color", "size", "hideDetails", "lineStyle", "borderStyle", "coords", "wiki", "note", "sources", "thumbnail", "thumbnailStyle"])
+    new Set(["icon", "hideYear", "approximate", "color", "size", "hideDetails", "lineStyle", "borderStyle", "coords", "wiki", "note", "sources", "thumbnail", "thumbnailStyle"])
   );
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -142,6 +142,7 @@ export default function SpreadsheetView({
       { key: "tags",       label: "Tags"         },
       { key: "icon",        label: "Icon"         },
       { key: "hideYear",    label: "Hide Date"    },
+      { key: "approximate", label: "Approximate"  },
       { key: "hideDetails", label: "Hide Details" },
       { key: "color",       label: "Color"        },
       { key: "size",        label: "Size"         },
@@ -219,6 +220,7 @@ export default function SpreadsheetView({
     if (field === "tags")    return (el.tags ?? []).join(", ");
     if (field === "icon")    return el.icon ?? "";
     if (field === "hideYear")    return el.hideYears ? "true" : "";
+    if (field === "approximate") return el.approximate ? "true" : "";
     if (field === "color")       return el.color ?? "";
     if (field === "size")        return el.type === "span" ? (el.spanSize ?? "") : el.type === "era" ? (el.eraSize ?? "") : "";
     if (field === "hideDetails") return el.hideDetails ? "true" : "";
@@ -632,6 +634,14 @@ export default function SpreadsheetView({
     if (e.shiftKey) return;
     const updated = { ...el };
     if (el.hideYears) delete updated.hideYears; else updated.hideYears = true;
+    onUpdate(updated);
+  };
+
+  const toggleApproximate = (e, el) => {
+    e.stopPropagation();
+    if (e.shiftKey) return;
+    const updated = { ...el };
+    if (el.approximate) delete updated.approximate; else updated.approximate = true;
     onUpdate(updated);
   };
 
@@ -1199,6 +1209,18 @@ export default function SpreadsheetView({
           onClick={(e) => { selectCell(e, el.id, field); if (!readOnly) toggleHideYear(e, el); }}
         >
           {el.hideYears && <Check size={13} className="sheet-check-icon" />}
+        </td>
+      );
+    }
+
+    if (field === "approximate") {
+      return (
+        <td key={field}
+          className={`sheet-cell sheet-cell-center sheet-cell-editable${selClass}`}
+          style={{ width: cellW }}
+          onClick={(e) => { selectCell(e, el.id, field); if (!readOnly) toggleApproximate(e, el); }}
+        >
+          {el.approximate && <Check size={13} className="sheet-check-icon" />}
         </td>
       );
     }

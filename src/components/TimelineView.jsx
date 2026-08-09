@@ -8,6 +8,7 @@ import {
   layoutSpans,
   layoutEvents,
   formatYear,
+  withApproxLabel,
   calculateDetailLevel,
   getReadableTextColor,
   MONTH_LABELS,
@@ -909,6 +910,7 @@ const TimelineView = forwardRef(function TimelineView({
         pinnedTags,
         negID: file.negID,
         posID: file.posID,
+        approxID: file.approxID,
         useCalendar: useCalendar,
         hideDecimals: file.hideDecimals,
         belowLine: isBelowLine,
@@ -1069,6 +1071,7 @@ const TimelineView = forwardRef(function TimelineView({
         pinnedTags,
         negID: file.negID,
         posID: file.posID,
+        approxID: file.approxID,
         useCalendar: useCalendar,
         hideDecimals: file.hideDecimals,
         belowLine: group.belowLine,
@@ -1515,6 +1518,7 @@ const TimelineView = forwardRef(function TimelineView({
     file?.hideDecimals,
     file?.negID,
     file?.posID,
+    file?.approxID,
   ]);
 
   // Notify parent of height changes
@@ -3873,7 +3877,7 @@ const TimelineView = forwardRef(function TimelineView({
                           )}
                           {!hideSpanYears && (
                             <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                              {displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
+                              {withApproxLabel(`${displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - ${displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}`, file.approxID, span.approximate === true)}
                             </span>
                           )}
                         </>
@@ -3965,7 +3969,7 @@ const TimelineView = forwardRef(function TimelineView({
                           ><ExternalLink size={11} strokeWidth={2.7} /></a>
                         )}
                         {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                          {event.hideYears !== true && <span className="event-year">{displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
+                          {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}</span>}
                           {(() => {
                             const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                               .filter((tag) => pinnedTags.includes(tag));
@@ -4060,7 +4064,7 @@ const TimelineView = forwardRef(function TimelineView({
                   )}
                   {!hideSpanYears && (
                     <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                      {displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - {displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}
+                      {withApproxLabel(`${displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - ${displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}`, file.approxID, span.approximate === true)}
                     </span>
                   )}
                   {span.sourceLink && !hideSpanYears && (
@@ -4285,7 +4289,7 @@ const TimelineView = forwardRef(function TimelineView({
                 <div className={event.thumbnail && event.thumbnailStyle !== "banner" ? "event-text-content" : ""}>
                 <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={evFontSize} className="event-title-icon" />; })()}{event.title}</div>
                 {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                  {event.hideYears !== true && <span className="event-year">{displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}</span>}
+                  {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateLabel(event.dateLabel) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}</span>}
                   {(() => {
                     const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                       .filter((tag) => pinnedTags.includes(tag));

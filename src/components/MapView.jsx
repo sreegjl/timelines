@@ -2,7 +2,7 @@ import { useMemo, useEffect, useRef, useState, memo, forwardRef, useImperativeHa
 import { MapContainer, TileLayer, Marker, Tooltip, Rectangle, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { formatYear } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel } from "../utils/timelineUtils";
 import { displayDateLabel } from "../utils/dateUtils";
 
 const DEFAULT_COLOR = "#6b7280";
@@ -114,15 +114,16 @@ function isMarkerVisibleAtViewportYear(el, viewportYear, fileConfig) {
 }
 
 function formatElementDate(el, fileConfig) {
-  const { negID, posID, useCalendar, hideDecimals } = fileConfig ?? {};
+  const { negID, posID, approxID, useCalendar, hideDecimals } = fileConfig ?? {};
+  const approx = (text) => withApproxLabel(text, approxID, el.approximate === true);
   if (el.type === "event") {
     const year = displayDateLabel(el.dateLabel) ?? (el.date != null ? formatYear(el.date, negID, posID, useCalendar === true, hideDecimals) : null);
-    return year ?? "";
+    return approx(year ?? "");
   }
   const start = displayDateLabel(el.startLabel) ?? (el.start != null ? formatYear(el.start, negID, posID, useCalendar === true, hideDecimals) : null);
   const end = displayDateLabel(el.endLabel) ?? (el.end != null ? formatYear(el.end, negID, posID, useCalendar === true, hideDecimals) : null);
-  if (start && end) return `${start} - ${end}`;
-  return start ?? end ?? "";
+  if (start && end) return approx(`${start} - ${end}`);
+  return approx(start ?? end ?? "");
 }
 
 function MapClickHandler({ onSelect }) {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search } from "lucide-react";
-import { formatYear } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
 
 const TypeDot = () => <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />;
@@ -19,13 +19,15 @@ function formatElementDate(el, fileSettings) {
     return formatYear(year, negID, posID, useCalendar, hideDecimals);
   };
 
+  const approx = (text) => withApproxLabel(text, fileSettings?.approxID, el.approximate === true);
+
   if (el.type === "event") {
-    return fmtYear(el.date, el.dateLabel);
+    return approx(fmtYear(el.date, el.dateLabel));
   }
   const start = fmtYear(el.start, el.startLabel);
   const end = fmtYear(el.end, el.endLabel);
-  if (start && end) return `${start} – ${end}`;
-  return start || end || "";
+  if (start && end) return approx(`${start} – ${end}`);
+  return approx(start || end || "");
 }
 
 const TYPE_ICONS = {

@@ -4,6 +4,7 @@ import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../util
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
 import { themeOptionLabel } from "../utils/themeLoader";
+import { DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
 import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
@@ -59,6 +60,7 @@ export default function SettingsModal({
   const [logScaleFactor, setLogScaleFactor] = useState(10);
   const [negID, setNegID] = useState("");
   const [posID, setPosID] = useState("");
+  const [approxID, setApproxID] = useState("");
   const [branchOrdering, setBranchOrdering] = useState("later-first");
   const [fixedEventHeight, setFixedEventHeight] = useState(false);
   const [eventWidth, setEventWidth] = useState(150);
@@ -105,6 +107,7 @@ export default function SettingsModal({
     tickDensity: Number(tickDensity) !== 1 ? Number(tickDensity) : undefined,
     negID,
     posID,
+    approxID,
     theme,
     font: fontFamily,
     useCalendar: useCalendar || undefined,
@@ -270,6 +273,7 @@ export default function SettingsModal({
         setLogScaleFactor(Number.isFinite(Number(timelineData.file.logScaleFactor)) && Number(timelineData.file.logScaleFactor) >= 1 ? Number(timelineData.file.logScaleFactor) : 10);
         setNegID(timelineData.file.negID || "");
         setPosID(timelineData.file.posID || "");
+        setApproxID(timelineData.file.approxID || "");
         setBranchOrdering(timelineData.file.branchOrdering || "later-first");
         setFixedEventHeight(Boolean(timelineData.file.fixedEventHeight));
         let rawWidth = timelineData.file.eventWidth;
@@ -419,6 +423,7 @@ export default function SettingsModal({
     tickDensity,
     negID,
     posID,
+    approxID,
     theme,
     fontFamily,
     useCalendar,
@@ -893,7 +898,7 @@ export default function SettingsModal({
               </div>
 
               {/* Positive Era */}
-              <div className="settings-row">
+              <div className="settings-row no-border-bottom">
                 <div className="settings-row-left">
                   <div className="settings-row-label">Positive Era</div>
                   <div className="settings-row-description">Optional label for positive years (e.g., CE).</div>
@@ -905,6 +910,24 @@ export default function SettingsModal({
                     value={posID}
                     onChange={(e) => setPosID(e.target.value)}
                     placeholder="e.g., CE"
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {/* Approximate Date */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Approximate Date</div>
+                  <div className="settings-row-description">Prefix for elements marked approximate (e.g., c., ca., circa).</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={approxID}
+                    onChange={(e) => setApproxID(e.target.value)}
+                    placeholder={DEFAULT_APPROX_LABEL}
                     maxLength={10}
                   />
                 </div>

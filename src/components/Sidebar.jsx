@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
 import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
 import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
-import { formatYear } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel } from "../utils/timelineUtils";
 import { displayDateLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
 import ColorPicker from "./ColorPicker";
@@ -132,7 +132,7 @@ function SidebarRow({ item, rightText, level = 0, selectedId, onSelect, listRef,
   );
 }
 
-function ElementRow({ element, selectedId, onSelect, listRef, lastScrollTopRef, setElementMenu, tagColors = {}, spanById, fmtYear }) {
+function ElementRow({ element, selectedId, onSelect, listRef, lastScrollTopRef, setElementMenu, tagColors = {}, spanById, fmtYear, approxID }) {
   const isSelected = selectedId === element.id;
   const isSpan = element.type === "span";
   const isEra = element.type === "era";
@@ -144,9 +144,13 @@ function ElementRow({ element, selectedId, onSelect, listRef, lastScrollTopRef, 
   const glyphColor = isEra || isSpan
     ? (element.color || tagColor || "var(--ui-muted)")
     : (parentSpanColor || tagColor || "var(--ui-muted)");
-  const dateText = (isSpan || isEra)
-    ? `${displayDateLabel(element.startLabel) ?? fmtYear(element.start)}–${displayDateLabel(element.endLabel) ?? fmtYear(element.end)}`
-    : (displayDateLabel(element.dateLabel) ?? fmtYear(element.date));
+  const dateText = withApproxLabel(
+    (isSpan || isEra)
+      ? `${displayDateLabel(element.startLabel) ?? fmtYear(element.start)}–${displayDateLabel(element.endLabel) ?? fmtYear(element.end)}`
+      : (displayDateLabel(element.dateLabel) ?? fmtYear(element.date)),
+    approxID,
+    element.approximate === true
+  );
   return (
     <button
       className={`sb-el-row${isSelected ? " is-selected" : ""}`}
@@ -571,10 +575,10 @@ export default function Sidebar({
     return [...pinned, ...rest].slice(0, 4);
   }, [allTags, pinnedTags]);
 
-  const formatRange = (start, end, startLabel, endLabel) => {
-    const left = displayDateLabel(startLabel) ?? fmtYear(start);
-    const right = displayDateLabel(endLabel) ?? fmtYear(end);
-    return `${left} - ${right}`;
+  const formatRange = (el) => {
+    const left = displayDateLabel(el.startLabel) ?? fmtYear(el.start);
+    const right = displayDateLabel(el.endLabel) ?? fmtYear(el.end);
+    return withApproxLabel(`${left} - ${right}`, file?.approxID, el.approximate === true);
   };
 
   const handleTimelineMenuClick = (e) => {
@@ -990,7 +994,7 @@ export default function Sidebar({
           {isOpen && (
             <div className="sb-era-items">
               {items.map((el) => (
-                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
               ))}
               {children.length > 0 && (
                 <div className="sb-era-nested-children">
@@ -1017,12 +1021,12 @@ export default function Sidebar({
               {(era.title || era.id).toUpperCase()}
             </span>
           </button>
-          <span className="sb-sub-era-range">{formatRange(era.start, era.end, era.startLabel, era.endLabel)}</span>
+          <span className="sb-sub-era-range">{formatRange(era)}</span>
         </div>
         {isOpen && (items.length > 0 || children.length > 0) && (
           <div className="sb-sub-era-items">
             {items.map((el) => (
-              <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+              <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
             ))}
             {children.length > 0 && (
               <div className="sb-era-nested-children">
@@ -1372,7 +1376,7 @@ export default function Sidebar({
                     {(s.title || s.id).toUpperCase()}
                   </span>
                 </button>
-                <span className="sb-sub-era-range">{formatRange(s.start, s.end, s.startLabel, s.endLabel)}</span>
+                <span className="sb-sub-era-range">{formatRange(s)}</span>
               </div>
             );
             return (
@@ -1381,7 +1385,7 @@ export default function Sidebar({
                 {isOpen && (
                   <div className="sb-sub-era-items">
                     {items.map((el) => (
-                      <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                      <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                     ))}
                     {subGroups?.map(({ span: childSpan, items: childItems }) => {
                       const isChildOpen = searchActive || openSpanGroups[childSpan.id] !== false;
@@ -1391,7 +1395,7 @@ export default function Sidebar({
                           {isChildOpen && childItems.length > 0 && (
                             <div className="sb-sub-era-items">
                               {childItems.map((el) => (
-                                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                               ))}
                             </div>
                           )}
@@ -1418,7 +1422,7 @@ export default function Sidebar({
                     {isOtherOpen && (
                       <div className="sb-sub-era-items">
                         {sortedVisibleSpanUngrouped.map((el) => (
-                          <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                          <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                         ))}
                       </div>
                     )}
@@ -1428,7 +1432,7 @@ export default function Sidebar({
               {spanGroups.groups.length === 0 && (
                 <div className="sb-sub-era-items">
                   {sortedVisibleSpanUngrouped.map((el) => (
-                    <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                    <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                   ))}
                 </div>
               )}
@@ -1448,7 +1452,7 @@ export default function Sidebar({
               {(openEras || searchActive) && (
                 <div className="sb-section-body">
                   {visibleEras.map((e) => (
-                    <SidebarRow key={e.id} item={e} rightText={formatRange(e.start, e.end, e.startLabel, e.endLabel)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
+                    <SidebarRow key={e.id} item={e} rightText={formatRange(e)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
                   ))}
                 </div>
               )}
@@ -1464,7 +1468,7 @@ export default function Sidebar({
               {(openSpans || searchActive) && (
                 <div className="sb-section-body">
                   {visibleSpans.map((s) => (
-                    <SidebarRow key={s.id} item={s} rightText={formatRange(s.start, s.end, s.startLabel, s.endLabel)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
+                    <SidebarRow key={s.id} item={s} rightText={formatRange(s)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
                   ))}
                 </div>
               )}
@@ -1480,7 +1484,7 @@ export default function Sidebar({
               {(openEvents || searchActive) && (
                 <div className="sb-section-body">
                   {visibleEvents.map((ev) => (
-                    <SidebarRow key={ev.id} item={ev} rightText={displayDateLabel(ev.dateLabel) ?? fmtYear(ev.date)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
+                    <SidebarRow key={ev.id} item={ev} rightText={withApproxLabel(displayDateLabel(ev.dateLabel) ?? fmtYear(ev.date), file?.approxID, ev.approximate === true)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} />
                   ))}
                 </div>
               )}
@@ -1530,7 +1534,7 @@ export default function Sidebar({
                 {isOpen && (
                   <div className="sb-era-items">
                     {items.map((el) => (
-                      <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                      <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                     ))}
                     {subGroups?.map(({ era: subEra, items: subItems }) => {
                       const isSubOpen = searchActive || openEraGroups[subEra.id] !== false;
@@ -1560,13 +1564,13 @@ export default function Sidebar({
                               </span>
                             </button>
                             <span className="sb-sub-era-range">
-                              {formatRange(subEra.start, subEra.end, subEra.startLabel, subEra.endLabel)}
+                              {formatRange(subEra)}
                             </span>
                           </div>
                           {isSubOpen && subItems.length > 0 && (
                             <div className="sb-sub-era-items">
                               {subItems.map((el) => (
-                                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                                <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                               ))}
                             </div>
                           )}
@@ -1594,7 +1598,7 @@ export default function Sidebar({
                     {isOtherOpen && (
                       <div className="sb-era-items">
                         {sortedVisibleUngrouped.map((el) => (
-                          <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                          <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                         ))}
                       </div>
                     )}
@@ -1604,7 +1608,7 @@ export default function Sidebar({
               {eraGroups.groups.length === 0 && (
                 <div className="sb-era-items">
                   {sortedVisibleUngrouped.map((el) => (
-                    <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} />
+                    <ElementRow key={el.id} element={el} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} tagColors={tagColors} spanById={spanById} fmtYear={fmtYear} approxID={file?.approxID} />
                   ))}
                 </div>
               )}
@@ -1926,8 +1930,8 @@ export default function Sidebar({
                             <span className="sidebar-group-element-title">{element.title || element.id}</span>
                             <span className="sidebar-group-element-range">
                               {element.type === "event"
-                                ? (displayDateLabel(element.dateLabel) ?? fmtYear(element.date))
-                                : formatRange(element.start, element.end, element.startLabel, element.endLabel)}
+                                ? withApproxLabel(displayDateLabel(element.dateLabel) ?? fmtYear(element.date), file?.approxID, element.approximate === true)
+                                : formatRange(element)}
                             </span>
                           </button>
                         ))}

@@ -5,6 +5,16 @@ export const MONTH_LABELS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
+export const DEFAULT_APPROX_LABEL = "c.";
+
+// Prefixes the approximate marker onto an already-formatted date, e.g. "c. 625 BCE"
+export function withApproxLabel(text, approxID, isApprox) {
+  if (isApprox !== true) return text;
+  if (text == null || text === "") return text;
+  const label = typeof approxID === "string" && approxID.trim() ? approxID.trim() : DEFAULT_APPROX_LABEL;
+  return `${label} ${text}`;
+}
+
 export function formatYear(year, negID, posID, useCalendar = false, hideDecimals = false) {
   if (year < 0) {
     const abs = hideDecimals ? Math.round(Math.abs(year)) : Math.abs(year);
@@ -599,6 +609,7 @@ export function layoutEvents({
   pinnedTags = [],
   negID,
   posID,
+  approxID,
   belowLine = false,
   useCalendar = false,
   hideDecimals = false,
@@ -879,7 +890,11 @@ export function layoutEvents({
 
   const finalEvents = laidOut.map((event) => {
     const x = event._x;
-    const yearLabel = displayDateLabel(event.dateLabel) ?? formatYear(event.date, negID, posID, useCalendar, hideDecimals);
+    const yearLabel = withApproxLabel(
+      displayDateLabel(event.dateLabel) ?? formatYear(event.date, negID, posID, useCalendar, hideDecimals),
+      approxID,
+      event.approximate === true
+    );
     const { boxHeight, isMultiLine, squareSize, boxWidth = EVENT_WIDTH } = measureEvent(
       event.title,
       event.tags,
