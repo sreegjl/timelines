@@ -7,16 +7,20 @@ import {
 } from "lucide-react";
 import { parseTimelineInput, formatDateForInput } from "../utils/dateUtils";
 import { formatYear } from "../utils/timelineUtils";
-import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
+import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
 import { normalizeTagValue } from "../utils/validation";
 import { ICON_MAP } from "../config/elementIcons";
 import { pickAndImportImage } from "../utils/electronApi";
 
 const TYPE_LABEL = { event: "Event", span: "Span", era: "Era" };
 
+// Events carry a single `approximate` flag; ranges mark each end on its own
+const approxField = (el, col) =>
+  col === "approxEnd" ? "approxEnd" : el.type === "event" ? "approximate" : "approxStart";
+
 const DEFAULT_WIDTHS = {
   type: 72, title: 200, description: 180, parent: 130, parentType: 90, date: 90, end: 85, mergeInto: 130,
-  group: 85, tags: 160, icon: 80, hideYear: 75, approximate: 90, color: 110, size: 100,
+  group: 85, tags: 160, icon: 80, hideYear: 75, approxStart: 105, approxEnd: 100, color: 110, size: 100,
   hideDetails: 90, lineStyle: 100, borderStyle: 105,
   coords: 150, wiki: 160, note: 110, sources: 110, thumbnail: 180, thumbnailStyle: 120,
 };
@@ -59,7 +63,7 @@ export default function SpreadsheetView({
   const [colWidths, setColWidths] = useState({});
   const scrollRef = useRef(null);
   const [hiddenCols, setHiddenCols] = useState(
-    new Set(["icon", "hideYear", "approximate", "color", "size", "hideDetails", "lineStyle", "borderStyle", "coords", "wiki", "note", "sources", "thumbnail", "thumbnailStyle"])
+    new Set(["icon", "hideYear", "approxStart", "approxEnd", "color", "size", "hideDetails", "lineStyle", "borderStyle", "coords", "wiki", "note", "sources", "thumbnail", "thumbnailStyle"])
   );
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -142,7 +146,8 @@ export default function SpreadsheetView({
       { key: "tags",       label: "Tags"         },
       { key: "icon",        label: "Icon"         },
       { key: "hideYear",    label: "Hide Date"    },
-      { key: "approximate", label: "Approximate"  },
+      { key: "approxStart", label: "Approx. Start" },
+      { key: "approxEnd",   label: "Approx. End"   },
       { key: "hideDetails", label: "Hide Details" },
       { key: "color",       label: "Color"        },
       { key: "size",        label: "Size"         },
@@ -203,7 +208,8 @@ export default function SpreadsheetView({
   const searchedElements = useMemo(() => {
     if (!search.trim()) return elements;
     const parsed = parseFilterQuery(search);
-    return elements.filter((el) => matchesFilter(el, parsed));
+    const context = buildFilterContext(elements);
+    return elements.filter((el) => matchesFilter(el, parsed, null, context));
   }, [elements, search]);
 
   const getCellDisplayValue = useCallback((el, field) => {
@@ -220,7 +226,8 @@ export default function SpreadsheetView({
     if (field === "tags")    return (el.tags ?? []).join(", ");
     if (field === "icon")    return el.icon ?? "";
     if (field === "hideYear")    return el.hideYears ? "true" : "";
-    if (field === "approximate") return el.approximate ? "true" : "";
+    if (field === "approxStart") return el[approxField(el, field)] ? "true" : "";
+    if (field === "approxEnd")   return el.type === "event" ? "" : (el.approxEnd ? "true" : "");
     if (field === "color")       return el.color ?? "";
     if (field === "size")        return el.type === "span" ? (el.spanSize ?? "") : el.type === "era" ? (el.eraSize ?? "") : "";
     if (field === "hideDetails") return el.hideDetails ? "true" : "";
@@ -637,11 +644,12 @@ export default function SpreadsheetView({
     onUpdate(updated);
   };
 
-  const toggleApproximate = (e, el) => {
+  const toggleApprox = (e, el, col) => {
     e.stopPropagation();
     if (e.shiftKey) return;
+    const field = approxField(el, col);
     const updated = { ...el };
-    if (el.approximate) delete updated.approximate; else updated.approximate = true;
+    if (el[field]) delete updated[field]; else updated[field] = true;
     onUpdate(updated);
   };
 
@@ -1213,14 +1221,22 @@ export default function SpreadsheetView({
       );
     }
 
-    if (field === "approximate") {
+    if (field === "approxStart" || field === "approxEnd") {
+      if (field === "approxEnd" && el.type === "event") {
+        return (
+          <td key={field} className={`sheet-cell sheet-cell-muted sheet-cell-disabled${selClass}`} style={{ width: cellW }}
+            onClick={(e) => selectCell(e, el.id, field)}>
+            <span className="sheet-cell-na">—</span>
+          </td>
+        );
+      }
       return (
         <td key={field}
           className={`sheet-cell sheet-cell-center sheet-cell-editable${selClass}`}
           style={{ width: cellW }}
-          onClick={(e) => { selectCell(e, el.id, field); if (!readOnly) toggleApproximate(e, el); }}
+          onClick={(e) => { selectCell(e, el.id, field); if (!readOnly) toggleApprox(e, el, field); }}
         >
-          {el.approximate && <Check size={13} className="sheet-check-icon" />}
+          {el[approxField(el, field)] && <Check size={13} className="sheet-check-icon" />}
         </td>
       );
     }

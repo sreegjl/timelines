@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search } from "lucide-react";
-import { formatYear, withApproxLabel } from "../utils/timelineUtils";
-import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
+import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
+import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
 
 const TypeDot = () => <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor", flexShrink: 0 }} />;
 const TypeBar = () => <span style={{ display: "inline-block", width: 12, height: 2, borderRadius: 1, background: "currentColor", flexShrink: 0 }} />;
@@ -19,15 +19,14 @@ function formatElementDate(el, fileSettings) {
     return formatYear(year, negID, posID, useCalendar, hideDecimals);
   };
 
-  const approx = (text) => withApproxLabel(text, fileSettings?.approxID, el.approximate === true);
-
   if (el.type === "event") {
-    return approx(fmtYear(el.date, el.dateLabel));
+    return withApproxLabel(fmtYear(el.date, el.dateLabel), fileSettings?.approxID, el.approximate === true);
   }
   const start = fmtYear(el.start, el.startLabel);
   const end = fmtYear(el.end, el.endLabel);
-  if (start && end) return approx(`${start} – ${end}`);
-  return approx(start || end || "");
+  if (start && end) return formatApproxRange(el, start, end, fileSettings?.approxID, " – ");
+  if (start) return withApproxLabel(start, fileSettings?.approxID, el.approxStart === true);
+  return withApproxLabel(end || "", fileSettings?.approxID, el.approxEnd === true);
 }
 
 const TYPE_ICONS = {
@@ -46,10 +45,11 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
   const activeItemRef = useRef(null);
 
   const parsedFilter = useMemo(() => parseFilterQuery(query), [query]);
+  const filterContext = useMemo(() => buildFilterContext(elements), [elements]);
   const results = useMemo(() => {
     if (!query.trim()) return elements.slice(0, 50);
-    return elements.filter((el) => matchesFilter(el, parsedFilter));
-  }, [query, elements, parsedFilter]);
+    return elements.filter((el) => matchesFilter(el, parsedFilter, null, filterContext));
+  }, [query, elements, parsedFilter, filterContext]);
 
   useEffect(() => {
     if (isOpen) {

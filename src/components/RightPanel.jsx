@@ -13,7 +13,7 @@ const DYNAMIC_DATE_OPTIONS = [
   { label: "This month", value: "current-month" },
   { label: "This year", value: "current-year" },
 ];
-import { formatYear, withApproxLabel, DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel, formatApproxRange, DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
 import { normalizeColor } from "../utils/colorUtils";
 import ColorPicker from "./ColorPicker";
@@ -877,10 +877,12 @@ export default function RightPanel({
                 <label>Date</label>
                 <div className="view-separator" />
                 <p>
-                  {withApproxLabel(
-                    `${displayDateLabel(formData.startLabel) ?? formatDisplayYear(formData.start)} – ${displayDateLabel(formData.endLabel) ?? formatDisplayYear(formData.end)}`,
+                  {formatApproxRange(
+                    formData,
+                    displayDateLabel(formData.startLabel) ?? formatDisplayYear(formData.start),
+                    displayDateLabel(formData.endLabel) ?? formatDisplayYear(formData.end),
                     timelineData?.file?.approxID,
-                    formData.approximate === true
+                    " – "
                   )}
                 </p>
               </div>
@@ -1253,27 +1255,32 @@ export default function RightPanel({
               </>
             )}
 
-            {/* Approximate date marker */}
-            <div className="form-group">
-              <div className="edit-row" title={`Prefixes the displayed date with "${approxMarker}"`}>
-                <label htmlFor="approximate">Approximate</label>
-                <div className="edit-separator" />
-                <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
-                  <input
-                    id="approximate"
-                    type="checkbox"
-                    checked={formData.approximate === true}
-                    onChange={(e) => {
-                      const next = { ...formData };
-                      if (e.target.checked) { next.approximate = true; } else { delete next.approximate; }
-                      setFormData(next);
-                      commitDraft(next);
-                    }}
-                  />
-                  <span className="settings-toggle-slider" />
-                </label>
+            {/* Approximate date marker — one flag per date, so a range can mark either end */}
+            {(formData.type === "event"
+              ? [{ field: "approximate", label: "Approximate" }]
+              : [{ field: "approxStart", label: "Approximate Start" }, { field: "approxEnd", label: "Approximate End" }]
+            ).map(({ field, label }) => (
+              <div className="form-group" key={field}>
+                <div className="edit-row" title={`Prefixes the displayed date with "${approxMarker}"`}>
+                  <label htmlFor={field}>{label}</label>
+                  <div className="edit-separator" />
+                  <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
+                    <input
+                      id={field}
+                      type="checkbox"
+                      checked={formData[field] === true}
+                      onChange={(e) => {
+                        const next = { ...formData };
+                        if (e.target.checked) { next[field] = true; } else { delete next[field]; }
+                        setFormData(next);
+                        commitDraft(next);
+                      }}
+                    />
+                    <span className="settings-toggle-slider" />
+                  </label>
+                </div>
               </div>
-            </div>
+            ))}
 
             {/* Relations */}
             {(formData.type === "event" || formData.type === "span") && (

@@ -15,6 +15,13 @@ export function withApproxLabel(text, approxID, isApprox) {
   return `${label} ${text}`;
 }
 
+// Joins a start/end pair, marking each end the element flags approximate on its own
+export function formatApproxRange(el, startText, endText, approxID, separator = " - ") {
+  const left = withApproxLabel(startText, approxID, el?.approxStart === true);
+  const right = withApproxLabel(endText, approxID, el?.approxEnd === true);
+  return `${left}${separator}${right}`;
+}
+
 export function formatYear(year, negID, posID, useCalendar = false, hideDecimals = false) {
   if (year < 0) {
     const abs = hideDecimals ? Math.round(Math.abs(year)) : Math.abs(year);

@@ -796,6 +796,19 @@
   z-index: 100;
 }
 
+/* Long-press to focus: the ring fills over the hold, so a quick tap barely shows it */
+@media (hover: none) and (pointer: coarse) {
+  .span-item {
+    -webkit-touch-callout: none;
+    transition: box-shadow 140ms ease-out;
+  }
+
+  .span-item:active {
+    transition: box-shadow 500ms ease-in;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--selection-color) 60%, transparent);
+  }
+}
+
 .era-item.is-selected {
   outline: 3px solid var(--selection-color);
   z-index: 100;

@@ -54,7 +54,11 @@ function tokenize(input) {
     } else if (wl.startsWith('contains:')) {
       const v = wl.slice(9);
       if (v) raw.push({ t: 'LEAF', kind: 'contains', value: v });
-      else raw.push({ t: 'PENDING_CONTAINS' });
+      else raw.push({ t: 'PENDING', kind: 'contains' });
+    } else if (wl.startsWith('family:')) {
+      const v = wl.slice(7);
+      if (v) raw.push({ t: 'LEAF', kind: 'family', value: v });
+      else raw.push({ t: 'PENDING', kind: 'family' });
     } else if (word[0] === '#' && word.length > 1) {
       raw.push({ t: 'LEAF', kind: 'tag', value: word.slice(1).normalize('NFC').toLowerCase() });
     } else {
@@ -65,10 +69,10 @@ function tokenize(input) {
   // Resolve "contains: text" (space between keyword and value)
   const tokens = [];
   for (let j = 0; j < raw.length; j++) {
-    if (raw[j].t === 'PENDING_CONTAINS') {
+    if (raw[j].t === 'PENDING') {
       const next = raw[j + 1];
       if (next && next.t === 'LEAF' && (next.kind === 'text' || next.kind === 'quoted')) {
-        tokens.push({ t: 'LEAF', kind: 'contains', value: next.value });
+        tokens.push({ t: 'LEAF', kind: raw[j].kind, value: next.value });
         j++;
       }
     } else {
@@ -145,9 +149,67 @@ function parseDateValue(val) {
   return isNaN(n) ? null : n;
 }
 
+// ─── Family index ─────────────────────────────────────────────────────────────
+
+const PARENT_FIELDS = ['parent', 'extendFrom', 'mergeParent'];
+
+const lowerId = (value) => String(value ?? '').toLowerCase();
+
+function parentIdsOf(el) {
+  const ids = [];
+  for (const field of PARENT_FIELDS) {
+    if (el[field]) ids.push(lowerId(el[field]));
+  }
+  if (Array.isArray(el.parents)) {
+    for (const pid of el.parents) if (pid) ids.push(lowerId(pid));
+  }
+  return ids;
+}
+
+export function buildFilterContext(elements) {
+  const list = Array.isArray(elements) ? elements : [];
+  const childIdsByParent = new Map();
+  for (const el of list) {
+    if (!el?.id) continue;
+    for (const parentId of parentIdsOf(el)) {
+      if (!childIdsByParent.has(parentId)) childIdsByParent.set(parentId, []);
+      childIdsByParent.get(parentId).push(lowerId(el.id));
+    }
+  }
+  return { elements: list, childIdsByParent, familyCache: new Map() };
+}
+
+const EMPTY_FAMILY = new Set();
+
+function resolveFamily(context, value) {
+  if (!value) return EMPTY_FAMILY;
+  const cached = context.familyCache.get(value);
+  if (cached) return cached;
+
+  // Exact id or title first, substring only as a fallback
+  let roots = context.elements.filter(
+    (el) => lowerId(el.id) === value || lowerId(el.title) === value
+  );
+  if (roots.length === 0) {
+    roots = context.elements.filter((el) => lowerId(el.title).includes(value));
+  }
+
+  const ids = new Set();
+  const stack = roots.map((el) => lowerId(el.id));
+  while (stack.length > 0) {
+    const id = stack.pop();
+    if (!id || ids.has(id)) continue;
+    ids.add(id);
+    for (const childId of context.childIdsByParent.get(id) ?? []) stack.push(childId);
+  }
+
+  context.familyCache.set(value, ids);
+  return ids;
+}
+
 // ─── Evaluator ────────────────────────────────────────────────────────────────
 
-function evalLeaf(leaf, el, noteContent) {
+function evalLeaf(leaf, el, noteContent, context) {
   const title = (el.title || el.id || '').toLowerCase();
 
   switch (leaf.kind) {
@@ -172,6 +234,10 @@ function evalLeaf(leaf, el, noteContent) {
       if (!noteContent) return false;
       return noteContent.toLowerCase().includes(leaf.value);
 
+    case 'family':
+      if (!context) return false;
+      return resolveFamily(context, leaf.value).has(lowerId(el.id));
+
     case 'date': {
       const dateVal = el.date ?? el.start;
       if (dateVal == null) return false;
@@ -191,13 +257,13 @@ function evalLeaf(leaf, el, noteContent) {
   }
 }
 
-function evalNode(node, el, noteContent) {
+function evalNode(node, el, noteContent, context) {
   if (!node) return true;
   switch (node.t) {
-    case 'AND': return evalNode(node.left, el, noteContent) && evalNode(node.right, el, noteContent);
-    case 'OR':  return evalNode(node.left, el, noteContent) || evalNode(node.right, el, noteContent);
-    case 'NOT': return !evalNode(node.operand, el, noteContent);
-    case 'LEAF': return evalLeaf(node, el, noteContent);
+    case 'AND': return evalNode(node.left, el, noteContent, context) && evalNode(node.right, el, noteContent, context);
+    case 'OR':  return evalNode(node.left, el, noteContent, context) || evalNode(node.right, el, noteContent, context);
+    case 'NOT': return !evalNode(node.operand, el, noteContent, context);
+    case 'LEAF': return evalLeaf(node, el, noteContent, context);
     default: return true;
   }
 }
@@ -217,7 +283,8 @@ export function parseFilterQuery(query) {
   return parse(tokens);
 }
 
-export function matchesFilter(el, parsedQuery, noteContent = null) {
+// Without a context from buildFilterContext(), family: never matches
+export function matchesFilter(el, parsedQuery, noteContent = null, context = null) {
   if (!parsedQuery) return true;
-  return evalNode(parsedQuery, el, noteContent);
+  return evalNode(parsedQuery, el, noteContent, context);
 }

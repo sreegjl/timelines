@@ -9,6 +9,7 @@ import {
   layoutEvents,
   formatYear,
   withApproxLabel,
+  formatApproxRange,
   calculateDetailLevel,
   getReadableTextColor,
   MONTH_LABELS,
@@ -16,8 +17,8 @@ import {
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
-import { parseFilterQuery, matchesFilter, tokenizeFilterQuery } from "../utils/filterUtils";
-import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History } from "lucide-react";
+import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext } from "../utils/filterUtils";
+import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
@@ -31,6 +32,10 @@ const readAppFontStack = () => {
   return root.style.getPropertyValue("--app-font-family").trim()
     || getComputedStyle(root).getPropertyValue("--app-font-family").trim();
 };
+
+// Matches the :active ring transition in 04-timeline.css
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_PX = 10;
 
 const FILTER_TYPE_TERMS = ["is:event", "is:span", "is:era", "has:coords"];
 const FILTER_DATE_OPS = [[">", ">"], [">=", "≥"], ["<", "<"], ["<=", "≤"]];
@@ -165,11 +170,14 @@ const readCardSnapshot = (root, scale, width, height, background) => {
   return { width, height, background, boxes };
 };
 
+const quoteIfNeeded = (value) => (/[\s|()~"<>]/.test(value) ? `"${value}"` : value);
+
 const filterChipTerm = (chip) => {
   let term;
   if (chip.kind === "date") term = `${chip.op}${chip.value}`;
   else if (chip.kind === "tag") term = `#${chip.value}`;
-  else if (chip.kind === "text") term = /[\s|()~"<>]/.test(chip.value) ? `"${chip.value}"` : chip.value;
+  else if (chip.kind === "text") term = quoteIfNeeded(chip.value);
+  else if (chip.kind === "family") term = `family:${quoteIfNeeded(chip.value)}`;
   else term = chip.value; // "type" kind holds the literal term: is:event / has:coords
   return (chip.negated ? "~" : "") + term;
 };
@@ -177,6 +185,7 @@ const filterChipTerm = (chip) => {
 const filterChipLabel = (chip) =>
   chip.kind === "date" ? `${FILTER_OP_GLYPH[chip.op] ?? chip.op} ${chip.value}`
     : chip.kind === "tag" ? `#${chip.value}`
+    : chip.kind === "family" ? `family: ${chip.label ?? chip.value}`
     : chip.value;
 
 const buildChipQuery = (chips) =>
@@ -195,6 +204,7 @@ const chipsFromQuery = (query, nextId) => {
     else if (tok.kind === "has") chip = { kind: "type", value: `has:${tok.value}` };
     else if (tok.kind === "tag") chip = { kind: "tag", value: tok.value };
     else if (tok.kind === "date") chip = { kind: "date", op: tok.op, value: tok.value };
+    else if (tok.kind === "family") chip = { kind: "family", value: tok.value };
     else if (tok.kind === "contains") chip = { kind: "text", value: `contains:${tok.value}` };
     else chip = { kind: "text", value: tok.value };
     chips.push({ id: nextId(), negated, join: chips.length === 0 ? "and" : join, ...chip });
@@ -428,6 +438,10 @@ const TimelineView = forwardRef(function TimelineView({
 
   const chipsQuery = useMemo(() => buildChipQuery(filterChips), [filterChips]);
   const parsedChipQuery = useMemo(() => parseFilterQuery(chipsQuery), [chipsQuery]);
+  const filterContext = useMemo(
+    () => buildFilterContext(timelineData?.elements ?? []),
+    [timelineData?.elements]
+  );
 
   useEffect(() => {
     onChipQueryChange?.(chipsQuery);
@@ -440,8 +454,10 @@ const TimelineView = forwardRef(function TimelineView({
   }, [chipsQuery, filterChips, activeTags]);
   const shownElementCount = useMemo(() => {
     const elements = timelineData?.elements ?? [];
-    return parsedChipQuery ? elements.filter((el) => matchesFilter(el, parsedChipQuery)).length : elements.length;
-  }, [timelineData?.elements, parsedChipQuery]);
+    return parsedChipQuery
+      ? elements.filter((el) => matchesFilter(el, parsedChipQuery, null, filterContext)).length
+      : elements.length;
+  }, [timelineData?.elements, parsedChipQuery, filterContext]);
   const hasAnyFilter = filterChips.length > 0 || activeTags.length > 0 || hiddenTags.length > 0;
   const [showMap, setShowMap] = useState(false);
   const mapViewRef = useRef(null);
@@ -485,9 +501,9 @@ const TimelineView = forwardRef(function TimelineView({
     );
     return (timelineData?.elements ?? []).filter(
       (el) => (!el.groupId || !hiddenGroupIds.has(el.groupId)) &&
-        (!parsedChipQuery || matchesFilter(el, parsedChipQuery))
+        (!parsedChipQuery || matchesFilter(el, parsedChipQuery, null, filterContext))
     );
-  }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery]);
+  }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery, filterContext]);
 
   const [appFontStack, setAppFontStack] = useState(() => readAppFontStack());
   useEffect(() => {
@@ -538,7 +554,7 @@ const TimelineView = forwardRef(function TimelineView({
     evFontSize,
   } = useMemo(() => {
     const file = timelineData.file;
-    const passesQuery = (el) => !parsedChipQuery || matchesFilter(el, parsedChipQuery);
+    const passesQuery = (el) => !parsedChipQuery || matchesFilter(el, parsedChipQuery, null, filterContext);
     const events = timelineData.elements.filter(e => e.type === "event" && passesQuery(e));
     const spans = timelineData.elements.filter(e => e.type === "span" && passesQuery(e));
     const eras = timelineData.elements.filter(e => e.type === "era" && passesQuery(e));
@@ -1257,7 +1273,7 @@ const TimelineView = forwardRef(function TimelineView({
       decompressYear,
       evFontSize,
     };
-  }, [timelineData, pinnedTags, showMap, parsedChipQuery, resolvedFont, fontReady]);
+  }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady]);
 
   const ticks = useMemo(() => {
     const minYear = file?.start;
@@ -1888,6 +1904,60 @@ const TimelineView = forwardRef(function TimelineView({
     addFilterChip({ kind: "date", op: filterDateOp, value: v });
     setFilterDateVal("");
   };
+  const isFamilyFocused = (spanId) =>
+    filterChips.some((c) => c.kind === "family" && !c.negated && c.value === spanId);
+  // One family chip at a time, so re-clicking the focused span clears it
+  const toggleFamilyChip = (spanId, title) =>
+    setFilterChips((prev) => {
+      const focused = prev.some((c) => c.kind === "family" && !c.negated && c.value === spanId);
+      const rest = prev.filter((c) => c.kind !== "family");
+      if (focused) return rest;
+      return [...rest, { id: nextChipId(), kind: "family", value: spanId, label: title, negated: false, join: "and" }];
+    });
+  // Touch stand-in for shift-click; editor long-press already opens the context menu
+  const longPressTimerRef = useRef(null);
+  const longPressOriginRef = useRef({ x: 0, y: 0 });
+  const longPressFiredRef = useRef(false);
+
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const spanLongPressProps = (span) => {
+    if (!readOnly) return null;
+    return {
+      onTouchStart: (e) => {
+        cancelLongPress();
+        longPressFiredRef.current = false;
+        if (e.touches.length !== 1) return;
+        longPressOriginRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        longPressTimerRef.current = setTimeout(() => {
+          longPressTimerRef.current = null;
+          longPressFiredRef.current = true;
+          navigator.vibrate?.(12);
+          toggleFamilyChip(span.id, span.title);
+        }, LONG_PRESS_MS);
+      },
+      onTouchMove: (e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        const origin = longPressOriginRef.current;
+        if (Math.hypot(touch.clientX - origin.x, touch.clientY - origin.y) > LONG_PRESS_MOVE_PX) {
+          cancelLongPress();
+        }
+      },
+      onTouchEnd: cancelLongPress,
+      onTouchCancel: cancelLongPress,
+      // Suppress the browser's own long-press menu
+      onContextMenu: (e) => {
+        if (longPressTimerRef.current || longPressFiredRef.current) e.preventDefault();
+      },
+    };
+  };
+
   const clearFilterChips = () => { setFilterChips([]); setFilterText(""); setFilterDateVal(""); };
   const clearAllFilters = () => { clearFilterChips(); onClearTags?.(); };
 
@@ -3863,8 +3933,11 @@ const TimelineView = forwardRef(function TimelineView({
                           height: `${span.spanHeight ?? 20}px`,
                           background: span.color || "var(--secondary-text)",
                         }}
+                        {...spanLongPressProps(span)}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+                          if (e.shiftKey) { toggleFamilyChip(span.id, span.title); return; }
                           handleSelect(span.id);
                         }}
                       >
@@ -3877,7 +3950,7 @@ const TimelineView = forwardRef(function TimelineView({
                           )}
                           {!hideSpanYears && (
                             <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                              {withApproxLabel(`${displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - ${displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}`, file.approxID, span.approximate === true)}
+                              {formatApproxRange(span, displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID)}
                             </span>
                           )}
                         </>
@@ -4053,8 +4126,11 @@ const TimelineView = forwardRef(function TimelineView({
                   height: `${span.spanHeight ?? 20}px`,
                   background: span.color || "var(--secondary-text)",
                 }}
+                {...spanLongPressProps(span)}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
+                  if (e.shiftKey) { toggleFamilyChip(span.id, span.title); return; }
                   handleSelect(span.id);
                 }}
               >
@@ -4064,7 +4140,7 @@ const TimelineView = forwardRef(function TimelineView({
                   )}
                   {!hideSpanYears && (
                     <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
-                      {withApproxLabel(`${displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)} - ${displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals)}`, file.approxID, span.approximate === true)}
+                      {formatApproxRange(span, displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID)}
                     </span>
                   )}
                   {span.sourceLink && !hideSpanYears && (
@@ -4389,6 +4465,16 @@ const TimelineView = forwardRef(function TimelineView({
             <CopyPlus size={16} />
             <span>Duplicate {contextMenu.element.type.charAt(0).toUpperCase() + contextMenu.element.type.slice(1)}</span>
           </button>
+          {contextMenu.element.type === "span" && (
+            <button
+              className="context-menu-item"
+              title="Shift-click a span to do this without the menu"
+              onClick={() => handleMenuAction(() => toggleFamilyChip(contextMenu.element.id, contextMenu.element.title))}
+            >
+              <Crosshair size={16} />
+              <span>{isFamilyFocused(contextMenu.element.id) ? "Clear Focus" : "Focus Span & Children"}</span>
+            </button>
+          )}
           <div className="context-menu-separator" />
           <button
             className="context-menu-item context-menu-item-danger"

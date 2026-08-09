@@ -733,6 +733,7 @@
 .fm-fchip-type,
 .fm-fchip-tag,
 .fm-fchip-date,
+.fm-fchip-family,
 .fm-fchip-text {
   background: color-mix(in srgb, var(--link-color, var(--accent-color)) 14%, var(--surface));
   border-color: color-mix(in srgb, var(--link-color, var(--accent-color)), var(--accent-color) 52%);

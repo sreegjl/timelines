@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
-import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
+import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
 import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
-import { formatYear, withApproxLabel } from "../utils/timelineUtils";
+import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { displayDateLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
 import ColorPicker from "./ColorPicker";
@@ -144,13 +144,15 @@ function ElementRow({ element, selectedId, onSelect, listRef, lastScrollTopRef, 
   const glyphColor = isEra || isSpan
     ? (element.color || tagColor || "var(--ui-muted)")
     : (parentSpanColor || tagColor || "var(--ui-muted)");
-  const dateText = withApproxLabel(
-    (isSpan || isEra)
-      ? `${displayDateLabel(element.startLabel) ?? fmtYear(element.start)}–${displayDateLabel(element.endLabel) ?? fmtYear(element.end)}`
-      : (displayDateLabel(element.dateLabel) ?? fmtYear(element.date)),
-    approxID,
-    element.approximate === true
-  );
+  const dateText = (isSpan || isEra)
+    ? formatApproxRange(
+        element,
+        displayDateLabel(element.startLabel) ?? fmtYear(element.start),
+        displayDateLabel(element.endLabel) ?? fmtYear(element.end),
+        approxID,
+        "–"
+      )
+    : withApproxLabel(displayDateLabel(element.dateLabel) ?? fmtYear(element.date), approxID, element.approximate === true);
   return (
     <button
       className={`sb-el-row${isSelected ? " is-selected" : ""}`}
@@ -575,11 +577,12 @@ export default function Sidebar({
     return [...pinned, ...rest].slice(0, 4);
   }, [allTags, pinnedTags]);
 
-  const formatRange = (el) => {
-    const left = displayDateLabel(el.startLabel) ?? fmtYear(el.start);
-    const right = displayDateLabel(el.endLabel) ?? fmtYear(el.end);
-    return withApproxLabel(`${left} - ${right}`, file?.approxID, el.approximate === true);
-  };
+  const formatRange = (el) => formatApproxRange(
+    el,
+    displayDateLabel(el.startLabel) ?? fmtYear(el.start),
+    displayDateLabel(el.endLabel) ?? fmtYear(el.end),
+    file?.approxID
+  );
 
   const handleTimelineMenuClick = (e) => {
     e.stopPropagation();
@@ -810,9 +813,14 @@ export default function Sidebar({
   const q = searchQuery.trim().toLowerCase();
   const matchesSearch = (value) => (value || "").toLowerCase().includes(q);
   const parsedFilter = useMemo(() => parseFilterQuery(searchQuery), [searchQuery]);
+  const filterContext = useMemo(
+    () => buildFilterContext(allElements ?? timelineData?.elements ?? []),
+    [allElements, timelineData?.elements]
+  );
   // Combine the sidebar's own search with the timeline's active chip filter (AND semantics).
   const elMatches = (el) =>
-    matchesFilter(el, parsedFilter) && (!hasChipFilter || matchesFilter(el, chipFilter));
+    matchesFilter(el, parsedFilter, null, filterContext) &&
+    (!hasChipFilter || matchesFilter(el, chipFilter, null, filterContext));
   const searchPlaceholder = sidebarTab === "timeline"
     ? "Search spans, events, eras..."
     : sidebarTab === "tags"
