@@ -56,7 +56,7 @@ function tokenize(input) {
       if (v) raw.push({ t: 'LEAF', kind: 'contains', value: v });
       else raw.push({ t: 'PENDING_CONTAINS' });
     } else if (word[0] === '#' && word.length > 1) {
-      raw.push({ t: 'LEAF', kind: 'tag', value: word.slice(1).toLowerCase() });
+      raw.push({ t: 'LEAF', kind: 'tag', value: word.slice(1).normalize('NFC').toLowerCase() });
     } else {
       raw.push({ t: 'LEAF', kind: 'text', value: wl });
     }
@@ -160,7 +160,8 @@ function evalLeaf(leaf, el, noteContent) {
 
     case 'tag': {
       const tags = Array.isArray(el.tags) ? el.tags : [];
-      return tags.some((t) => t.toLowerCase() === leaf.value);
+      // Tags saved before NFC was applied on entry
+      return tags.some((t) => t.normalize('NFC').toLowerCase() === leaf.value);
     }
 
     case 'has':

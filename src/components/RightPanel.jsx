@@ -696,12 +696,12 @@ export default function RightPanel({
   const addTag = (tag) => {
     const normalized = normalizeTagValue(tag);
     if (!normalized) return;
-    if (normalized.length > TAG_MAX_LENGTH) {
+    if ([...normalized].length > TAG_MAX_LENGTH) {
       pushValidationError(`Tags must be ${TAG_MAX_LENGTH} characters or fewer.`);
       return;
     }
     if (!isValidTagValue(normalized)) {
-      pushValidationError("Tags can only include letters, numbers, spaces, hyphens, and underscores.");
+      pushValidationError('Tags cannot contain , # | ( ) ~ " < >');
       return;
     }
     const existing = Array.isArray(formData.tags) ? formData.tags : [];

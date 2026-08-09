@@ -4,7 +4,10 @@ import { parseTimelineInput, snapToMonthGrid } from "./dateUtils";
 
 export const isValidIdValue = (value) => /^[a-z0-9_-]+$/i.test(value);
 
-export const isValidTagValue = (value) => /^[a-z0-9 _-]+$/i.test(value);
+// Any script is fine; these break filter syntax or the spreadsheet's comma column
+const TAG_FORBIDDEN = /[,#|()~"<>]|\p{C}/u;
+
+export const isValidTagValue = (value) => value.length > 0 && !TAG_FORBIDDEN.test(value);
 
 // Bare filename or notes-root-relative slash path, matching what resolveNotePath accepts in main
 export const isSafeNoteRef = (name) => {
@@ -12,7 +15,7 @@ export const isSafeNoteRef = (name) => {
   return /^[\w.-]+(\/[\w.-]+)*\.md$/i.test(name);
 };
 
-export const normalizeTagValue = (value) => value.trim().replace(/\s+/g, " ");
+export const normalizeTagValue = (value) => String(value).normalize("NFC").trim().replace(/\s+/g, " ");
 
 // --- URL helpers ---
 

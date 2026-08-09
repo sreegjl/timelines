@@ -8,6 +8,7 @@ import {
 import { parseTimelineInput, formatDateForInput } from "../utils/dateUtils";
 import { formatYear } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter } from "../utils/filterUtils";
+import { normalizeTagValue } from "../utils/validation";
 import { ICON_MAP } from "../config/elementIcons";
 import { pickAndImportImage } from "../utils/electronApi";
 
@@ -356,7 +357,7 @@ export default function SpreadsheetView({
       if (Number.isFinite(el.start) && p.value <= el.start) return null;
       updated.end = p.value; if (p.label) updated.endLabel = p.label; else delete updated.endLabel;
     } else if (field === "tags") {
-      const tags = val.split(",").map((t) => t.trim()).filter(Boolean);
+      const tags = val.split(",").map((t) => normalizeTagValue(t)).filter(Boolean);
       if (tags.length) updated.tags = tags; else delete updated.tags;
     } else if (field === "icon") {
       const v = val.trim();
