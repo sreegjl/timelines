@@ -1245,6 +1245,15 @@
   white-space: nowrap;
 }
 
+.timeline-item-stats {
+  font-size: var(--text-xs);
+  color: var(--ui-muted);
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .timeline-item-dots {
   display: flex;
   align-items: center;
@@ -2119,6 +2128,85 @@
   transition: background 140ms ease;
 }
 
+/* Mirrors .home-row's outer template so the columns line up */
+.home-list-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 32px;
+  padding: 0 2px;
+  border-bottom: 1px solid var(--home-line);
+}
+
+.home-list-header .home-row-folder,
+.home-list-header .home-row-count,
+.home-list-header .home-row-time,
+.home-list-header-name {
+  color: var(--home-ink-3);
+  font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-list-header-name {
+  min-width: 0;
+  padding-left: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-list-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.home-list-header-btn:hover,
+.home-list-header-btn.is-active {
+  color: var(--home-ink);
+}
+
+.home-list-header-btn:focus-visible {
+  outline: 2px solid var(--home-tint-5);
+  outline-offset: 2px;
+}
+
+.home-list-header-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Always in layout so selecting a column never nudges its label */
+.home-list-header-caret {
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.home-list-header-btn:hover .home-list-header-caret {
+  opacity: 0.4;
+}
+
+.home-list-header-btn.is-active .home-list-header-caret {
+  opacity: 1;
+}
+
+.home-list-header-caret.is-asc {
+  transform: rotate(180deg);
+}
+
 .home-row:hover {
   background: var(--home-tint-1);
 }
@@ -2176,25 +2264,32 @@
   letter-spacing: 0.02em;
 }
 
+/* Fixed tracks keep header and rows aligned; 24px matches .timeline-item-dots */
 .home-row-meta {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 68px) 82px 24px;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
+.home-row-meta.has-folder {
+  grid-template-columns: 140px repeat(3, 68px) 82px 24px;
+}
+
 .home-row-folder,
+.home-row-count,
 .home-row-time {
   color: var(--home-ink-3);
   font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
   font-size: 11px;
   white-space: nowrap;
-}
-
-.home-row-folder {
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.home-row-count {
+  font-variant-numeric: tabular-nums;
 }
 
 .home-grid {
@@ -2336,16 +2431,50 @@
     white-space: normal;
   }
 
-  .home-row {
-    grid-template-columns: minmax(0, 1fr);
+}
+
+/* Narrow panes drop columns one at a time; templates must match .home-row-meta */
+@container (max-width: 700px) {
+  .home-list .home-row-folder {
+    display: none;
   }
 
-  .home-row-meta {
-    grid-column: 1;
-    padding-bottom: 14px;
-    gap: 10px;
+  .home-list .home-row-meta.has-folder {
+    grid-template-columns: repeat(3, 68px) 82px 24px;
+  }
+}
+
+@container (max-width: 550px) {
+  .home-list .home-row-count-eras {
+    display: none;
   }
 
+  .home-list .home-row-meta,
+  .home-list .home-row-meta.has-folder {
+    grid-template-columns: repeat(2, 68px) 82px 24px;
+  }
+}
+
+@container (max-width: 470px) {
+  .home-list .home-row-count-spans {
+    display: none;
+  }
+
+  .home-list .home-row-meta,
+  .home-list .home-row-meta.has-folder {
+    grid-template-columns: 68px 82px 24px;
+  }
+}
+
+@container (max-width: 390px) {
+  .home-list .home-row-count-events {
+    display: none;
+  }
+
+  .home-list .home-row-meta,
+  .home-list .home-row-meta.has-folder {
+    grid-template-columns: 82px 24px;
+  }
 }
 
 @media (max-width: 560px) {

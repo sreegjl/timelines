@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
-import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, History, ExternalLink, Share2 } from "lucide-react";
+import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, ChevronDown, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, History, ExternalLink, Share2 } from "lucide-react";
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
@@ -84,6 +84,37 @@ function relativeTime(ms) {
 }
 
 const isConflictCopyId = (value) => /-conflict-\d{8}-[\w.-]+(?:-\d+)?$/i.test(String(value || ""));
+
+const SORT_FIELDS = new Set(["modified", "name", "folder", "events", "spans", "eras"]);
+const DEFAULT_SORT_DIR = { name: "asc", folder: "asc", modified: "desc", events: "desc", spans: "desc", eras: "desc" };
+const LEGACY_SORT_MODES = { date: ["modified", "desc"], name: ["name", "asc"], "name-desc": ["name", "desc"] };
+const SORT_HEADER_LABELS = { name: "Name", folder: "Location", events: "Events", spans: "Spans", eras: "Eras", modified: "Modified" };
+
+function parseSortMode(value) {
+  if (LEGACY_SORT_MODES[value]) return LEGACY_SORT_MODES[value];
+  const [field, dir] = String(value || "").split(":");
+  if (SORT_FIELDS.has(field) && (dir === "asc" || dir === "desc")) return [field, dir];
+  return ["modified", "desc"];
+}
+
+const countLabel = (n, plural) => `${n} ${n === 1 ? plural.slice(0, -1) : plural}`;
+
+// null when the payload predates the count fields
+function elementCounts(file) {
+  const fields = [
+    [file?.eventCount, "events"],
+    [file?.spanCount, "spans"],
+    [file?.eraCount, "eras"],
+  ];
+  return fields.every(([n]) => Number.isFinite(n)) ? fields : null;
+}
+
+function formatElementCounts(file) {
+  const fields = elementCounts(file);
+  if (!fields) return null;
+  if (fields.every(([n]) => n === 0)) return "Empty";
+  return fields.map(([n, label]) => countLabel(n, label)).join(" · ");
+}
 
 function formatSyncTime(value) {
   if (!value) return "Not synced yet";
@@ -259,7 +290,8 @@ export default function HomePage({
   const [view, setView] = useState(settingsOnly ? "settings" : "home");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("grid");
-  const [sortMode, setSortMode] = useState("date");
+  const [sortField, setSortField] = useState("modified");
+  const [sortDir, setSortDir] = useState("desc");
   const [librarySection, setLibrarySection] = useState("home");
   const [currentFolder, setCurrentFolder] = useState("");
   const [allFolders, setAllFolders] = useState([]);
@@ -311,7 +343,11 @@ export default function HomePage({
 
   useEffect(() => {
     getAppSettings().then((settings) => {
-      if (settings?.homeSortMode) setSortMode(settings.homeSortMode);
+      if (settings?.homeSortMode) {
+        const [field, dir] = parseSortMode(settings.homeSortMode);
+        setSortField(field);
+        setSortDir(dir);
+      }
       if (settings?.homeViewMode === "list" || settings?.homeViewMode === "grid") {
         setViewMode(settings.homeViewMode);
       }
@@ -329,6 +365,33 @@ export default function HomePage({
     setViewMode(nextMode);
     saveAppSettings({ homeViewMode: nextMode });
   };
+
+  const applySort = (field, dir) => {
+    setSortField(field);
+    setSortDir(dir);
+    saveAppSettings({ homeSortMode: `${field}:${dir}` });
+  };
+
+  const handleSortHeader = (field) => {
+    if (field === sortField) applySort(field, sortDir === "asc" ? "desc" : "asc");
+    else applySort(field, DEFAULT_SORT_DIR[field] || "asc");
+  };
+
+  // Grid has no headers, so its button cycles the three common orders
+  const cycleGridSort = () => {
+    if (sortField === "name" && sortDir === "asc") applySort("name", "desc");
+    else if (sortField === "modified") applySort("name", "asc");
+    else applySort("modified", "desc");
+  };
+
+  const gridSortLabel = sortField === "name"
+    ? (sortDir === "asc" ? "A-Z" : "Z-A")
+    : sortField === "modified" ? "Recent" : SORT_HEADER_LABELS[sortField];
+  const GridSortIcon = sortField === "modified"
+    ? Clock
+    : sortField === "name" && sortDir === "asc" ? ArrowDownAZ
+      : sortField === "name" ? ArrowUpAZ
+        : ChevronDown;
 
   useEffect(() => {
     if (settingsOnly) return undefined;
@@ -1186,22 +1249,25 @@ export default function HomePage({
           folderLabel.toLowerCase().includes(normalizedQuery)
         );
       })
-      .sort((a, b) => (
-        sortMode === "name" ? a.name.localeCompare(b.name)
-          : sortMode === "name-desc" ? b.name.localeCompare(a.name)
-            : (b.modifiedAt ?? 0) - (a.modifiedAt ?? 0)
-      ))
-  ), [activeBaseTimelines, normalizedQuery, sortMode]);
+      .sort((a, b) => {
+        const compare = (
+          sortField === "name" ? a.name.localeCompare(b.name)
+            : sortField === "folder" ? (a.folder || "").localeCompare(b.folder || "")
+              : sortField === "events" ? (a.eventCount ?? 0) - (b.eventCount ?? 0)
+                : sortField === "spans" ? (a.spanCount ?? 0) - (b.spanCount ?? 0)
+                  : sortField === "eras" ? (a.eraCount ?? 0) - (b.eraCount ?? 0)
+                    : (a.modifiedAt ?? 0) - (b.modifiedAt ?? 0)
+        );
+        // Ties fall back to name for a stable order
+        return (sortDir === "asc" ? compare : -compare) || a.name.localeCompare(b.name);
+      })
+  ), [activeBaseTimelines, normalizedQuery, sortField, sortDir]);
 
   const activeScopeLabel = currentFolder
     ? currentFolder.split("/").pop()
     : librarySection === "recent"
         ? "Recent"
         : "Home";
-  const activeScopeLastModified = filteredTimelines.reduce(
-    (latest, file) => Math.max(latest, file.modifiedAt ?? 0),
-    0
-  );
   const lastSyncedMs = gitSyncStatus?.repo && gitSyncStatus?.lastSyncedAt
     ? Date.parse(gitSyncStatus.lastSyncedAt)
     : NaN;
@@ -1315,6 +1381,31 @@ export default function HomePage({
       return;
     }
     setView("home");
+  };
+
+  const renderSortHeader = (field, cellClass) => {
+    const label = SORT_HEADER_LABELS[field];
+    const active = sortField === field;
+    const caretDir = active ? sortDir : (DEFAULT_SORT_DIR[field] || "asc");
+    return (
+      <button
+        type="button"
+        className={`home-list-header-btn ${cellClass}${active ? " is-active" : ""}`}
+        onClick={() => handleSortHeader(field)}
+        title={`Sort by ${label.toLowerCase()}`}
+        aria-label={active
+          ? `Sorted by ${label.toLowerCase()}, ${sortDir === "asc" ? "ascending" : "descending"}. Click to reverse.`
+          : `Sort by ${label.toLowerCase()}`}
+      >
+        <span className="home-list-header-text">{label}</span>
+        {/* Always rendered so the label never shifts */}
+        <ChevronDown
+          size={11}
+          className={`home-list-header-caret${caretDir === "asc" ? " is-asc" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+    );
   };
 
   const renderGitSyncTreeNode = (node, depth = 0) => {
@@ -1570,20 +1661,19 @@ export default function HomePage({
                 </div>
 
                 <div className="home-toolbar-actions">
-                  <button
-                    className="home-sort-btn"
-                    type="button"
-                    onClick={() => setSortMode((state) => {
-                      const next = state === "date" ? "name" : state === "name" ? "name-desc" : "date";
-                      saveAppSettings({ homeSortMode: next });
-                      return next;
-                    })}
-                    aria-label="Toggle sort"
-                    title={sortMode === "date" ? "Sort: Date modified" : sortMode === "name" ? "Sort: A-Z" : "Sort: Z-A"}
-                  >
-                    {sortMode === "date" ? <Clock size={15} /> : sortMode === "name" ? <ArrowDownAZ size={15} /> : <ArrowUpAZ size={15} />}
-                    <span>{sortMode === "date" ? "Recent" : sortMode === "name" ? "A-Z" : "Z-A"}</span>
-                  </button>
+                  {/* List view sorts from its column headers instead */}
+                  {viewMode === "grid" && (
+                    <button
+                      className="home-sort-btn"
+                      type="button"
+                      onClick={cycleGridSort}
+                      aria-label="Toggle sort"
+                      title={`Sort: ${gridSortLabel}`}
+                    >
+                      <GridSortIcon size={15} />
+                      <span>{gridSortLabel}</span>
+                    </button>
+                  )}
 
                   <div className="view-mode-pill">
                     <button
@@ -1613,18 +1703,31 @@ export default function HomePage({
                   </div>
                   <div className="home-content-meta">
                     {filteredTimelines.length} total
-                    {activeScopeLastModified > 0 && ` · last edit ${relativeTime(activeScopeLastModified)}`}
                     {Number.isFinite(lastSyncedMs) && ` · last synced ${relativeTime(lastSyncedMs)}`}
                   </div>
                 </div>
 
                 {viewMode === "list" ? (
                   <div className="home-list">
+                    {filteredTimelines.length > 0 && (
+                      <div className="home-list-header">
+                        {renderSortHeader("name", "home-list-header-name")}
+                        <div className={`home-row-meta${showFolderMeta ? " has-folder" : ""}`}>
+                          {showFolderMeta && renderSortHeader("folder", "home-row-folder")}
+                          {renderSortHeader("events", "home-row-count home-row-count-events")}
+                          {renderSortHeader("spans", "home-row-count home-row-count-spans")}
+                          {renderSortHeader("eras", "home-row-count home-row-count-eras")}
+                          {renderSortHeader("modified", "home-row-time")}
+                          <span aria-hidden="true" />
+                        </div>
+                      </div>
+                    )}
                     {filteredTimelines.map((file) => {
                       const badges = [
                         file.isPackage ? "Package" : null,
                         isConflictCopyId(file.id) ? "Conflict" : null,
                       ].filter(Boolean);
+                      const counts = elementCounts(file);
                       return (
                         <div
                           key={file.id}
@@ -1653,10 +1756,16 @@ export default function HomePage({
                             </div>
                           </div>
 
-                          <div className="home-row-meta">
+                          <div className={`home-row-meta${showFolderMeta ? " has-folder" : ""}`}>
                             {showFolderMeta && (
                               <span className="home-row-folder">{file.folder || "Home"}</span>
                             )}
+                            {/* Rendered even when unknown so the columns stay aligned */}
+                            {(counts || [[null, "events"], [null, "spans"], [null, "eras"]]).map(([n, label]) => (
+                              <span key={label} className={`home-row-count home-row-count-${label}`}>
+                                {n === null ? "" : countLabel(n, label)}
+                              </span>
+                            ))}
                             <span className="home-row-time">{file.modifiedAt ? relativeTime(file.modifiedAt) : "no edits yet"}</span>
                             <button
                               className="timeline-item-dots"
@@ -1685,6 +1794,7 @@ export default function HomePage({
                     }}
                   >
                     {filteredTimelines.map((file) => {
+                      const countsLabel = formatElementCounts(file);
                       return (
                         <div
                           key={file.id}
@@ -1732,6 +1842,7 @@ export default function HomePage({
                             </div>
                             {showFolderMeta && <span className="home-row-folder">{file.folder || "Home"}</span>}
                             <span className="timeline-item-meta">{file.modifiedAt ? `Edited ${relativeTime(file.modifiedAt)}` : "No edits yet"}</span>
+                            {countsLabel && <span className="timeline-item-stats">{countsLabel}</span>}
                           </div>
                         </div>
                       );

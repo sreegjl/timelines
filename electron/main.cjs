@@ -620,13 +620,19 @@ ipcMain.handle('list-timelines', async () => {
           const storageId = deriveStorageId(data.file);
           const thumbnailPath = path.join(await getAssetsDir(storageId), '.timeline-thumbnail.jpg');
           const thumbnailStat = await fs.stat(thumbnailPath).catch(() => null);
+          const elements = Array.isArray(data.elements) ? data.elements : [];
+          // Anything not explicitly a span or era counts as an event
+          const spanCount = elements.filter((el) => el?.type === 'span').length;
+          const eraCount = elements.filter((el) => el?.type === 'era').length;
           return {
             id: relativeId,
             uid: storageId,
             name: data.file?.title || parts[parts.length - 1],
             neverSync: Boolean(data.file?.neverSync),
             modifiedAt: stat.mtimeMs,
-            eventCount: Array.isArray(data.elements) ? data.elements.length : 0,
+            eventCount: elements.length - spanCount - eraCount,
+            spanCount,
+            eraCount,
             folder,
             ...(thumbnailStat ? {
               thumbnailUrl: `${toAssetUrl(thumbnailPath)}&v=${Math.floor(thumbnailStat.mtimeMs)}`,
