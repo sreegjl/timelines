@@ -175,7 +175,7 @@ const quoteIfNeeded = (value) => (/[\s|()~"<>]/.test(value) ? `"${value}"` : val
 const filterChipTerm = (chip) => {
   let term;
   if (chip.kind === "date") term = `${chip.op}${chip.value}`;
-  else if (chip.kind === "tag") term = `#${chip.value}`;
+  else if (chip.kind === "tag") term = `#${quoteIfNeeded(chip.value)}`;
   else if (chip.kind === "text") term = quoteIfNeeded(chip.value);
   else if (chip.kind === "family") term = `family:${quoteIfNeeded(chip.value)}`;
   else term = chip.value; // "type" kind holds the literal term: is:event / has:coords
@@ -449,7 +449,7 @@ const TimelineView = forwardRef(function TimelineView({
   const fullFilterQuery = useMemo(() => {
     const extraTags = activeTags
       .filter((t) => !filterChips.some((c) => c.kind === "tag" && !c.negated && c.value.toLowerCase() === t.toLowerCase()))
-      .map((t) => `#${t}`);
+      .map((t) => `#${quoteIfNeeded(t)}`);
     return [chipsQuery, ...extraTags].filter(Boolean).join(" ");
   }, [chipsQuery, filterChips, activeTags]);
   const shownElementCount = useMemo(() => {
@@ -2047,7 +2047,11 @@ const TimelineView = forwardRef(function TimelineView({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const v = filterText.trim().replace(/^"+|"+$/g, "");
-                if (v) { addFilterChip({ kind: "text", value: v }); setFilterText(""); }
+                if (v) {
+                  const tag = v.startsWith("#") ? v.slice(1).replace(/^"+|"+$/g, "").trim() : "";
+                  addFilterChip(tag ? { kind: "tag", value: tag } : { kind: "text", value: v });
+                  setFilterText("");
+                }
                 setHistoryOpen(false);
                 return;
               }

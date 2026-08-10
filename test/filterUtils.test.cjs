@@ -73,6 +73,33 @@ test("family: tolerates a parent cycle", async () => {
   assert.deepStrictEqual((await run("family:span-a", cyclic)).sort(), ["span-a", "span-b"]);
 });
 
+const TAGGED = [
+  { id: "e-ww1", type: "event", title: "Armistice", date: 1918, tags: ["World War", "europe"] },
+  { id: "e-moon", type: "event", title: "Apollo 11", date: 1969, tags: ["space"] },
+];
+
+test("#tag matches a tag containing spaces when quoted", async () => {
+  assert.deepStrictEqual(await run('#"world war"', TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run('# "world war"', TAGGED), ["e-ww1"]);
+});
+
+test("#tag with spaces combines with other leaves", async () => {
+  assert.deepStrictEqual(await run('#"world war" is:event', TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run('~#"world war"', TAGGED), ["e-moon"]);
+  assert.deepStrictEqual((await run('#"world war" | #space', TAGGED)).sort(), ["e-moon", "e-ww1"]);
+});
+
+test("#tag without spaces still matches unquoted", async () => {
+  assert.deepStrictEqual(await run("#space", TAGGED), ["e-moon"]);
+});
+
+test("a quoted tag tokenizes as a tag leaf", async () => {
+  const { tokenizeFilterQuery } = await import("../src/utils/filterUtils.js");
+  assert.deepStrictEqual(tokenizeFilterQuery('#"World War"'), [
+    { t: "LEAF", kind: "tag", value: "world war" },
+  ]);
+});
+
 test("contains: still parses with a space before its value", async () => {
   const { tokenizeFilterQuery } = await import("../src/utils/filterUtils.js");
   assert.deepStrictEqual(tokenizeFilterQuery("contains: siege"), [
