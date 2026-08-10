@@ -364,6 +364,16 @@ function OverflowTags({ tags, tagColors, getReadableTextColor: readableColor }) 
   );
 }
 
+// html2canvas emits no progress events
+function creepProgress(from, to, stage, report) {
+  const started = Date.now();
+  const id = setInterval(() => {
+    const elapsed = (Date.now() - started) / 4000;
+    report(Math.round(from + (to - from) * (1 - Math.exp(-elapsed))), stage);
+  }, 150);
+  return () => clearInterval(id);
+}
+
 const TimelineView = forwardRef(function TimelineView({
   selectedId,
   onSelect,
@@ -381,6 +391,9 @@ const TimelineView = forwardRef(function TimelineView({
   exportPngOptions,
   onExportPng,
   onExportVideo,
+  onExportProgress,
+  onExportComplete,
+  onNotify,
   rightPanelWidth = 0,
   isRightPanelOpen = false,
   leftPanelWidth = 0,
@@ -2631,22 +2644,30 @@ const TimelineView = forwardRef(function TimelineView({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    onNotify?.('JSON export saved');
   };
 
   const handleDownloadPNG = async () => {
     const timelineEl = timelineRef.current;
-    if (!timelineEl) return;
+    if (!timelineEl) {
+      onExportComplete?.({ success: false, error: 'Timeline is not ready' });
+      return;
+    }
+
+    const report = (percent, stage) => onExportProgress?.({ percent, stage });
+    let stopCreep = null;
+    report(2, 'Preparing export...');
+
+    // hoisted so finally can restore after a failed render
+    const currentTransform = timelineEl.style.transform;
+    const currentTransformOrigin = timelineEl.style.transformOrigin;
+    const root = document.documentElement;
+    const originalPrimaryBg = getComputedStyle(root).getPropertyValue('--app-bg').trim();
+    const overridesBg = Boolean(exportPngOptions?.transparentBg || exportPngOptions?.customBg);
 
     try {
       // Dynamically import html2canvas
       const html2canvas = (await import('html2canvas')).default;
-
-      // Store the current transform
-      const currentTransform = timelineEl.style.transform;
-      const currentTransformOrigin = timelineEl.style.transformOrigin;
-
-      const root = document.documentElement;
-      const originalPrimaryBg = getComputedStyle(root).getPropertyValue('--app-bg').trim();
 
       // Temporarily remove transform
       timelineEl.style.transform = 'none';
@@ -2692,6 +2713,8 @@ const TimelineView = forwardRef(function TimelineView({
         MAX_CANVAS_DIM / exportHeight,
       );
       const safeScale = Math.min(scale, maxScale);
+      report(8, 'Rendering timeline...');
+      stopCreep = creepProgress(8, 65, 'Rendering timeline...', report);
       const canvas = await html2canvas(timelineEl, {
         backgroundColor: bgColor,
         scale: safeScale,
@@ -2702,6 +2725,10 @@ const TimelineView = forwardRef(function TimelineView({
         windowHeight: exportHeight,
         onclone: normalizeHtml2CanvasColors,
       });
+
+      stopCreep();
+      stopCreep = null;
+      report(70, 'Compositing image...');
 
       if (exportPngOptions?.transparentBg || exportPngOptions?.customBg) {
         root.style.setProperty('--app-bg', originalPrimaryBg);
@@ -2848,23 +2875,30 @@ const TimelineView = forwardRef(function TimelineView({
         finalCanvas = outCanvas;
       }
 
-      finalCanvas.toBlob((blob) => {
-        if (!blob) {
-          console.error('Failed to generate PNG — canvas may be too large for this resolution.');
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const exportFilename = exportPngOptions?.filename || file?.id || 'timeline';
-        link.download = `${exportFilename}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 'image/png');
+      report(88, 'Encoding PNG...');
+      const blob = await new Promise((resolve) => finalCanvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('Canvas may be too large for this resolution');
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const exportFilename = exportPngOptions?.filename || file?.id || 'timeline';
+      link.download = `${exportFilename}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      report(100, 'Saved');
+      onExportComplete?.({ success: true });
     } catch (error) {
       console.error('Error generating PNG:', error);
+      onExportComplete?.({ success: false, error: error.message });
+    } finally {
+      if (stopCreep) stopCreep();
+      if (overridesBg) root.style.setProperty('--app-bg', originalPrimaryBg);
+      timelineEl.style.transform = currentTransform;
+      timelineEl.style.transformOrigin = currentTransformOrigin;
     }
   };
 

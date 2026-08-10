@@ -14,7 +14,7 @@ const RESOLUTION_OPTIONS = [
   { value: 'custom', label: 'Custom', width: null, height: null },
 ];
 
-export default function ExportPngModal({ isOpen, onClose, onExport, timelineData, timelineViewRef }) {
+export default function ExportPngModal({ isOpen, onClose, onExport, timelineData, timelineViewRef, exportState }) {
   const [filename, setFilename] = useState("");
   const [previewData, setPreviewData] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
@@ -137,7 +137,9 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
     });
   }, [clampPreviewOffset]);
 
-  useEscapeKey(isOpen, onClose);
+  const isExporting = Boolean(exportState);
+
+  useEscapeKey(isOpen && !isExporting, onClose);
 
   useEffect(() => {
     const container = previewContainerRef.current;
@@ -181,7 +183,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
   };
 
   const handleBackdropMouseUp = (e) => {
-    if (backdropPointerDownRef.current && e.target === e.currentTarget) {
+    if (!isExporting && backdropPointerDownRef.current && e.target === e.currentTarget) {
       onClose();
     }
     backdropPointerDownRef.current = false;
@@ -239,10 +241,10 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
       titleStyle,
       title: titleText,
     });
-    onClose();
   };
 
   const handleCancel = () => {
+    if (isExporting) return;
     setValidationErrors([]);
     setPreviewData(null);
     onClose();
@@ -437,6 +439,20 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
               <div className="export-preview-placeholder">Preview will appear here</div>
             )}
           </div>
+
+          {isExporting && (
+            <div className="settings-row">
+              <div className="settings-row-left" style={{ flex: 1 }}>
+                <div className="settings-row-label">{exportState.stage || 'Exporting...'}</div>
+                <div className="export-progress-bar">
+                  <div
+                    className="export-progress-fill"
+                    style={{ width: `${exportState.percent || 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="settings-row">
             <div className="settings-row-left">
@@ -640,11 +656,19 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
         </div>
 
         <div className="settings-footer">
-          <button className="settings-footer-button settings-cancel-button" onClick={handleCancel}>
+          <button
+            className="settings-footer-button settings-cancel-button"
+            onClick={handleCancel}
+            disabled={isExporting}
+          >
             Cancel
           </button>
-          <button className="settings-footer-button settings-create-button" onClick={handleExport}>
-            Export
+          <button
+            className="settings-footer-button settings-create-button"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? `Exporting ${exportState.percent || 0}%` : 'Export'}
           </button>
         </div>
       </div>

@@ -28,7 +28,7 @@ const VIDEO_ZOOM_MIN = 0.2;
 const VIDEO_ZOOM_MAX = 1;
 
 
-export default function ExportVideoModal({ isOpen, onClose, timelineData, timelineViewRef }) {
+export default function ExportVideoModal({ isOpen, onClose, timelineData, timelineViewRef, onExportComplete }) {
   const [filename, setFilename] = useState("");
   const [previewData, setPreviewData] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
@@ -343,6 +343,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
       if (exportCancelRef.current) {
         encoder.close();
+        onExportComplete?.({ canceled: true });
         return;
       }
 
@@ -360,8 +361,10 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      onExportComplete?.({ success: true });
     } catch (error) {
       console.error('Error exporting video:', error);
+      onExportComplete?.({ success: false, error: error.message });
     } finally {
       try { if (encoder && encoder.state !== 'closed') encoder.close(); } catch { /* ignore close failures */ }
       setIsExporting(false);
@@ -531,9 +534,9 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
             <div className="settings-row">
               <div className="settings-row-left" style={{ flex: 1 }}>
                 <div className="settings-row-label">Exporting...</div>
-                <div className="export-video-progress-bar">
+                <div className="export-progress-bar">
                   <div
-                    className="export-video-progress-fill"
+                    className="export-progress-fill"
                     style={{ width: `${exportProgress}%` }}
                   />
                 </div>

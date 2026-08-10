@@ -8,6 +8,7 @@ import SettingsModal from "./components/SettingsModal";
 import NewTimelineModal from "./components/NewTimelineModal";
 import ExportPngModal from "./components/ExportPngModal";
 import ExportVideoModal from "./components/ExportVideoModal";
+import Toast from "./components/Toast";
 import TopBar from "./components/TopBar";
 import HomePage from "./components/HomePage";
 import SearchOverlay from "./components/SearchOverlay";
@@ -233,7 +234,19 @@ function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsRenameError, setSettingsRenameError] = useState("");
-  const [screenshotToast, setScreenshotToast] = useState(false);
+  const [toast, setToast] = useState(null); // { message, tone }
+  const toastTimerRef = useRef(null);
+  // duration 0 stays until hidden
+  const showToast = useCallback((message, tone = "success", duration = 2000) => {
+    clearTimeout(toastTimerRef.current);
+    setToast({ message, tone });
+    if (duration > 0) toastTimerRef.current = setTimeout(() => setToast(null), duration);
+  }, []);
+  const hideToast = useCallback(() => {
+    clearTimeout(toastTimerRef.current);
+    setToast(null);
+  }, []);
+  useEffect(() => () => clearTimeout(toastTimerRef.current), []);
   const [deleteElementDialog, setDeleteElementDialog] = useState(null);
   const [deleteElementWithNotes, setDeleteElementWithNotes] = useState(false);
   const [deleteElementWithImage, setDeleteElementWithImage] = useState(false);
@@ -249,6 +262,7 @@ function App() {
   const [skippedFilesNotice, setSkippedFilesNotice] = useState(null); // { title, message, files }
   const [isExportPngModalOpen, setIsExportPngModalOpen] = useState(false);
   const [exportPngOptions, setExportPngOptions] = useState(null);
+  const [exportPngProgress, setExportPngProgress] = useState(null); // { percent, stage }
   const [isExportVideoModalOpen, setIsExportVideoModalOpen] = useState(false);
   const [editRequestId, setEditRequestId] = useState(null);
   const [editRequestFocusTitle, setEditRequestFocusTitle] = useState(false);
@@ -675,7 +689,7 @@ function App() {
       } else if (e.shiftKey && e.key === "S") {
         e.preventDefault();
         window.electron?.captureScreenshot()
-          .then(() => { setScreenshotToast(true); setTimeout(() => setScreenshotToast(false), 2000); })
+          .then(() => showToast("Screenshot saved"))
           .catch((err) => console.error("[screenshot] error:", err));
       }
     };
@@ -1369,15 +1383,23 @@ function App() {
 
   const handleDownloadPackage = async () => {
     const baseName = timelineData.file?.uid || timelineData.file?.id?.replace(/-timeline$/, "") || "timeline";
-    const result = await exportTimelinePackage(timelineData, `${baseName}.timeline`);
+    showToast("Exporting package...", "pending", 0);
+    let result;
+    try {
+      result = await exportTimelinePackage(timelineData, `${baseName}.timeline`);
+    } finally {
+      hideToast();
+    }
     if (result?.success && result.skipped?.length > 0) {
       setSkippedFilesNotice({
         title: "EXPORT FINISHED",
         message: `Package exported, but ${result.skipped.length} referenced file(s) could not be found and were skipped:`,
         files: result.skipped,
       });
+    } else if (result?.success) {
+      showToast("Package export saved");
     } else if (result && !result.success && !result.canceled) {
-      alert(`Failed to export package: ${result.error || "unknown error"}`);
+      showToast(`Package export failed: ${result.error || "unknown error"}`, "error", 4000);
     }
   };
 
@@ -1473,12 +1495,37 @@ function App() {
 
   const handleExportPng = (options) => {
     setExportPngOptions(options);
+    setExportPngProgress({ percent: 0, stage: "Preparing export..." });
     setDownloadPngTrigger(prev => prev + 1);
   };
+
+  const handleExportProgress = useCallback((progress) => {
+    setExportPngProgress(progress);
+  }, []);
+
+  const handleExportComplete = useCallback((result) => {
+    setExportPngProgress(null);
+    setIsExportPngModalOpen(false);
+    if (result?.success) {
+      showToast("PNG export saved");
+    } else {
+      showToast(`PNG export failed: ${result?.error || "unknown error"}`, "error", 4000);
+    }
+  }, [showToast]);
 
   const handleDownloadVideo = () => {
     setIsExportVideoModalOpen(true);
   };
+
+  const handleVideoExportComplete = useCallback((result) => {
+    if (result?.canceled) return;
+    setIsExportVideoModalOpen(false);
+    if (result?.success) {
+      showToast("Video export saved");
+    } else {
+      showToast(`Video export failed: ${result?.error || "unknown error"}`, "error", 4000);
+    }
+  }, [showToast]);
 
   const handleLoadTimeline = async (timelineId, hasThumbnail = false) => {
     try {
@@ -2417,6 +2464,9 @@ function App() {
               exportPngOptions={exportPngOptions}
               onExportPng={handleDownloadPNG}
               onExportVideo={handleDownloadVideo}
+              onExportProgress={handleExportProgress}
+              onExportComplete={handleExportComplete}
+              onNotify={showToast}
               rightPanelWidth={rightWidth}
               isRightPanelOpen={isRightPanelVisible}
               leftPanelWidth={currentLeftWidth}
@@ -2650,6 +2700,7 @@ function App() {
         onExport={handleExportPng}
         timelineData={timelineData}
         timelineViewRef={timelineViewRef}
+        exportState={exportPngProgress}
       />
 
       <ExportVideoModal
@@ -2657,6 +2708,7 @@ function App() {
         onClose={() => setIsExportVideoModalOpen(false)}
         timelineData={timelineData}
         timelineViewRef={timelineViewRef}
+        onExportComplete={handleVideoExportComplete}
       />
 
       <SearchOverlay
@@ -2669,11 +2721,7 @@ function App() {
       {importConflictModal}
       {skippedFilesModal}
       </div>
-      {screenshotToast && (
-        <div style={{ position: 'fixed', bottom: '20px', right: '20px', background: '#1a7a4a', borderRadius: '8px', padding: '8px 14px', zIndex: 9999, fontSize: 'var(--text-sm)', color: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', pointerEvents: 'none' }}>
-          Screenshot saved
-        </div>
-      )}
+      <Toast toast={toast} />
     </>
   );
 }

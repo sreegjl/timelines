@@ -2293,7 +2293,7 @@
   position: relative;
 }
 
-.export-video-progress-bar {
+.export-progress-bar {
   width: 100%;
   height: 4px;
   background: var(--accent-color);
@@ -2302,7 +2302,7 @@
   margin-top: 6px;
 }
 
-.export-video-progress-fill {
+.export-progress-fill {
   height: 100%;
   background: var(--ui-muted);
   border-radius: 2px;
@@ -2428,4 +2428,52 @@
   border-radius: 5px;
   outline: none;
   text-transform: lowercase;
+}
+
+/* Status Toast */
+.app-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: var(--text-sm);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  animation: toastIn 0.15s ease;
+}
+
+.app-toast-success {
+  background: #1a7a4a;
+}
+
+.app-toast-error {
+  background: #a33a2f;
+}
+
+.app-toast-pending {
+  background: var(--ui-muted);
+}
+
+.app-toast-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: toastSpin 0.7s linear infinite;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastSpin {
+  to { transform: rotate(360deg); }
 }
