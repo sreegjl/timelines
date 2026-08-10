@@ -277,6 +277,7 @@ function App() {
   const [appFontSize, setAppFontSize] = useState(14);
   const [hardwareAcceleration, setHardwareAcceleration] = useState(true);
   const [startMaximized, setStartMaximized] = useState(false);
+  const [disableThumbnails, setDisableThumbnails] = useState(false);
   const [keybinds, setKeybinds] = useState(() => cloneDefaultKeybinds());
   const [availableFonts, setAvailableFonts] = useState([]);
   const [activeTags, setActiveTags] = useState([]);
@@ -304,6 +305,7 @@ function App() {
 
   const HISTORY_LIMIT = 100;
   const thumbnailExistsRef = useRef(false);
+  const disableThumbnailsRef = useRef(false);
   const historyRef = useRef({ past: [], future: [] });
   const historyLockRef = useRef(false);
   const prevTimelineRef = useRef(null);
@@ -1548,6 +1550,7 @@ function App() {
 
   // Must run before the timeline unmounts
   const captureTimelineSnapshot = useCallback(() => {
+    if (disableThumbnailsRef.current) return null;
     const timelineId = getStorageId(timelineDataRef.current?.file);
     if (!timelineId || !timelineViewRef.current?.captureCardSnapshot || !window.electron?.saveTimelineThumbnail) return null;
     // Nothing edited since load, so the stored card still matches
@@ -1776,6 +1779,8 @@ function App() {
       setAppFontSize(storedFontSize);
       setHardwareAcceleration(settings?.hardwareAcceleration !== false);
       setStartMaximized(settings?.startMaximized === true);
+      setDisableThumbnails(settings?.disableThumbnails === true);
+      disableThumbnailsRef.current = settings?.disableThumbnails === true;
       setKeybinds(savedKeybinds);
     };
 
@@ -2005,6 +2010,12 @@ function App() {
       hardwareAcceleration,
       startMaximized: next,
     });
+  };
+
+  const handleDisableThumbnailsChange = async (next) => {
+    setDisableThumbnails(next);
+    disableThumbnailsRef.current = next;
+    await saveAppSettings({ disableThumbnails: next });
   };
 
   const handlePickTimelinesDir = async () => {
@@ -2281,6 +2292,8 @@ function App() {
             onHardwareAccelerationChange={handleHardwareAccelerationChange}
             startMaximized={startMaximized}
             onStartMaximizedChange={handleStartMaximizedChange}
+            disableThumbnails={disableThumbnails}
+            onDisableThumbnailsChange={handleDisableThumbnailsChange}
             onRefreshThemes={refreshUserThemes}
             openSettingsSignal={homeSettingsSignal}
             onAppSettingsClosed={handleAppSettingsClosedFromHome}
@@ -2542,6 +2555,8 @@ function App() {
           onHardwareAccelerationChange={handleHardwareAccelerationChange}
           startMaximized={startMaximized}
           onStartMaximizedChange={handleStartMaximizedChange}
+          disableThumbnails={disableThumbnails}
+          onDisableThumbnailsChange={handleDisableThumbnailsChange}
           onRefreshThemes={refreshUserThemes}
           openSettingsSignal={homeSettingsSignal}
           onAppSettingsClosed={handleAppSettingsClosedFromHome}

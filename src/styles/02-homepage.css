@@ -2052,9 +2052,10 @@
 .home-sort-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  width: 36px;
   min-height: 36px;
-  padding: 0 12px;
+  padding: 0;
   border: none;
   border-radius: 12px;
   background: transparent;
@@ -2066,8 +2067,42 @@
   flex: 0 0 auto;
 }
 
-.home-sort-btn:hover {
+.home-sort-btn:hover,
+.home-sort-btn.is-active {
   background: var(--home-tint-2);
+}
+
+.home-sort-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.home-sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  z-index: 1100;
+}
+
+.home-sort-menu-header {
+  padding: 5px 12px 4px;
+  color: var(--text-subtle);
+  font-size: var(--text-3xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-sort-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--accent-color);
+}
+
+.home-sort-check {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .home-content-panel {
@@ -2501,13 +2536,4 @@
     right: 6px;
   }
 
-  .home-sort-btn {
-    justify-content: center;
-    width: 36px;
-    padding: 0;
-  }
-
-  .home-sort-btn span {
-    display: none;
-  }
 }

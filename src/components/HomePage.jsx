@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
-import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpAZ, ArrowDownAZ, Clock, ChevronRight, ChevronDown, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, History, ExternalLink, Share2 } from "lucide-react";
+import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store, X, LayoutGrid, List, MoreVertical, Pencil, RotateCcw, ArrowUpNarrowWide, ArrowDownWideNarrow, Check, ChevronRight, ChevronDown, Search, Import, Cloud, CloudOff, RefreshCw, AlertTriangle, CheckCircle2, History, ExternalLink, Share2 } from "lucide-react";
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
@@ -276,6 +276,8 @@ export default function HomePage({
   onHardwareAccelerationChange,
   startMaximized = false,
   onStartMaximizedChange,
+  disableThumbnails = false,
+  onDisableThumbnailsChange,
   onRefreshThemes,
   openSettingsSignal = 0,
   onAppSettingsClosed,
@@ -292,6 +294,8 @@ export default function HomePage({
   const [viewMode, setViewMode] = useState("grid");
   const [sortField, setSortField] = useState("modified");
   const [sortDir, setSortDir] = useState("desc");
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef(null);
   const [librarySection, setLibrarySection] = useState("home");
   const [currentFolder, setCurrentFolder] = useState("");
   const [allFolders, setAllFolders] = useState([]);
@@ -377,21 +381,7 @@ export default function HomePage({
     else applySort(field, DEFAULT_SORT_DIR[field] || "asc");
   };
 
-  // Grid has no headers, so its button cycles the three common orders
-  const cycleGridSort = () => {
-    if (sortField === "name" && sortDir === "asc") applySort("name", "desc");
-    else if (sortField === "modified") applySort("name", "asc");
-    else applySort("modified", "desc");
-  };
-
-  const gridSortLabel = sortField === "name"
-    ? (sortDir === "asc" ? "A-Z" : "Z-A")
-    : sortField === "modified" ? "Recent" : SORT_HEADER_LABELS[sortField];
-  const GridSortIcon = sortField === "modified"
-    ? Clock
-    : sortField === "name" && sortDir === "asc" ? ArrowDownAZ
-      : sortField === "name" ? ArrowUpAZ
-        : ChevronDown;
+  const SortDirIcon = sortDir === "asc" ? ArrowUpNarrowWide : ArrowDownWideNarrow;
 
   useEffect(() => {
     if (settingsOnly) return undefined;
@@ -723,6 +713,15 @@ export default function HomePage({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [contextMenu, folderContextMenu]);
 
+  useEffect(() => {
+    if (!sortMenuOpen) return undefined;
+    const handleClickOutside = (e) => {
+      if (!sortMenuRef.current?.contains(e.target)) setSortMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sortMenuOpen]);
+
   const handleNewTimeline = () => {
     setIsNewTimelineModalOpen(true);
   };
@@ -741,6 +740,7 @@ export default function HomePage({
   const anyModalOpen = isNewTimelineModalOpen || newFolderDialogOpen || !!moveDialogFile
     || isMarketplaceOpen || !!deleteDialogFile || !!gitSyncShareDialog || !!gitSyncHistoryDialog;
 
+  useEscapeKey(sortMenuOpen, () => setSortMenuOpen(false));
   useEscapeKey(!!contextMenu, () => setContextMenu(null));
   useEscapeKey(!!folderContextMenu, () => setFolderContextMenu(null));
   useEscapeKey(!!renameTarget, closeRenameDialog);
@@ -1661,19 +1661,62 @@ export default function HomePage({
                 </div>
 
                 <div className="home-toolbar-actions">
-                  {/* List view sorts from its column headers instead */}
-                  {viewMode === "grid" && (
+                  <div className="home-sort-wrap" ref={sortMenuRef}>
                     <button
-                      className="home-sort-btn"
+                      className={`home-sort-btn${sortMenuOpen ? " is-active" : ""}`}
                       type="button"
-                      onClick={cycleGridSort}
-                      aria-label="Toggle sort"
-                      title={`Sort: ${gridSortLabel}`}
+                      onClick={() => setSortMenuOpen((open) => !open)}
+                      aria-haspopup="menu"
+                      aria-expanded={sortMenuOpen}
+                      aria-label={`Sort: ${SORT_HEADER_LABELS[sortField]}, ${sortDir === "asc" ? "ascending" : "descending"}`}
+                      title={`Sort: ${SORT_HEADER_LABELS[sortField]}, ${sortDir === "asc" ? "ascending" : "descending"}`}
                     >
-                      <GridSortIcon size={15} />
-                      <span>{gridSortLabel}</span>
+                      <SortDirIcon size={15} />
                     </button>
-                  )}
+                    {sortMenuOpen && (
+                      <div className="home-sort-menu timeline-context-menu" role="menu">
+                        <div className="home-sort-menu-header">Sort by</div>
+                        {[
+                          ["name", "Name"],
+                          ...(showFolderMeta ? [["folder", "Location"]] : []),
+                          ["events", "Events"],
+                          ["spans", "Spans"],
+                          ["eras", "Eras"],
+                          ["modified", "Modified"],
+                        ].map(([field, label]) => (
+                          <button
+                            key={field}
+                            className="context-menu-item"
+                            role="menuitemradio"
+                            aria-checked={sortField === field}
+                            onClick={() => {
+                              applySort(field, sortDir);
+                              setSortMenuOpen(false);
+                            }}
+                          >
+                            <span>{label}</span>
+                            {sortField === field && <Check size={12} className="home-sort-check" />}
+                          </button>
+                        ))}
+                        <div className="home-sort-divider" />
+                        {[["asc", "Ascending"], ["desc", "Descending"]].map(([dir, label]) => (
+                          <button
+                            key={dir}
+                            className="context-menu-item"
+                            role="menuitemradio"
+                            aria-checked={sortDir === dir}
+                            onClick={() => {
+                              applySort(sortField, dir);
+                              setSortMenuOpen(false);
+                            }}
+                          >
+                            <span>{label}</span>
+                            {sortDir === dir && <Check size={12} className="home-sort-check" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="view-mode-pill">
                     <button
@@ -1816,7 +1859,7 @@ export default function HomePage({
                               <span />
                               <span />
                             </div>
-                            {file.thumbnailUrl ? (
+                            {!disableThumbnails && file.thumbnailUrl ? (
                               <img
                                 className="home-grid-card-thumbnail"
                                 src={file.thumbnailUrl}
@@ -2166,6 +2209,25 @@ export default function HomePage({
                             type="checkbox"
                             checked={startMaximized}
                             onChange={(e) => onStartMaximizedChange?.(e.target.checked)}
+                          />
+                          <span className="settings-toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="settings-row">
+                      <div className="settings-row-left">
+                        <div className="settings-row-label">Disable Thumbnails</div>
+                        <div className="settings-row-description">
+                          Hide timeline previews on cards and skip capturing them when leaving a timeline.
+                        </div>
+                      </div>
+                      <div className="settings-row-right">
+                        <label className="settings-toggle">
+                          <input
+                            type="checkbox"
+                            checked={disableThumbnails}
+                            onChange={(e) => onDisableThumbnailsChange?.(e.target.checked)}
                           />
                           <span className="settings-toggle-slider"></span>
                         </label>

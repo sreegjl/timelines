@@ -1621,7 +1621,7 @@ const ALLOWED_SETTINGS_KEYS = new Set([
   'timelineStorageDir', 'storageDir', 'notesStorageDir',
   'themeKey',
   'theme', 'notesSubfolder', 'notesSubfolderEnabled',
-  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
+  'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'disableThumbnails', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
   'gitSyncAutoSync', 'gitSyncIntervalMinutes', 'gitSyncMachineLabel',
 ]);
 
