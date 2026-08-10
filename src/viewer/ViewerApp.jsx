@@ -24,7 +24,7 @@ const GH_RAW_BASE = "https://raw.githubusercontent.com/";
 
 // The app stores these on the file; the viewer can't write files, so they live in localStorage
 const PANEL_PREFS_KEY = "timelines-viewer-panel-prefs";
-const PANEL_PREF_KEYS = ["panelSortField", "panelSortOrder", "panelGroupMode", "nestEraSubGroups"];
+const PANEL_PREF_KEYS = ["panelSortField", "panelSortOrder", "panelTagSortField", "panelTagSortOrder", "panelGroupMode", "nestEraSubGroups"];
 
 const panelPrefsId = (file) => String(file?.uid || file?.id || file?.title || "");
 
@@ -435,6 +435,8 @@ export default function ViewerApp() {
   const {
     panelSortField,
     panelSortOrder,
+    panelTagSortField,
+    panelTagSortOrder,
     panelGroupMode,
     nestEraSubGroups,
   } = timelineData?.file ?? {};
@@ -450,11 +452,11 @@ export default function ViewerApp() {
   useEffect(() => {
     if (!panelPrefsKey || restoredPanelKeyRef.current !== panelPrefsKey) return;
     const prefs = {};
-    for (const [key, value] of Object.entries({ panelSortField, panelSortOrder, panelGroupMode, nestEraSubGroups })) {
+    for (const [key, value] of Object.entries({ panelSortField, panelSortOrder, panelTagSortField, panelTagSortOrder, panelGroupMode, nestEraSubGroups })) {
       if (value !== undefined) prefs[key] = value;
     }
     writePanelPrefs(panelPrefsKey, prefs);
-  }, [panelPrefsKey, panelSortField, panelSortOrder, panelGroupMode, nestEraSubGroups]);
+  }, [panelPrefsKey, panelSortField, panelSortOrder, panelTagSortField, panelTagSortOrder, panelGroupMode, nestEraSubGroups]);
 
   const handleUpdateGroup = useCallback((groupId, patch) => {
     setTimelineData((prev) => {

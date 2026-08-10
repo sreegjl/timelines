@@ -246,6 +246,9 @@ export default function Sidebar({
   // Sort prefs live on the file (like panelGroupMode) so they survive reloads
   const sortField = file?.panelSortField === "name" ? "name" : "year";
   const sortOrder = file?.panelSortOrder === "desc" ? "desc" : "asc";
+  // Tags tab keeps its own prefs; default is most-used first
+  const tagSortField = file?.panelTagSortField === "name" ? "name" : "elements";
+  const tagSortOrder = file?.panelTagSortOrder === "asc" ? "asc" : "desc";
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
@@ -945,9 +948,16 @@ export default function Sidebar({
   }));
   const sortedVisibleSpanUngrouped = applySidebarSort(visibleSpanUngrouped, null);
 
-  const visibleTags = searchActive
-    ? allTags.filter((tag) => matchesSearch(tag))
-    : allTags;
+  const visibleTags = (() => {
+    const base = searchActive ? allTags.filter((tag) => matchesSearch(tag)) : allTags;
+    const dir = tagSortOrder === "desc" ? -1 : 1;
+    return [...base].sort((a, b) => {
+      if (tagSortField === "name") return dir * a.localeCompare(b);
+      const diff = (tagCounts.get(a) || 0) - (tagCounts.get(b) || 0);
+      // Equal counts stay alphabetical in both directions
+      return diff !== 0 ? dir * diff : a.localeCompare(b);
+    });
+  })();
   const visibleDisplayGroups = searchActive
     ? displayGroups
         .map((group) => {
@@ -1271,7 +1281,7 @@ export default function Sidebar({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-          {sidebarTab === "timeline" && (
+          {(sidebarTab === "timeline" || sidebarTab === "tags") && (
             <div className="sb-sort-wrap" ref={sortMenuRef}>
               <button
                 className={`sb-sort-btn${sortMenuOpen ? " is-active" : ""}`}
@@ -1281,7 +1291,29 @@ export default function Sidebar({
               >
                 <ArrowUpDown size={14} strokeWidth={2} />
               </button>
-              {sortMenuOpen && (
+              {sortMenuOpen && sidebarTab === "tags" && (
+                <div className="sb-sort-menu timeline-context-menu">
+                  <div className="sb-sort-menu-header">Sort by</div>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortField: "name" }); setSortMenuOpen(false); }}>
+                    <span>Name</span>
+                    {tagSortField === "name" && <Check size={12} className="sb-sort-check" />}
+                  </button>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortField: "elements" }); setSortMenuOpen(false); }}>
+                    <span>Elements</span>
+                    {tagSortField === "elements" && <Check size={12} className="sb-sort-check" />}
+                  </button>
+                  <div className="sb-sort-divider" />
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortOrder: "asc" }); setSortMenuOpen(false); }}>
+                    <span>Ascending</span>
+                    {tagSortOrder === "asc" && <Check size={12} className="sb-sort-check" />}
+                  </button>
+                  <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortOrder: "desc" }); setSortMenuOpen(false); }}>
+                    <span>Descending</span>
+                    {tagSortOrder === "desc" && <Check size={12} className="sb-sort-check" />}
+                  </button>
+                </div>
+              )}
+              {sortMenuOpen && sidebarTab === "timeline" && (
                 <div className="sb-sort-menu timeline-context-menu">
                   <div className="sb-sort-menu-header">Sort by</div>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "year" }); setSortMenuOpen(false); }}>

@@ -1350,6 +1350,8 @@ function App() {
       if (!nextFile.nestEraSubGroups) delete nextFile.nestEraSubGroups;
       if (nextFile.panelSortField !== "name") delete nextFile.panelSortField;
       if (nextFile.panelSortOrder !== "desc") delete nextFile.panelSortOrder;
+      if (nextFile.panelTagSortField !== "name") delete nextFile.panelTagSortField;
+      if (nextFile.panelTagSortOrder !== "asc") delete nextFile.panelTagSortOrder;
       const updatedData = { ...prevData, file: nextFile };
       saveCurrentTimeline(updatedData).catch(console.error);
       return updatedData;
