@@ -61,6 +61,7 @@ export default function SettingsModal({
   const [negID, setNegID] = useState("");
   const [posID, setPosID] = useState("");
   const [approxID, setApproxID] = useState("");
+  const [durationUnit, setDurationUnit] = useState("");
   const [branchOrdering, setBranchOrdering] = useState("later-first");
   const [fixedEventHeight, setFixedEventHeight] = useState(false);
   const [eventWidth, setEventWidth] = useState(150);
@@ -71,6 +72,7 @@ export default function SettingsModal({
   const [hideDecimals, setHideDecimals] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showTodayLine, setShowTodayLine] = useState(false);
+  const [showDurations, setShowDurations] = useState(false);
   const [spanColorEvents, setSpanColorEvents] = useState(false);
   const [disableGroups, setDisableGroups] = useState(false);
   const [panelGroupMode, setPanelGroupMode] = useState("default");
@@ -108,6 +110,7 @@ export default function SettingsModal({
     negID,
     posID,
     approxID,
+    durationUnit,
     theme,
     font: fontFamily,
     useCalendar: useCalendar || undefined,
@@ -125,6 +128,7 @@ export default function SettingsModal({
     hideDecimals,
     showGrid,
     showTodayLine,
+    showDurations,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -274,6 +278,7 @@ export default function SettingsModal({
         setNegID(timelineData.file.negID || "");
         setPosID(timelineData.file.posID || "");
         setApproxID(timelineData.file.approxID || "");
+        setDurationUnit(timelineData.file.durationUnit || "");
         setBranchOrdering(timelineData.file.branchOrdering || "later-first");
         setFixedEventHeight(Boolean(timelineData.file.fixedEventHeight));
         let rawWidth = timelineData.file.eventWidth;
@@ -287,6 +292,7 @@ export default function SettingsModal({
         setHideDecimals(Boolean(timelineData.file.hideDecimals));
         setShowGrid(Boolean(timelineData.file.showGrid));
         setShowTodayLine(Boolean(timelineData.file.showTodayLine));
+        setShowDurations(Boolean(timelineData.file.showDurations));
         setSpanColorEvents(Boolean(timelineData.file.spanColorEvents));
         setDisableGroups(Boolean(timelineData.file.disableGroups));
         setPanelGroupMode(timelineData.file.panelGroupMode || (timelineData.file.useEraGroupsInPanel ? "eras" : "default"));
@@ -424,6 +430,7 @@ export default function SettingsModal({
     negID,
     posID,
     approxID,
+    durationUnit,
     theme,
     fontFamily,
     useCalendar,
@@ -442,6 +449,7 @@ export default function SettingsModal({
     hideDecimals,
     showGrid,
     showTodayLine,
+    showDurations,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -916,7 +924,7 @@ export default function SettingsModal({
               </div>
 
               {/* Approximate Date */}
-              <div className="settings-row">
+              <div className="settings-row no-border-bottom">
                 <div className="settings-row-left">
                   <div className="settings-row-label">Approximate Date</div>
                   <div className="settings-row-description">Prefix for elements marked approximate (e.g., c., ca., circa).</div>
@@ -929,6 +937,24 @@ export default function SettingsModal({
                     onChange={(e) => setApproxID(e.target.value)}
                     placeholder={DEFAULT_APPROX_LABEL}
                     maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {/* Duration Unit */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Duration Unit</div>
+                  <div className="settings-row-description">What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={durationUnit}
+                    onChange={(e) => setDurationUnit(e.target.value)}
+                    placeholder="yrs"
+                    maxLength={12}
                   />
                 </div>
               </div>
@@ -1033,6 +1059,24 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={showTodayLine}
                       onChange={(e) => setShowTodayLine(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Show Durations */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">Show Durations</div>
+                  <div className="settings-row-description">Display how long each span and era lasts beside its date range.</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showDurations}
+                      onChange={(e) => setShowDurations(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>

@@ -1268,6 +1268,7 @@ function App() {
       if (!nextFile.hideDecimals) delete nextFile.hideDecimals;
       if (!nextFile.showGrid) delete nextFile.showGrid;
       if (!nextFile.showTodayLine) delete nextFile.showTodayLine;
+      if (!nextFile.showDurations) delete nextFile.showDurations;
       if (!nextFile.spanColorEvents) delete nextFile.spanColorEvents;
       if (!nextFile.disableGroups) delete nextFile.disableGroups;
       if (!nextFile.panelGroupMode || nextFile.panelGroupMode === "default") delete nextFile.panelGroupMode;
@@ -1285,6 +1286,7 @@ function App() {
       if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
       if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
       if (!nextFile.approxID) delete nextFile.approxID;
+      if (!nextFile.durationUnit) delete nextFile.durationUnit;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
 
       const updatedData = {

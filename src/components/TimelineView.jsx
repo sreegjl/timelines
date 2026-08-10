@@ -15,7 +15,7 @@ import {
   MONTH_LABELS,
 } from "../utils/timelineUtils";
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel, formatDuration } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair } from "lucide-react";
@@ -1535,6 +1535,7 @@ const TimelineView = forwardRef(function TimelineView({
     file?.negID,
     file?.posID,
     file?.approxID,
+    file?.showDurations,
   ]);
 
   // Notify parent of height changes
@@ -3349,6 +3350,9 @@ const TimelineView = forwardRef(function TimelineView({
     return { zeroScaleBreaks, axisBreakMarkers };
   }, [normalizedScaleSections, yearToPx, file.negID, file.posID, file.hideDecimals]);
   const timelineBreakMaskBg = file?.useSecondaryBg ? "var(--surface)" : "var(--app-bg)";
+  const durationOf = (el) => file?.showDurations === true
+    ? formatDuration(el.start, el.end, file?.useCalendar === true, file?.hideDecimals, file?.durationUnit)
+    : null;
 
   // Resolve CSS variables to hex for inline styles (avoids color-mix / color() which html2canvas can't parse)
   const rootStyles = getComputedStyle(document.documentElement);
@@ -3574,6 +3578,10 @@ const TimelineView = forwardRef(function TimelineView({
                     >
                       {era.title}
                     </span>
+                    {(() => {
+                      const duration = durationOf(era);
+                      return duration ? <span className="era-duration" style={{ color: eraTextColor }}>{duration}</span> : null;
+                    })()}
                     {era.sourceLink && (
                       <a className="era-source-link" href={era.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title="Open source" style={{ color: eraTextColor }}><ExternalLink size={8} strokeWidth={2.5} /></a>
                     )}
@@ -3953,6 +3961,10 @@ const TimelineView = forwardRef(function TimelineView({
                               {formatApproxRange(span, displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID)}
                             </span>
                           )}
+                          {!hideSpanYears && (() => {
+                            const duration = durationOf(span);
+                            return duration ? <span className="span-duration" style={{ color: spanTextColor, opacity: 0.7 }}>{duration}</span> : null;
+                          })()}
                         </>
                         {(() => {
                           const visiblePinnedTags = (Array.isArray(span.tags) ? span.tags : [])
@@ -4143,6 +4155,10 @@ const TimelineView = forwardRef(function TimelineView({
                       {formatApproxRange(span, displayDateLabel(span.startLabel) ?? formatYear(span.start, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), displayDateLabel(span.endLabel) ?? formatYear(span.end, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID)}
                     </span>
                   )}
+                  {!hideSpanYears && (() => {
+                    const duration = durationOf(span);
+                    return duration ? <span className="span-duration" style={{ color: spanTextColor, opacity: 0.7 }}>{duration}</span> : null;
+                  })()}
                   {span.sourceLink && !hideSpanYears && (
                     <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title="Open source" style={{ color: spanTextColor, opacity: 0.85 }}><ExternalLink size={9} strokeWidth={2.5} /></a>
                   )}

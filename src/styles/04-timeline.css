@@ -344,6 +344,21 @@
   white-space: nowrap;
 }
 
+.span-duration {
+  margin-left: 7px;
+  color: var(--ui-muted);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.span-duration::before {
+  content: "|";
+  margin-right: 7px;
+  opacity: 0.5;
+}
+
+.span-item.hide-span-years .span-duration { display: none; }
+
 .span-description {
   margin-left: 7px;
   color: var(--ui-muted);
@@ -378,17 +393,20 @@
 
 .span-segment .span-title { margin-left: 5px; }
 .span-segment .span-years { margin-left: 5px; }
+.span-segment .span-duration { margin-left: 5px; }
 .span-segment .span-description { margin-left: 5px; }
 
 .span-thin { z-index: 10; }
 .span-thin .span-title,
 .span-thin .span-years,
+.span-thin .span-duration,
 .span-thin .span-description {
   font-size: 8px;
 }
 
 .span-thin-segment .span-title,
 .span-thin-segment .span-years,
+.span-thin-segment .span-duration,
 .span-thin-segment .span-description {
   font-size: 8px;
 }
@@ -410,6 +428,7 @@
 .span-thick { font-size: 11px; }
 .span-thick .span-title { margin-left: 8px; }
 .span-thick .span-years { margin-left: 9px; }
+.span-thick .span-duration { margin-left: 9px; }
 
 .span-connector-top,
 .span-connector-bottom {
@@ -772,6 +791,21 @@
   text-align: center;
   line-height: 1.2;
   min-width: 0;
+}
+
+.era-duration {
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 400;
+  opacity: 0.7;
+  /* Match .era-title exactly so both baselines land together when centered */
+  line-height: 1.2;
+}
+
+.era-duration::before {
+  content: "|";
+  margin-right: 3px;
+  opacity: 0.5;
 }
 
 .era-source-link {

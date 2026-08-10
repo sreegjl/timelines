@@ -189,6 +189,59 @@ export const fractionalYearToDate = (value) => {
   return { year: yearInt, month, day };
 };
 
+const plural = (n, unit) => `${n.toLocaleString()} ${unit}${n === 1 ? "" : "s"}`;
+
+// Proleptic Gregorian day number, valid for negative years unlike the Date object
+const daysFromCivil = (year, month, day) => {
+  const y = month <= 2 ? year - 1 : year;
+  const era = Math.floor((y >= 0 ? y : y - 399) / 400);
+  const yoe = y - era * 400;
+  const doy = Math.floor((153 * (month + (month > 2 ? -3 : 9)) + 2) / 5) + day - 1;
+  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy;
+  return era * 146097 + doe - 719468;
+};
+
+// Advance a date by whole months, clamping to the target month's length
+const addMonths = (date, count) => {
+  const total = date.year * 12 + (date.month - 1) + count;
+  const year = Math.floor(total / 12);
+  const month = total - year * 12 + 1;
+  return { year, month, day: Math.min(date.day, daysInMonth(year, month)) };
+};
+
+// A custom unit is written verbatim, since "Ma" and "kyr" have no sensible plural
+const withUnit = (n, unit) => (unit ? `${n.toLocaleString()} ${unit}` : plural(n, "yr"));
+
+// How long a span or era lasts, e.g. "4 yrs, 4 mos, 26 days", "1,550 yrs", or "2.3 Ma"
+export const formatDuration = (start, end, useCalendar = false, hideDecimals = false, unit = "") => {
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+  const gap = end - start;
+  if (gap < 0) return null;
+  const unitLabel = typeof unit === "string" ? unit.trim() : "";
+
+  if (!useCalendar) {
+    // Year-only timelines have no meaningful months or days to break out
+    const years = hideDecimals ? Math.round(gap) : Math.round(gap * 100) / 100;
+    return withUnit(years, unitLabel);
+  }
+
+  const from = fractionalYearToDate(start);
+  const to = fractionalYearToDate(end);
+  // Count whole months first, then the leftover days, so month lengths never skew the result
+  let months = (to.year - from.year) * 12 + (to.month - from.month);
+  if (to.day < from.day) months -= 1;
+  if (months < 0) months = 0;
+  const anchor = addMonths(from, months);
+  const days = daysFromCivil(to.year, to.month, to.day) - daysFromCivil(anchor.year, anchor.month, anchor.day);
+
+  const parts = [];
+  const years = Math.floor(months / 12);
+  if (years) parts.push(withUnit(years, unitLabel));
+  if (months - years * 12) parts.push(plural(months - years * 12, "mo"));
+  if (days) parts.push(plural(days, "day"));
+  return parts.length ? parts.join(", ") : "0 days";
+};
+
 export const snapToDayGrid = (value) => {
   if (!Number.isFinite(value)) return value;
   const yearInt = Math.floor(value);

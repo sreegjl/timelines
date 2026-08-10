@@ -6,7 +6,7 @@ import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
-import { parseTimelineInput, fractionalYearToDate, displayDateLabel, formatDateForInput, formatCalendarDate } from "../utils/dateUtils";
+import { parseTimelineInput, fractionalYearToDate, displayDateLabel, formatDateForInput, formatCalendarDate, formatDuration } from "../utils/dateUtils";
 
 const DYNAMIC_DATE_OPTIONS = [
   { label: "Today", value: "current" },
@@ -887,6 +887,25 @@ export default function RightPanel({
                 </p>
               </div>
             )}
+
+            {/* Duration (spans and eras, when the timeline shows durations) */}
+            {formData.type !== "event" && timelineData?.file?.showDurations === true && (() => {
+              const duration = formatDuration(
+                formData.start,
+                formData.end,
+                timelineData?.file?.useCalendar === true,
+                timelineData?.file?.hideDecimals,
+                timelineData?.file?.durationUnit
+              );
+              if (!duration) return null;
+              return (
+                <div className="view-group">
+                  <label>Duration</label>
+                  <div className="view-separator" />
+                  <p>{duration}</p>
+                </div>
+              );
+            })()}
 
             {/* Color (spans and eras only) */}
 
