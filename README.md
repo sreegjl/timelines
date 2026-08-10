@@ -11,7 +11,7 @@ Timelines Studio is a free, open-source app for creating customizable, interacti
 [![Electron](https://img.shields.io/badge/Electron-2B2E3A?logo=electron&logoColor=fff)](#)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-[Website](https://www.timelines.studio/) · [Gallery](https://www.timelines.studio/gallery) · [Wiki](https://github.com/sreegjl/timelines/wiki) · [Feature Suggestions & Roadmap](https://github.com/sreegjl/timelines/issues/8) · [Donate](https://ko-fi.com/sreegjl)
+[Website](https://www.timelines.studio/) · [Gallery](https://www.timelines.studio/gallery) · [Wiki](https://www.timelines.studio/wiki) · [Feature Suggestions & Roadmap](https://github.com/sreegjl/timelines/issues/8) · [Donate](https://ko-fi.com/sreegjl)
 
 ![Default View](docs/default-view.png)
 
