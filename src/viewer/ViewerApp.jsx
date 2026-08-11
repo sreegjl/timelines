@@ -240,6 +240,10 @@ export default function ViewerApp() {
   const restoredPanelKeyRef = useRef(null);
 
   const parsedChipQuery = useMemo(() => parseFilterQuery(chipQuery), [chipQuery]);
+  const [tagFilterRequest, setTagFilterRequest] = useState(null);
+  const handleToggleTagQuery = useCallback((tag) => {
+    setTagFilterRequest((prev) => ({ tag, n: (prev?.n ?? 0) + 1 }));
+  }, []);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -661,9 +665,11 @@ export default function ViewerApp() {
               timelineData={filteredTimelineData}
               allElements={timelineData.elements}
               chipFilter={parsedChipQuery}
+              chipQuery={chipQuery}
               activeTags={activeTags}
               hiddenTags={hiddenTags}
               onToggleTag={handleToggleTag}
+              onToggleTagQuery={handleToggleTagQuery}
               onToggleHiddenTag={handleToggleHiddenTag}
               onClearTags={handleClearTags}
               pinnedTags={pinnedTags}
@@ -722,6 +728,7 @@ export default function ViewerApp() {
               onTogglePinnedTag={handleTogglePinnedTag}
               tagColors={tagColors}
               onChipQueryChange={setChipQuery}
+              tagFilterRequest={tagFilterRequest}
               onSetViewMode={timelineData.file?.useSpreadsheet ? setViewMode : undefined}
             />
           </ErrorBoundary>

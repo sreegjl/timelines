@@ -17,7 +17,7 @@ import {
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateLabel, formatDuration } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
-import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext } from "../utils/filterUtils";
+import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
 
@@ -170,12 +170,16 @@ const readCardSnapshot = (root, scale, width, height, background) => {
   return { width, height, background, boxes };
 };
 
-const quoteIfNeeded = (value) => (/[\s|()~"<>]/.test(value) ? `"${value}"` : value);
+const quoteIfNeeded = quoteFilterValue;
+
+// Shift-mousedown would extend the text selection over the row
+const blockShiftSelect = (e) => { if (e.shiftKey) e.preventDefault(); };
 
 const filterChipTerm = (chip) => {
   let term;
   if (chip.kind === "date") term = `${chip.op}${chip.value}`;
   else if (chip.kind === "tag") term = `#${quoteIfNeeded(chip.value)}`;
+  else if (chip.kind === "tagsearch") term = `tag:${quoteIfNeeded(chip.value)}`;
   else if (chip.kind === "text") term = quoteIfNeeded(chip.value);
   else if (chip.kind === "family") term = `family:${quoteIfNeeded(chip.value)}`;
   else term = chip.value; // "type" kind holds the literal term: is:event / has:coords
@@ -185,8 +189,23 @@ const filterChipTerm = (chip) => {
 const filterChipLabel = (chip) =>
   chip.kind === "date" ? `${FILTER_OP_GLYPH[chip.op] ?? chip.op} ${chip.value}`
     : chip.kind === "tag" ? `#${chip.value}`
+    : chip.kind === "tagsearch" ? `tag: ${chip.value}`
     : chip.kind === "family" ? `family: ${chip.label ?? chip.value}`
     : chip.value;
+
+const stripQuotes = (value) => value.replace(/^"+|"+$/g, "").trim();
+
+const chipFromInput = (value) => {
+  if (value.startsWith("#")) {
+    const tag = stripQuotes(value.slice(1));
+    if (tag) return { kind: "tag", value: tag };
+  }
+  if (/^tag:/i.test(value)) {
+    const needle = stripQuotes(value.slice(4));
+    if (needle) return { kind: "tagsearch", value: needle.toLowerCase() };
+  }
+  return { kind: "text", value };
+};
 
 const buildChipQuery = (chips) =>
   chips.map((c, i) => (i > 0 && c.join === "or" ? "| " : "") + filterChipTerm(c)).join(" ");
@@ -203,6 +222,7 @@ const chipsFromQuery = (query, nextId) => {
     if (tok.kind === "type") chip = { kind: "type", value: `is:${tok.value}` };
     else if (tok.kind === "has") chip = { kind: "type", value: `has:${tok.value}` };
     else if (tok.kind === "tag") chip = { kind: "tag", value: tok.value };
+    else if (tok.kind === "tagsearch") chip = { kind: "tagsearch", value: tok.value };
     else if (tok.kind === "date") chip = { kind: "date", op: tok.op, value: tok.value };
     else if (tok.kind === "family") chip = { kind: "family", value: tok.value };
     else if (tok.kind === "contains") chip = { kind: "text", value: `contains:${tok.value}` };
@@ -408,6 +428,7 @@ const TimelineView = forwardRef(function TimelineView({
   onTogglePinnedTag,
   onViewportYearChange,
   onChipQueryChange,
+  tagFilterRequest,
   tagColors = {},
   keybinds = {},
   onSetViewMode,
@@ -1918,6 +1939,25 @@ const TimelineView = forwardRef(function TimelineView({
     addFilterChip({ kind: "date", op: filterDateOp, value: v });
     setFilterDateVal("");
   };
+  const isTagChip = (chip, tag) =>
+    chip.kind === "tag" && !chip.negated && normalizeTag(chip.value) === normalizeTag(tag);
+  const isTagChipped = (tag) => filterChips.some((c) => isTagChip(c, tag));
+  const toggleTagChip = (tag) =>
+    setFilterChips((prev) =>
+      prev.some((c) => isTagChip(c, tag))
+        ? prev.filter((c) => !isTagChip(c, tag))
+        : [...prev, { id: nextChipId(), kind: "tag", value: tag, negated: false, join: "and" }]);
+
+  // Tag shift-clicked in the sidebar
+  const lastTagRequestRef = useRef(tagFilterRequest?.n ?? 0);
+  useEffect(() => {
+    const n = tagFilterRequest?.n ?? 0;
+    if (!n || n === lastTagRequestRef.current) return;
+    lastTagRequestRef.current = n;
+    toggleTagChip(tagFilterRequest.tag);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagFilterRequest]);
+
   const isFamilyFocused = (spanId) =>
     filterChips.some((c) => c.kind === "family" && !c.negated && c.value === spanId);
   // One family chip at a time, so re-clicking the focused span clears it
@@ -2059,10 +2099,9 @@ const TimelineView = forwardRef(function TimelineView({
             autoComplete="off"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
-                const v = filterText.trim().replace(/^"+|"+$/g, "");
+                const v = stripQuotes(filterText.trim());
                 if (v) {
-                  const tag = v.startsWith("#") ? v.slice(1).replace(/^"+|"+$/g, "").trim() : "";
-                  addFilterChip(tag ? { kind: "tag", value: tag } : { kind: "text", value: v });
+                  addFilterChip(chipFromInput(v));
                   setFilterText("");
                 }
                 setHistoryOpen(false);
@@ -2154,7 +2193,7 @@ const TimelineView = forwardRef(function TimelineView({
       </div>
       <div className="fm-tags-header">
         <span className="fm-tags-title">TAGS</span>
-        <span className="fm-tags-subtitle">CLICK TO FILTER</span>
+        <span className="fm-tags-subtitle">CLICK TO FILTER · SHIFT TO QUERY</span>
         <span className="fm-tags-count">{allTags.length} tags</span>
       </div>
       <div className="filter-menu-dropdown">
@@ -2166,12 +2205,14 @@ const TimelineView = forwardRef(function TimelineView({
           const isHidden = hiddenTags.includes(tag);
           const isPinned = pinnedTags.includes(tag);
           const count = timelineData?.elements?.filter((el) => el.tags?.includes(tag)).length || 0;
+          const inQuery = isTagChipped(tag);
           return (
             <div
               key={tag}
-              className={`sb-tag-row${isHidden ? " is-hidden" : ""}${isShown ? " is-selected" : ""}`}
-              onClick={() => onToggleTag?.(tag)}
-              title={isShown ? "Remove tag filter" : "Filter by this tag"}
+              className={`sb-tag-row${isHidden ? " is-hidden" : ""}${isShown ? " is-selected" : ""}${inQuery ? " is-in-query" : ""}`}
+              onMouseDown={blockShiftSelect}
+              onClick={(e) => { if (e.shiftKey) toggleTagChip(tag); else onToggleTag?.(tag); }}
+              title={`${isShown ? "Remove tag filter" : "Filter by this tag"} · Shift-click to ${inQuery ? "remove from" : "add to"} the query`}
             >
               <span className="sb-tag-name"><span className="sb-tag-hash">#</span>{tag}</span>
               <span className="sb-tag-count">{count}</span>

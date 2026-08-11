@@ -100,6 +100,35 @@ test("a quoted tag tokenizes as a tag leaf", async () => {
   ]);
 });
 
+test("tag: matches part of a tag name", async () => {
+  assert.deepStrictEqual(await run("tag:war", TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run("tag:pac", TAGGED), ["e-moon"]);
+});
+
+test("tag: is case-insensitive and accepts spaces when quoted", async () => {
+  assert.deepStrictEqual(await run("tag:WAR", TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run('tag:"world war"', TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run('tag: "rld wa"', TAGGED), ["e-ww1"]);
+});
+
+test("tag: combines with other leaves", async () => {
+  assert.deepStrictEqual(await run("tag:war is:event", TAGGED), ["e-ww1"]);
+  assert.deepStrictEqual(await run("~tag:war", TAGGED), ["e-moon"]);
+  assert.deepStrictEqual((await run("tag:war | tag:pac", TAGGED)).sort(), ["e-moon", "e-ww1"]);
+});
+
+test("tag: differs from #tag, which stays exact", async () => {
+  assert.deepStrictEqual(await run("#war", TAGGED), []);
+  assert.deepStrictEqual(await run("tag:war", TAGGED), ["e-ww1"]);
+});
+
+test("tag: tokenizes as a tagsearch leaf", async () => {
+  const { tokenizeFilterQuery } = await import("../src/utils/filterUtils.js");
+  assert.deepStrictEqual(tokenizeFilterQuery("tag:World"), [
+    { t: "LEAF", kind: "tagsearch", value: "world" },
+  ]);
+});
+
 test("contains: still parses with a space before its value", async () => {
   const { tokenizeFilterQuery } = await import("../src/utils/filterUtils.js");
   assert.deepStrictEqual(tokenizeFilterQuery("contains: siege"), [

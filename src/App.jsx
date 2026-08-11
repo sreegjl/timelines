@@ -285,6 +285,10 @@ function App() {
   const [pinnedTags, setPinnedTags] = useState([]);
   const [chipQuery, setChipQuery] = useState("");
   const parsedChipQuery = useMemo(() => parseFilterQuery(chipQuery), [chipQuery]);
+  const [tagFilterRequest, setTagFilterRequest] = useState(null);
+  const handleToggleTagQuery = useCallback((tag) => {
+    setTagFilterRequest((prev) => ({ tag, n: (prev?.n ?? 0) + 1 }));
+  }, []);
   const [viewportYear, setViewportYear] = useState(null);
   const handleViewportYearChange = useCallback((year) => {
     startTransition(() => {
@@ -2363,9 +2367,11 @@ function App() {
               timelineData={filteredTimelineData}
               allElements={timelineData.elements}
               chipFilter={parsedChipQuery}
+              chipQuery={chipQuery}
               activeTags={activeTags}
               hiddenTags={hiddenTags}
               onToggleTag={handleToggleTag}
+              onToggleTagQuery={handleToggleTagQuery}
               onToggleHiddenTag={handleToggleHiddenTag}
               onClearTags={handleClearTags}
               pinnedTags={pinnedTags}
@@ -2496,6 +2502,7 @@ function App() {
               onTogglePinnedTag={handleTogglePinnedTag}
               onViewportYearChange={handleViewportYearChange}
               onChipQueryChange={setChipQuery}
+              tagFilterRequest={tagFilterRequest}
               tagColors={timelineData.file?.tagColors || {}}
               keybinds={keybinds}
               onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}

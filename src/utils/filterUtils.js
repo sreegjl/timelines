@@ -2,7 +2,11 @@
 
 const SPECIAL = ' \t|()~"<>';
 
-const normalizeTag = (value) => value.normalize('NFC').toLowerCase();
+export const normalizeTag = (value) => String(value ?? '').normalize('NFC').toLowerCase();
+
+// Quote so the value survives a round-trip through the tokenizer
+export const quoteFilterValue = (value) =>
+  /[\s|()~"<>]/.test(value) ? `"${value}"` : value;
 
 function tokenize(input) {
   const s = input;
@@ -61,6 +65,10 @@ function tokenize(input) {
       const v = wl.slice(7);
       if (v) raw.push({ t: 'LEAF', kind: 'family', value: v });
       else raw.push({ t: 'PENDING', kind: 'family' });
+    } else if (wl.startsWith('tag:')) {
+      const v = word.slice(4);
+      if (v) raw.push({ t: 'LEAF', kind: 'tagsearch', value: normalizeTag(v) });
+      else raw.push({ t: 'PENDING', kind: 'tagsearch' });
     } else if (word === '#') {
       raw.push({ t: 'PENDING', kind: 'tag' });
     } else if (word[0] === '#' && word.length > 1) {
@@ -77,7 +85,8 @@ function tokenize(input) {
       const next = raw[j + 1];
       if (next && next.t === 'LEAF' && (next.kind === 'text' || next.kind === 'quoted')) {
         const kind = raw[j].kind;
-        tokens.push({ t: 'LEAF', kind, value: kind === 'tag' ? normalizeTag(next.value) : next.value });
+        const isTagKind = kind === 'tag' || kind === 'tagsearch';
+        tokens.push({ t: 'LEAF', kind, value: isTagKind ? normalizeTag(next.value) : next.value });
         j++;
       }
     } else {
@@ -229,6 +238,11 @@ function evalLeaf(leaf, el, noteContent, context) {
       const tags = Array.isArray(el.tags) ? el.tags : [];
       // Tags saved before NFC was applied on entry
       return tags.some((t) => normalizeTag(t) === leaf.value);
+    }
+
+    case 'tagsearch': {
+      const tags = Array.isArray(el.tags) ? el.tags : [];
+      return tags.some((t) => normalizeTag(t).includes(leaf.value));
     }
 
     case 'has':

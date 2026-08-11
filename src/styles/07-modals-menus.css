@@ -732,6 +732,7 @@
 
 .fm-fchip-type,
 .fm-fchip-tag,
+.fm-fchip-tagsearch,
 .fm-fchip-date,
 .fm-fchip-family,
 .fm-fchip-text {
@@ -964,6 +965,11 @@
 .sidebar-filter-menu .sb-tag-row.is-selected:hover,
 .fm-modal .sb-tag-row.is-selected:hover {
   background: color-mix(in srgb, var(--accent-color), transparent 22%);
+}
+
+.sidebar-filter-menu .sb-tag-row.is-in-query,
+.fm-modal .sb-tag-row.is-in-query {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--link-color, var(--accent-color)), transparent 30%);
 }
 
 .fm-preview {

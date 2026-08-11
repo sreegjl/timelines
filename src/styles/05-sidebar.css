@@ -311,6 +311,10 @@
   color: var(--app-bg);
 }
 
+.sb-tag-strip-pill.is-in-query {
+  border-color: var(--link-color, var(--accent-color));
+}
+
 .sb-tag-strip-all.is-active {
   background: var(--text-primary);
   border-color: var(--text-primary);
@@ -979,6 +983,10 @@
 
 .sb-tag-row.is-hidden {
   opacity: 0.4;
+}
+
+.sb-tag-row.is-in-query {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--link-color, var(--accent-color)), transparent 30%);
 }
 
 .sb-tag-swatch {

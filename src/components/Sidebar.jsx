@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
-import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
+import { parseFilterQuery, matchesFilter, buildFilterContext, tokenizeFilterQuery, normalizeTag } from "../utils/filterUtils";
 import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { displayDateLabel } from "../utils/dateUtils";
@@ -8,6 +8,9 @@ import ColorPicker from "./ColorPicker";
 import "../styles/07-modals-menus.css";
 
 const DEFAULT_GROUP_COLOR = "#d9d9d9";
+
+// Shift-mousedown would extend the text selection over the row
+const blockShiftSelect = (e) => { if (e.shiftKey) e.preventDefault(); };
 
 const expandShortHex = (value) =>
   value
@@ -190,9 +193,11 @@ export default function Sidebar({
   timelineData,
   allElements,
   chipFilter = null,
+  chipQuery = "",
   activeTags = [],
   hiddenTags = [],
   onToggleTag,
+  onToggleTagQuery,
   onClearTags,
   onToggleHiddenTag,
   pinnedTags = [],
@@ -815,6 +820,12 @@ export default function Sidebar({
   const searchActive = searchQuery.trim().length > 0 || hasChipFilter;
   const q = searchQuery.trim().toLowerCase();
   const matchesSearch = (value) => (value || "").toLowerCase().includes(q);
+  const queryTags = useMemo(
+    () => new Set(
+      tokenizeFilterQuery(chipQuery).filter((t) => t.kind === "tag").map((t) => t.value)
+    ),
+    [chipQuery]
+  );
   const parsedFilter = useMemo(() => parseFilterQuery(searchQuery), [searchQuery]);
   const filterContext = useMemo(
     () => buildFilterContext(allElements ?? timelineData?.elements ?? []),
@@ -1377,13 +1388,15 @@ export default function Sidebar({
             {stripTags.map((tag) => {
               const isActive = activeTags.includes(tag);
               const color = tagColors[tag];
+              const inQuery = queryTags.has(normalizeTag(tag));
               return (
                 <button
                   key={tag}
                   type="button"
-                  className={`sb-tag-strip-pill${isActive ? " is-active" : ""}`}
-                  onClick={() => onToggleTag?.(tag)}
-                  title={tag}
+                  className={`sb-tag-strip-pill${isActive ? " is-active" : ""}${inQuery ? " is-in-query" : ""}`}
+                  onMouseDown={blockShiftSelect}
+                  onClick={(e) => { if (e.shiftKey) onToggleTagQuery?.(tag); else onToggleTag?.(tag); }}
+                  title={`${tag} · Shift-click to ${inQuery ? "remove from" : "add to"} the filter query`}
                 >
                   <span className="sb-tag-strip-dot" style={{ background: color || "var(--ui-muted)" }} />
                   {tag}
@@ -1673,12 +1686,14 @@ export default function Sidebar({
                 const isPinned = pinnedTags.includes(tag);
                 const tagColor = tagColors[tag];
                 const count = tagCounts.get(tag) || 0;
+                const inQuery = queryTags.has(normalizeTag(tag));
                 return (
                   <div
                     key={tag}
-                    className={`sb-tag-row${isHidden ? " is-hidden" : ""}`}
-                    onClick={() => onToggleTag?.(tag)}
-                    title={isShown ? "Disable spotlight filter" : "Spotlight this tag"}
+                    className={`sb-tag-row${isHidden ? " is-hidden" : ""}${inQuery ? " is-in-query" : ""}`}
+                    onMouseDown={blockShiftSelect}
+                    onClick={(e) => { if (e.shiftKey) onToggleTagQuery?.(tag); else onToggleTag?.(tag); }}
+                    title={`${isShown ? "Disable spotlight filter" : "Spotlight this tag"} · Shift-click to ${inQuery ? "remove from" : "add to"} the filter query`}
                   >
                     {readOnly ? (
                       <span
