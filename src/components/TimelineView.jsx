@@ -1961,13 +1961,17 @@ const TimelineView = forwardRef(function TimelineView({
   const isFamilyFocused = (spanId) =>
     filterChips.some((c) => c.kind === "family" && !c.negated && c.value === spanId);
   // One family chip at a time, so re-clicking the focused span clears it
-  const toggleFamilyChip = (spanId, title) =>
+  const toggleFamilyChip = (spanId, title) => {
+    const focused = isFamilyFocused(spanId);
     setFilterChips((prev) => {
-      const focused = prev.some((c) => c.kind === "family" && !c.negated && c.value === spanId);
       const rest = prev.filter((c) => c.kind !== "family");
       if (focused) return rest;
       return [...rest, { id: nextChipId(), kind: "family", value: spanId, label: title, negated: false, join: "and" }];
     });
+    if (focused) return;
+    handleSelect(spanId);
+    pendingCenterRef.current = spanId;
+  };
   // Touch stand-in for shift-click; editor long-press already opens the context menu
   const longPressTimerRef = useRef(null);
   const longPressOriginRef = useRef({ x: 0, y: 0 });
@@ -3030,6 +3034,35 @@ const TimelineView = forwardRef(function TimelineView({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleZoomIn, handleZoomOut]);
 
+  const scrollToElementId = (elementId) => {
+    const el = timelineData?.elements?.find((e) => e.id === elementId);
+    if (!el) return;
+    const targetYear = el.type === "event" ? el.date : (el.start + el.end) / 2;
+    if (!Number.isFinite(targetYear)) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const yearPx = yearToPx(targetYear);
+    const scale = scaleRef.current;
+    const viewportWidth = container.clientWidth;
+    const scaledTimelineWidth = timelineWidth * scale;
+    const baseMaxPan = Math.max(0, scaledTimelineWidth - viewportWidth);
+    const extra = Math.max(0, viewportWidth / 2 - TIMELINE_PADDING * scale);
+    const newX = viewportWidth / 2 - yearPx * scale;
+    translateRef.current.x = Math.min(extra, Math.max(-baseMaxPan - extra, newX));
+    applyTransform();
+  };
+  const scrollToElementRef = useRef(scrollToElementId);
+  scrollToElementRef.current = scrollToElementId;
+
+  // Focus rebuilds the layout, so center once the filtered timeline has rendered
+  const pendingCenterRef = useRef(null);
+  useEffect(() => {
+    const id = pendingCenterRef.current;
+    if (!id) return;
+    pendingCenterRef.current = null;
+    scrollToElementId(id);
+  });
+
   // Stop animation and select an element
   const handleSelect = (id) => {
     if (isPlaying) {
@@ -3298,30 +3331,7 @@ const TimelineView = forwardRef(function TimelineView({
         return null;
       }
     },
-    scrollToElement: (elementId) => {
-      const el = timelineData?.elements?.find((e) => e.id === elementId);
-      if (!el) return;
-      let targetYear;
-      if (el.type === "event") {
-        targetYear = el.date;
-      } else {
-        targetYear = (el.start + el.end) / 2;
-      }
-      if (!Number.isFinite(targetYear)) return;
-      const container = containerRef.current;
-      if (!container) return;
-      const yearPx = yearToPx(targetYear);
-      const scale = scaleRef.current;
-      const viewportWidth = container.clientWidth;
-      const scaledTimelineWidth = timelineWidth * scale;
-      const baseMaxPan = Math.max(0, scaledTimelineWidth - viewportWidth);
-      const extra = Math.max(0, viewportWidth / 2 - TIMELINE_PADDING * scale);
-      const minX = -baseMaxPan - extra;
-      const maxX = extra;
-      const newX = viewportWidth / 2 - yearPx * scale;
-      translateRef.current.x = Math.min(maxX, Math.max(minX, newX));
-      applyTransform();
-    },
+    scrollToElement: (elementId) => scrollToElementRef.current(elementId),
 
     scrollToGroup: (groupId) => {
       const container = containerRef.current;
@@ -3333,7 +3343,7 @@ const TimelineView = forwardRef(function TimelineView({
       translateRef.current.y = container.clientHeight / 2 - centerY * scale;
       applyTransform();
     },
-  }), [calculatedHeight, yearToPx, timelineWidth, file, TIMELINE_PADDING, PX_PER_YEAR, compressedMin, compressedMax, decompressYear, timelineData, groupBandBoxes]);
+  }), [calculatedHeight, yearToPx, timelineWidth, file, TIMELINE_PADDING, PX_PER_YEAR, compressedMin, compressedMax, decompressYear, groupBandBoxes]);
 
   // Reapply transform when timeline DOM is recreated after switching back from map view
   useLayoutEffect(() => {
