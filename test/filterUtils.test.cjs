@@ -73,6 +73,52 @@ test("family: tolerates a parent cycle", async () => {
   assert.deepStrictEqual((await run("family:span-a", cyclic)).sort(), ["span-a", "span-b"]);
 });
 
+test("parent: matches direct children only", async () => {
+  assert.deepStrictEqual(
+    (await run("parent:span-rome")).sort(),
+    ["span-empire", "span-legion", "span-punic"]
+  );
+});
+
+test("parent: matches a parent title substring", async () => {
+  assert.deepStrictEqual((await run("parent:roman")).sort(), ["span-empire", "span-legion", "span-punic"]);
+  assert.deepStrictEqual(await run("parent:greece"), ["event-marathon"]);
+});
+
+test("parent: keeps substring matching even when a title matches exactly", async () => {
+  const nested = [
+    { id: "span-sega", type: "span", title: "Sega" },
+    { id: "span-genesis", type: "span", title: "Sega Genesis", parent: "span-sega" },
+    { id: "e-sonic", type: "event", title: "Sonic", parents: ["span-genesis"] },
+    { id: "span-saturn", type: "span", title: "Sega Saturn" },
+    { id: "e-nights", type: "event", title: "NiGHTS", parents: ["span-saturn"] },
+  ];
+  assert.deepStrictEqual((await run("parent:sega", nested)).sort(), ["e-nights", "e-sonic", "span-genesis"]);
+  assert.deepStrictEqual(
+    (await run("family:sega", nested)).sort(),
+    ["e-sonic", "span-genesis", "span-sega"]
+  );
+});
+
+test("parent: resolves a quoted multi-word title and combines with other leaves", async () => {
+  assert.deepStrictEqual(
+    (await run('parent:"roman republic"')).sort(),
+    ["span-empire", "span-legion", "span-punic"]
+  );
+  assert.deepStrictEqual(await run("parent:punic is:event"), ["event-cannae"]);
+  assert.deepStrictEqual((await run("~parent:roman is:span")).sort(), ["span-greece", "span-rome"]);
+});
+
+test("parent: yields nothing for an unknown target", async () => {
+  assert.deepStrictEqual(await run("parent:span-atlantis"), []);
+});
+
+test("parent: does not match when no context is supplied", async () => {
+  const { parseFilterQuery, matchesFilter } = await import("../src/utils/filterUtils.js");
+  const parsed = parseFilterQuery("parent:span-rome");
+  assert.strictEqual(matchesFilter(ELEMENTS[1], parsed), false);
+});
+
 const TAGGED = [
   { id: "e-ww1", type: "event", title: "Armistice", date: 1918, tags: ["World War", "europe"] },
   { id: "e-moon", type: "event", title: "Apollo 11", date: 1969, tags: ["space"] },

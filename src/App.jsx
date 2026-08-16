@@ -289,6 +289,10 @@ function App() {
   const handleToggleTagQuery = useCallback((tag) => {
     setTagFilterRequest((prev) => ({ tag, n: (prev?.n ?? 0) + 1 }));
   }, []);
+  const [focusSpanRequest, setFocusSpanRequest] = useState(null);
+  const handleFocusSpan = useCallback((span) => {
+    setFocusSpanRequest((prev) => ({ id: span.id, title: span.title, n: (prev?.n ?? 0) + 1 }));
+  }, []);
   const [viewportYear, setViewportYear] = useState(null);
   const handleViewportYearChange = useCallback((year) => {
     startTransition(() => {
@@ -2399,6 +2403,7 @@ function App() {
               onDuplicateElement={handleDuplicateElement}
               onEditElement={handleEditElement}
               onPatchFile={handlePatchFile}
+              onFocusSpan={handleFocusSpan}
               keybinds={keybinds}
             />
             </ErrorBoundary>
@@ -2503,6 +2508,7 @@ function App() {
               onViewportYearChange={handleViewportYearChange}
               onChipQueryChange={setChipQuery}
               tagFilterRequest={tagFilterRequest}
+              focusSpanRequest={focusSpanRequest}
               tagColors={timelineData.file?.tagColors || {}}
               keybinds={keybinds}
               onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}

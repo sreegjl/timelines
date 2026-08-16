@@ -182,6 +182,7 @@ const filterChipTerm = (chip) => {
   else if (chip.kind === "tagsearch") term = `tag:${quoteIfNeeded(chip.value)}`;
   else if (chip.kind === "text") term = quoteIfNeeded(chip.value);
   else if (chip.kind === "family") term = `family:${quoteIfNeeded(chip.value)}`;
+  else if (chip.kind === "parent") term = `parent:${quoteIfNeeded(chip.value)}`;
   else term = chip.value; // "type" kind holds the literal term: is:event / has:coords
   return (chip.negated ? "~" : "") + term;
 };
@@ -191,6 +192,7 @@ const filterChipLabel = (chip) =>
     : chip.kind === "tag" ? `#${chip.value}`
     : chip.kind === "tagsearch" ? `tag: ${chip.value}`
     : chip.kind === "family" ? `family: ${chip.label ?? chip.value}`
+    : chip.kind === "parent" ? `parent: ${chip.label ?? chip.value}`
     : chip.value;
 
 const stripQuotes = (value) => value.replace(/^"+|"+$/g, "").trim();
@@ -203,6 +205,10 @@ const chipFromInput = (value) => {
   if (/^tag:/i.test(value)) {
     const needle = stripQuotes(value.slice(4));
     if (needle) return { kind: "tagsearch", value: needle.toLowerCase() };
+  }
+  if (/^parent:/i.test(value)) {
+    const needle = stripQuotes(value.slice(7));
+    if (needle) return { kind: "parent", value: needle.toLowerCase() };
   }
   return { kind: "text", value };
 };
@@ -225,6 +231,7 @@ const chipsFromQuery = (query, nextId) => {
     else if (tok.kind === "tagsearch") chip = { kind: "tagsearch", value: tok.value };
     else if (tok.kind === "date") chip = { kind: "date", op: tok.op, value: tok.value };
     else if (tok.kind === "family") chip = { kind: "family", value: tok.value };
+    else if (tok.kind === "parent") chip = { kind: "parent", value: tok.value };
     else if (tok.kind === "contains") chip = { kind: "text", value: `contains:${tok.value}` };
     else chip = { kind: "text", value: tok.value };
     chips.push({ id: nextId(), negated, join: chips.length === 0 ? "and" : join, ...chip });
@@ -429,6 +436,7 @@ const TimelineView = forwardRef(function TimelineView({
   onViewportYearChange,
   onChipQueryChange,
   tagFilterRequest,
+  focusSpanRequest,
   tagColors = {},
   keybinds = {},
   onSetViewMode,
@@ -1972,6 +1980,16 @@ const TimelineView = forwardRef(function TimelineView({
     handleSelect(spanId);
     pendingCenterRef.current = spanId;
   };
+
+  // Span focused from the sidebar
+  const lastFocusRequestRef = useRef(focusSpanRequest?.n ?? 0);
+  useEffect(() => {
+    const n = focusSpanRequest?.n ?? 0;
+    if (!n || n === lastFocusRequestRef.current) return;
+    lastFocusRequestRef.current = n;
+    toggleFamilyChip(focusSpanRequest.id, focusSpanRequest.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSpanRequest]);
   // Touch stand-in for shift-click; editor long-press already opens the context menu
   const longPressTimerRef = useRef(null);
   const longPressOriginRef = useRef({ x: 0, y: 0 });

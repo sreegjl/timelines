@@ -244,6 +244,10 @@ export default function ViewerApp() {
   const handleToggleTagQuery = useCallback((tag) => {
     setTagFilterRequest((prev) => ({ tag, n: (prev?.n ?? 0) + 1 }));
   }, []);
+  const [focusSpanRequest, setFocusSpanRequest] = useState(null);
+  const handleFocusSpan = useCallback((span) => {
+    setFocusSpanRequest((prev) => ({ id: span.id, title: span.title, n: (prev?.n ?? 0) + 1 }));
+  }, []);
 
   useEffect(() => {
     const onResize = () => setViewportWidth(window.innerWidth);
@@ -678,6 +682,7 @@ export default function ViewerApp() {
               onPatchFile={handlePatchFile}
               onUpdateGroup={handleUpdateGroup}
               onCenterGroup={handleCenterGroup}
+              onFocusSpan={handleFocusSpan}
             />
           </ErrorBoundary>
         </aside>
@@ -729,6 +734,7 @@ export default function ViewerApp() {
               tagColors={tagColors}
               onChipQueryChange={setChipQuery}
               tagFilterRequest={tagFilterRequest}
+              focusSpanRequest={focusSpanRequest}
               onSetViewMode={timelineData.file?.useSpreadsheet ? setViewMode : undefined}
             />
           </ErrorBoundary>

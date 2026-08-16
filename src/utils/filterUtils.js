@@ -65,6 +65,10 @@ function tokenize(input) {
       const v = wl.slice(7);
       if (v) raw.push({ t: 'LEAF', kind: 'family', value: v });
       else raw.push({ t: 'PENDING', kind: 'family' });
+    } else if (wl.startsWith('parent:')) {
+      const v = wl.slice(7);
+      if (v) raw.push({ t: 'LEAF', kind: 'parent', value: v });
+      else raw.push({ t: 'PENDING', kind: 'parent' });
     } else if (wl.startsWith('tag:')) {
       const v = word.slice(4);
       if (v) raw.push({ t: 'LEAF', kind: 'tagsearch', value: normalizeTag(v) });
@@ -183,14 +187,16 @@ function parentIdsOf(el) {
 export function buildFilterContext(elements) {
   const list = Array.isArray(elements) ? elements : [];
   const childIdsByParent = new Map();
+  const nameById = new Map();
   for (const el of list) {
     if (!el?.id) continue;
+    nameById.set(lowerId(el.id), lowerId(el.title || el.id));
     for (const parentId of parentIdsOf(el)) {
       if (!childIdsByParent.has(parentId)) childIdsByParent.set(parentId, []);
       childIdsByParent.get(parentId).push(lowerId(el.id));
     }
   }
-  return { elements: list, childIdsByParent, familyCache: new Map() };
+  return { elements: list, childIdsByParent, nameById, familyCache: new Map() };
 }
 
 const EMPTY_FAMILY = new Set();
@@ -257,6 +263,15 @@ function evalLeaf(leaf, el, noteContent, context) {
       if (!context) return false;
       return resolveFamily(context, leaf.value).has(lowerId(el.id));
 
+    case 'parent': {
+      if (!context) return false;
+      return parentIdsOf(el).some((pid) => {
+        if (pid.includes(leaf.value)) return true;
+        const name = context.nameById?.get(pid);
+        return name ? name.includes(leaf.value) : false;
+      });
+    }
+
     case 'date': {
       const dateVal = el.date ?? el.start;
       if (dateVal == null) return false;
@@ -302,7 +317,7 @@ export function parseFilterQuery(query) {
   return parse(tokens);
 }
 
-// Without a context from buildFilterContext(), family: never matches
+// Without a context from buildFilterContext(), family: and parent: never match
 export function matchesFilter(el, parsedQuery, noteContent = null, context = null) {
   if (!parsedQuery) return true;
   return evalNode(parsedQuery, el, noteContent, context);
