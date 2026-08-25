@@ -437,6 +437,7 @@ const TimelineView = forwardRef(function TimelineView({
   onChipQueryChange,
   tagFilterRequest,
   focusSpanRequest,
+  suppressFocusSelect = false,
   tagColors = {},
   keybinds = {},
   onSetViewMode,
@@ -1977,7 +1978,8 @@ const TimelineView = forwardRef(function TimelineView({
       return [...rest, { id: nextChipId(), kind: "family", value: spanId, label: title, negated: false, join: "and" }];
     });
     if (focused) return;
-    handleSelect(spanId);
+    // A compact viewer hides the canvas behind the right panel
+    if (!suppressFocusSelect) handleSelect(spanId);
     pendingCenterRef.current = spanId;
   };
 

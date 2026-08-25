@@ -735,6 +735,7 @@ export default function ViewerApp() {
               onChipQueryChange={setChipQuery}
               tagFilterRequest={tagFilterRequest}
               focusSpanRequest={focusSpanRequest}
+              suppressFocusSelect={isCompact}
               onSetViewMode={timelineData.file?.useSpreadsheet ? setViewMode : undefined}
             />
           </ErrorBoundary>
