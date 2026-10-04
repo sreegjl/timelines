@@ -1,11 +1,13 @@
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { parseTimelineInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, detailToSlider, sliderToDetail } from "../utils/sliderUtils";
 import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
 
 export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
+  const { t } = useTranslation("app");
   const [title, setTitle] = useState("");
   const [start, setStart] = useState("0");
   const [end, setEnd] = useState("2024");
@@ -57,12 +59,12 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
   const handleCreate = async () => {
     const errors = [];
     if (!title.trim()) {
-      errors.push("Please enter a timeline name.");
+      errors.push(t("newTimeline.errors.nameRequired", "Please enter a timeline name."));
     }
 
     const sanitized = sanitizeFilename(title);
     if (!sanitized) {
-      errors.push("Timeline name must contain at least one letter or number.");
+      errors.push(t("newTimeline.errors.nameAlphanumeric", "Timeline name must contain at least one letter or number."));
     }
 
     const parsedStart = parseTimelineInput(start);
@@ -71,15 +73,15 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
     const endValue = parsedEnd.value;
 
     if (!Number.isFinite(startValue)) {
-      errors.push("Start point must be a number or MM/DD/YYYY.");
+      errors.push(t("newTimeline.errors.startInvalid", "Start point must be a number or MM/DD/YYYY."));
     }
 
     if (!Number.isFinite(endValue)) {
-      errors.push("End point must be a number or MM/DD/YYYY.");
+      errors.push(t("newTimeline.errors.endInvalid", "End point must be a number or MM/DD/YYYY."));
     }
 
     if (Number.isFinite(startValue) && Number.isFinite(endValue) && startValue >= endValue) {
-      errors.push("Start point must be less than end point.");
+      errors.push(t("newTimeline.errors.startAfterEnd", "Start point must be less than end point."));
     }
 
     if (errors.length > 0) {
@@ -138,11 +140,11 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
           <button
             className="settings-back-button"
             onClick={handleCancel}
-            aria-label="Close"
+            aria-label={t("common:actions.close", "Close")}
           >
             <ArrowLeft size={20} strokeWidth={2} />
           </button>
-          <h2 className="settings-title">NEW TIMELINE</h2>
+          <h2 className="settings-title">{t("newTimeline.title", "NEW TIMELINE")}</h2>
         </div>
 
         {validationErrors.length > 0 && (
@@ -158,8 +160,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
         <div className="settings-content">
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Name</div>
-              <div className="settings-row-description">Your file will be saved as: {title ? title.toLowerCase().replace(/\s+/g, '-') : 'untitled'}.timeline</div>
+              <div className="settings-row-label">{t("newTimeline.name.label", "Timeline Name")}</div>
+              <div className="settings-row-description">{t("newTimeline.name.description", "Your file will be saved as: {{filename}}.timeline", { filename: title ? title.toLowerCase().replace(/\s+/g, '-') : 'untitled' })}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -172,7 +174,7 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
                   if (validationErrors.length) setValidationErrors([]);
                 }}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCreate(); } }}
-                placeholder="Enter timeline name"
+                placeholder={t("newTimeline.name.placeholder", "Enter timeline name")}
                 autoFocus
                 maxLength={100}
               />
@@ -181,8 +183,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row no-border-bottom">
             <div className="settings-row-left">
-              <div className="settings-row-label">Start Point</div>
-              <div className="settings-row-description">The first year/date shown on the timeline.</div>
+              <div className="settings-row-label">{t("newTimeline.start.label", "Start Point")}</div>
+              <div className="settings-row-description">{t("newTimeline.start.description", "The first year/date shown on the timeline.")}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -201,8 +203,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">End Point</div>
-              <div className="settings-row-description">The last year/date shown on the timeline.</div>
+              <div className="settings-row-label">{t("newTimeline.end.label", "End Point")}</div>
+              <div className="settings-row-description">{t("newTimeline.end.description", "The last year/date shown on the timeline.")}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -221,8 +223,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Length</div>
-              <div className="settings-row-description">Higher values let you add more events between years.</div>
+              <div className="settings-row-label">{t("newTimeline.length.label", "Timeline Length")}</div>
+              <div className="settings-row-description">{t("newTimeline.length.description", "Higher values let you add more events between years.")}</div>
             </div>
             <div className="settings-row-right">
               <div className="settings-slider-wrap">
@@ -265,8 +267,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Spreadsheet View</div>
-              <div className="settings-row-description">Enable a table view for bulk editing elements.</div>
+              <div className="settings-row-label">{t("newTimeline.spreadsheet.label", "Spreadsheet View")}</div>
+              <div className="settings-row-description">{t("newTimeline.spreadsheet.description", "Enable a table view for bulk editing elements.")}</div>
             </div>
             <div className="settings-row-right">
               <label className="settings-toggle">
@@ -282,8 +284,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Map View</div>
-              <div className="settings-row-description">Enable adding coordinates to events, eras, and spans to view them on a map.</div>
+              <div className="settings-row-label">{t("newTimeline.maps.label", "Map View")}</div>
+              <div className="settings-row-description">{t("newTimeline.maps.description", "Enable adding coordinates to events, eras, and spans to view them on a map.")}</div>
             </div>
             <div className="settings-row-right">
               <label className="settings-toggle">
@@ -299,8 +301,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Wiki Integration</div>
-              <div className="settings-row-description">Enable attaching MediaWiki articles to timeline elements.</div>
+              <div className="settings-row-label">{t("newTimeline.wiki.label", "Wiki Integration")}</div>
+              <div className="settings-row-description">{t("newTimeline.wiki.description", "Enable attaching MediaWiki articles to timeline elements.")}</div>
             </div>
             <div className="settings-row-right">
               <label className="settings-toggle">
@@ -315,17 +317,17 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
           </div>
 
           <div className="settings-form-note">
-            These options can be changed later in timeline settings.
+            {t("newTimeline.note", "These options can be changed later in timeline settings.")}
           </div>
 
         </div>
 
         <div className="settings-footer">
           <button className="settings-footer-button settings-cancel-button" onClick={handleCancel}>
-            Cancel
+            {t("common:actions.cancel", "Cancel")}
           </button>
           <button className="settings-footer-button settings-create-button" onClick={handleCreate}>
-            Create
+            {t("common:actions.create", "Create")}
           </button>
         </div>
       </div>

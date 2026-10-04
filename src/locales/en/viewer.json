@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "dropReadFailed": "Could not read the dropped file.",
+    "githubFailed": "Could not load from GitHub: {{message}}",
+    "linkNotTimeline": "The link must point to a .timeline file.",
+    "notGithubLink": "That doesn't look like a GitHub file link.",
+    "readFailed": "Could not read timeline: {{message}}",
+    "unsupportedFile": "Unsupported file type — drop a .timeline file."
+  },
+  "landing": {
+    "browse": "Browse for file…",
+    "githubPlaceholder": "Paste a GitHub link to a .timeline file",
+    "load": "Load",
+    "or": "or",
+    "subtitle": "Drop a <1>.timeline</1> file anywhere on this page to view it. Nothing is uploaded — the file stays in your browser.",
+    "title": "Timelines Viewer"
+  }
+}

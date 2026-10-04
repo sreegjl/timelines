@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronDown, Pencil, Trash2, BookOpen, RotateCw } from "lucide-react";
 import DOMPurify from "dompurify";
 import { parseMediaWikiUrl } from "../utils/validation";
@@ -145,6 +146,7 @@ function sanitizeWikiHtml(html, host = "https://en.wikipedia.org") {
 }
 
 export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange }) {
+  const { t } = useTranslation("timeline");
   const [wikiContent, setWikiContent] = useState("");
   const [isWikiLoading, setIsWikiLoading] = useState(false);
   const [wikiError, setWikiError] = useState("");
@@ -184,7 +186,7 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
     const parsed = parseMediaWikiUrl(url);
     if (!parsed) {
       if (background) return;
-      setWikiError("Invalid wiki URL");
+      setWikiError(t("wiki.errors.invalidUrl", "Invalid wiki URL"));
       setWikiContent("");
       return;
     }
@@ -349,7 +351,7 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
       return;
     }
     if (!parseMediaWikiUrl(trimmed)) {
-      setWikiUrlInputError("Enter a valid MediaWiki URL (e.g., https://en.wikipedia.org/wiki/Ancient_Greece)");
+      setWikiUrlInputError(t("wiki.errors.enterValidUrl", "Enter a valid MediaWiki URL (e.g., https://en.wikipedia.org/wiki/Ancient_Greece)"));
       return;
     }
     onUrlChange(trimmed);
@@ -387,7 +389,7 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
       <>
         <div className="note-divider" />
         <button type="button" className="rp-note-header sources-collapse-btn" onClick={() => setIsWikiCollapsed(v => !v)}>
-          <span className="rp-note-label rp-note-label-wiki">Wiki</span>
+          <span className="rp-note-label rp-note-label-wiki">{t("wiki.heading", "Wiki")}</span>
           <span className="sources-collapse-right">
             {safeHref && (
               <a
@@ -395,17 +397,17 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
                 href={safeHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Open in browser"
+                title={t("wiki.openInBrowser", "Open in browser")}
                 onClick={(e) => e.stopPropagation()}
               >
-                {parsedForLink?.section ? `§ ${parsedForLink.section.replace(/_/g, " ")}` : "Open article"}
+                {parsedForLink?.section ? `§ ${parsedForLink.section.replace(/_/g, " ")}` : t("wiki.openArticle", "Open article")}
               </a>
             )}
             <span
               role="button"
               tabIndex={0}
               className={`wiki-refresh-btn${isWikiLoading ? " wiki-refresh-btn-loading" : ""}`}
-              title="Reload article"
+              title={t("wiki.reload", "Reload article")}
               onClick={handleWikiRefresh}
               onKeyDown={(e) => { if (e.key === "Enter") handleWikiRefresh(e); }}
             >
@@ -415,7 +417,7 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
           </span>
         </button>
         {!isWikiCollapsed && (isWikiLoading ? (
-          <div className="wiki-loading">Loading wiki article...</div>
+          <div className="wiki-loading">{t("wiki.loading", "Loading wiki article...")}</div>
         ) : wikiError ? (
           <div className="wiki-error">{wikiError}</div>
         ) : (
@@ -434,15 +436,15 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
         <button type="button" className="note-create-card" onClick={handleOpenWikiInput}>
           <div className="note-create-card-icon"><BookOpen size={18} /></div>
           <div className="note-create-card-text">
-            <span className="note-create-card-title">Add wiki</span>
-            <span className="note-create-card-subtitle">Link a MediaWiki article or section</span>
+            <span className="note-create-card-title">{t("wiki.add.title", "Add wiki")}</span>
+            <span className="note-create-card-subtitle">{t("wiki.add.subtitle", "Link a MediaWiki article or section")}</span>
           </div>
         </button>
       )}
       {isWikiUrlInputOpen && (
         <div className="wiki-url-input-card">
           <div className="source-field">
-            <label className="source-field-label">URL</label>
+            <label className="source-field-label">{t("wiki.urlLabel", "URL")}</label>
             <input
               ref={wikiUrlInputRef}
               type="text"
@@ -450,13 +452,13 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
               value={wikiUrlInput}
               onChange={(e) => { setWikiUrlInput(e.target.value); setWikiUrlInputError(""); }}
               onKeyDown={handleWikiUrlKeyDown}
-              placeholder="https://en.wikipedia.org/wiki/… or …/wiki/Page#Section"
+              placeholder={t("wiki.urlPlaceholder", "https://en.wikipedia.org/wiki/… or …/wiki/Page#Section")}
             />
             {wikiUrlInputError && <div className="wiki-url-error">{wikiUrlInputError}</div>}
           </div>
           <div className="source-add-actions">
-            <button type="button" className="btn-secondary" onClick={() => { setIsWikiUrlInputOpen(false); setWikiUrlInputError(""); }}>Cancel</button>
-            <button type="button" className="btn-primary" onClick={handleWikiUrlSubmit}>Save</button>
+            <button type="button" className="btn-secondary" onClick={() => { setIsWikiUrlInputOpen(false); setWikiUrlInputError(""); }}>{t("common:actions.cancel", "Cancel")}</button>
+            <button type="button" className="btn-primary" onClick={handleWikiUrlSubmit}>{t("common:actions.save", "Save")}</button>
           </div>
         </div>
       )}
@@ -473,8 +475,8 @@ export default function WikiSection({ wikiUrl, useWiki, isEditMode, onUrlChange 
               <div className="wiki-url-card-host">{articleHost}</div>
             </div>
             <div className="wiki-url-card-actions">
-              <button type="button" className="wiki-url-card-btn" onClick={handleOpenWikiInput} title="Change"><Pencil size={13} /></button>
-              <button type="button" className="wiki-url-card-btn wiki-url-card-btn-remove" onClick={handleRemoveWikiUrl} title="Remove"><Trash2 size={13} /></button>
+              <button type="button" className="wiki-url-card-btn" onClick={handleOpenWikiInput} title={t("common:actions.change", "Change")}><Pencil size={13} /></button>
+              <button type="button" className="wiki-url-card-btn wiki-url-card-btn-remove" onClick={handleRemoveWikiUrl} title={t("common:actions.remove", "Remove")}><Trash2 size={13} /></button>
             </div>
           </div>
         );

@@ -1,6 +1,7 @@
 import { Component } from "react";
+import { withTranslation } from "react-i18next";
 
-export default class ErrorBoundary extends Component {
+class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { error: null };
@@ -15,11 +16,12 @@ export default class ErrorBoundary extends Component {
   }
 
   render() {
+    const { t } = this.props;
     if (this.state.error) {
       return (
         <div className="error-boundary-fallback">
           <span className="error-boundary-fallback__title">
-            {this.props.name} crashed
+            {t("errorBoundary.crashed", "{{name}} crashed", { name: this.props.name })}
           </span>
           <span className="error-boundary-fallback__message">
             {this.state.error.message}
@@ -29,7 +31,7 @@ export default class ErrorBoundary extends Component {
             style={{ marginTop: "8px" }}
             onClick={() => this.setState({ error: null })}
           >
-            Reload panel
+            {t("errorBoundary.reload", "Reload panel")}
           </button>
         </div>
       );
@@ -38,3 +40,7 @@ export default class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+const TranslatedErrorBoundary = withTranslation("common")(ErrorBoundary);
+
+export default TranslatedErrorBoundary;

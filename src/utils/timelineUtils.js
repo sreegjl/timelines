@@ -1,9 +1,28 @@
 import { daysInMonth, displayDateLabel, getActiveDateFormat, formatCalendarDate } from "./dateUtils";
+import i18n from "../i18n";
 
+// English fallback used when Intl is unavailable.
 export const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
+
+// Month abbreviations follow the UI language via Intl, so no translator has to list them.
+// They are prose, not the date format: MDY/DMY/ISO stays a per-timeline setting.
+let monthLabelCache = { locale: null, labels: MONTH_LABELS };
+export function monthLabels() {
+  const locale = i18n.language || "en";
+  if (monthLabelCache.locale === locale) return monthLabelCache.labels;
+  let labels;
+  try {
+    const fmt = new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" });
+    labels = Array.from({ length: 12 }, (_, m) => fmt.format(Date.UTC(2021, m, 1)));
+  } catch {
+    labels = MONTH_LABELS;
+  }
+  monthLabelCache = { locale, labels };
+  return labels;
+}
 
 export const DEFAULT_APPROX_LABEL = "c.";
 
@@ -43,7 +62,7 @@ export function formatYear(year, negID, posID, useCalendar = false, hideDecimals
         // Keep the month-name form for slash formats; ISO gets YYYY-MM.
         const label = isIso
           ? formatCalendarDate(yearInt, month, 1, "month", "ISO")
-          : `${MONTH_LABELS[monthIndex]} ${yearInt}`;
+          : `${monthLabels()[monthIndex]} ${yearInt}`;
         return posID ? `${label} ${posID}` : label;
       }
       const days = daysInMonth(yearInt, month);

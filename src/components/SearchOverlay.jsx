@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
@@ -35,9 +36,13 @@ const TYPE_ICONS = {
   era: <TypeBox />,
 };
 
-const TYPE_LABELS = { event: "Event", span: "Span", era: "Era" };
-
 export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fileSettings }) {
+  const { t } = useTranslation("timeline");
+  const typeLabels = useMemo(() => ({
+    event: t("elementTypes.event", "Event"),
+    span: t("elementTypes.span", "Span"),
+    era: t("elementTypes.era", "Era"),
+  }), [t]);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef(null);
@@ -108,7 +113,7 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
           <input
             ref={inputRef}
             className="search-overlay-input"
-            placeholder="Search spans, events, eras…"
+            placeholder={t("search.placeholder", "Search spans, events, eras…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             spellCheck={false}
@@ -135,9 +140,9 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
                   data-type={el.type}
                 >
                   {TYPE_ICONS[el.type]}
-                  <span className="search-result-type-label">{TYPE_LABELS[el.type]}</span>
+                  <span className="search-result-type-label">{typeLabels[el.type]}</span>
                 </span>
-                <span className="search-result-title">{el.title || "(untitled)"}</span>
+                <span className="search-result-title">{el.title || t("untitledElement", "(untitled)")}</span>
                 <span className="search-result-date">
                   {formatElementDate(el, fileSettings)}
                 </span>
@@ -148,7 +153,7 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
 
         {results.length === 0 && (
           <div className="search-overlay-empty">
-            No results for &ldquo;{query}&rdquo;
+            {t("search.noResults", "No results for \u201c{{query}}\u201d", { query })}
           </div>
         )}
       </div>

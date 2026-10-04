@@ -1,0 +1,346 @@
+{
+  "colorPicker": {
+    "hex": "Hex color",
+    "hue": "Hue",
+    "saturationBrightness": "Saturation and brightness"
+  },
+  "colorStatus": {
+    "custom": "Custom",
+    "default": "Default",
+    "inherited": "Inherited"
+  },
+  "columns": {
+    "approxEnd": "Approx. End",
+    "approxStart": "Approx. Start",
+    "borderStyle": "Border Style",
+    "color": "Color",
+    "coords": "Coordinates",
+    "date": "Date / Start",
+    "description": "Description",
+    "end": "End",
+    "group": "Group",
+    "hideDetails": "Hide Details",
+    "hideYear": "Hide Date",
+    "icon": "Icon",
+    "lineStyle": "Line Style",
+    "mergeInto": "Merge Into",
+    "note": "Note",
+    "parent": "Parent",
+    "parentType": "Parent Type",
+    "size": "Size",
+    "sources": "Sources",
+    "tags": "Tags",
+    "thumbnail": "Thumbnail",
+    "thumbnailStyle": "Thumbnail Style",
+    "title": "Title",
+    "type": "Type",
+    "wiki": "Wiki"
+  },
+  "contextMenu": {
+    "addEra": "Add Era",
+    "addEvent": "Add Event",
+    "addSpan": "Add Span",
+    "clearFocus": "Clear Focus",
+    "delete": "Delete {{type}}",
+    "downloadJson": "Download .json",
+    "duplicate": "Duplicate {{type}}",
+    "edit": "Edit {{type}}",
+    "focusHint": "Shift-click a span to do this without the menu",
+    "focusSpan": "Focus Span & Children"
+  },
+  "elementTypes": {
+    "era": "Era",
+    "event": "Event",
+    "span": "Span"
+  },
+  "fields": {
+    "addTag": "add tag...",
+    "approximate": "Approximate",
+    "approximateEnd": "Approximate End",
+    "approximateStart": "Approximate Start",
+    "borderStyle": "Border Style",
+    "color": "Color",
+    "colorLower": "color",
+    "coordinates": "Coordinates",
+    "date": "Date",
+    "dateLower": "date",
+    "description": "Description",
+    "descriptionPlaceholder": "Short description...",
+    "duration": "Duration",
+    "endDate": "End Date",
+    "extendFrom": "Extend From",
+    "fuzzyEnd": "Fuzzy End",
+    "fuzzyStart": "Fuzzy Start",
+    "group": "Group",
+    "hideDate": "Hide Date",
+    "hideDetails": "Hide Details",
+    "icon": "Icon",
+    "labelLower": "label",
+    "lat": "lat",
+    "lineStyle": "Line Style",
+    "lng": "lng",
+    "mergeInto": "Merge Into",
+    "name": "Name",
+    "parent": "Parent",
+    "pickCoordinates": "Pick coordinates on the map",
+    "size": "Size",
+    "sizeLower": "size",
+    "startDate": "Start Date",
+    "tags": "Tags",
+    "time": "Time"
+  },
+  "filters": {
+    "addDateFilter": "Add date filter",
+    "close": "Close filters",
+    "datePlaceholder": "year / date",
+    "exclude": "Exclude (~)",
+    "expand": "Open filters in a larger panel",
+    "hideTag": "Hide tag",
+    "include": "Include (remove ~)",
+    "labels": {
+      "date": "DATE",
+      "query": "QUERY",
+      "tags": "TAGS",
+      "tagsHint": "CLICK TO FILTER · SHIFT TO QUERY",
+      "type": "TYPE"
+    },
+    "noActiveFilter": "No active filter",
+    "placeholder": "Filter elements…",
+    "placeholderShort": "Filter…",
+    "remove": "Remove filter",
+    "removeFromHistory": "Remove from history",
+    "removeLabel": "Remove label",
+    "shownCount_one": "<0>{{count}}</0> shown",
+    "shownCount_other": "<0>{{count}}</0> shown",
+    "showTag": "Show tag",
+    "syntax": "syntax",
+    "syntaxHelp": "Filter syntax help",
+    "tagCount_one": "{{count}} tag",
+    "tagCount_other": "{{count}} tags",
+    "tagHint": "{{action}} · Shift-click to {{queryAction}} the query",
+    "toggleAndOr": "Toggle AND / OR",
+    "useAsLabel": "Use as label"
+  },
+  "iconCategories": {
+    "arts": "Arts, Media & Gaming",
+    "events": "Events & Milestones",
+    "food": "Food, Health & Commerce",
+    "military": "Military & Politics",
+    "nature": "Nature & Animals",
+    "people": "People & Emotions",
+    "places": "Places",
+    "religion": "Religion & Culture",
+    "science": "Science, Tech & Education",
+    "symbols": "Symbols",
+    "time": "Time",
+    "tools": "Tools & Communication",
+    "transport": "Transport"
+  },
+  "iconPicker": {
+    "add": "Add icon",
+    "current": "Icon: {{name}}",
+    "noMatches": "No icons match",
+    "none": "No icon",
+    "remove": "Remove icon",
+    "search": "Search icons..."
+  },
+  "lineStyles": {
+    "dashed": "Dashed",
+    "dotted": "Dotted",
+    "none": "None",
+    "solid": "Solid"
+  },
+  "mapPick": {
+    "escToCancel": "Esc to cancel"
+  },
+  "noteEditor": {
+    "addSubtitle": "Attach a note to this event",
+    "addTitle": "Add note",
+    "bold": "Bold",
+    "confirmDelete": "Delete this note? This cannot be undone.",
+    "delete": "Delete Note",
+    "embed": "Embed image or video",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "heading3": "Heading 3",
+    "highlight": "Highlight",
+    "insertLocalImage": "Insert local image",
+    "italic": "Italic",
+    "label": "Note",
+    "link": "Link",
+    "loading": "Loading note...",
+    "placeholder": "Write your note...",
+    "strikethrough": "Strikethrough",
+    "underline": "Underline",
+    "unlink": "Unlink Note"
+  },
+  "openSource": "Open source",
+  "options": {
+    "inherit": "Inherit"
+  },
+  "rightPanel": {
+    "branchFrom": "Branch from",
+    "closePanel": "Close panel",
+    "dateOptions": {
+      "aria": "Open date options",
+      "title": "Pick a date, or insert a dynamic date"
+    },
+    "dropImage": "Drop image or click to upload",
+    "dynamicDates": {
+      "thisMonth": "This month",
+      "thisYear": "This year",
+      "today": "Today"
+    },
+    "extendFrom": "Extend from",
+    "noContiguousSpans": "No contiguous spans",
+    "noMatchingSpans": "No matching spans",
+    "noMatchingTimes": "No matching times",
+    "noSelection": "No Selection",
+    "pasteImageUrl": "Paste image URL",
+    "removeBreak": "Remove break",
+    "revertInherited": "Revert to inherited",
+    "searchSpan": "Search span...",
+    "sections": {
+      "details": "Details",
+      "display": "Display",
+      "notes": "Notes & Sources"
+    },
+    "timePlaceholder": "e.g. 3:30 PM"
+  },
+  "search": {
+    "noResults": "No results for “{{query}}”",
+    "placeholder": "Search spans, events, eras…"
+  },
+  "sidebar": {
+    "downloadJson": "Download .json (data only)",
+    "downloadJsonHint": "Timeline data only; images and notes stay on this computer",
+    "downloadPng": "Download .png",
+    "exportPackage": "Export .timeline (images & notes)",
+    "exportPackageHint": "One shareable file bundling the timeline with its images and notes",
+    "exportVideo": "Export Video",
+    "groups": {
+      "add": "Add Group",
+      "all": "All Groups",
+      "color": "Group color",
+      "noMatches": "No matching groups",
+      "none": "No groups found"
+    },
+    "newTimeline": "New Timeline",
+    "noTimelines": "No timelines found",
+    "openTimeline": "Open Timeline",
+    "other": "OTHER",
+    "search": {
+      "elements": "Search spans, events, eras...",
+      "groups": "Search groups...",
+      "tags": "Search tags..."
+    },
+    "sections": {
+      "eras": "Eras",
+      "events": "Events",
+      "spans": "Spans"
+    },
+    "sort": {
+      "ascending": "Ascending",
+      "date": "Date",
+      "descending": "Descending",
+      "elements": "Elements",
+      "groupBy": "Group by",
+      "groupDefault": "Default",
+      "groupEras": "Eras",
+      "groupSpans": "Spans",
+      "label": "Sort",
+      "name": "Name",
+      "nestSubEras": "Nest Sub-Eras",
+      "sortBy": "Sort by"
+    },
+    "tabs": {
+      "groups": "Groups",
+      "groupsAria": "Groups tab",
+      "tags": "Tags",
+      "tagsAria": "Tags tab",
+      "timeline": "Timeline",
+      "timelineAria": "Timeline tab"
+    },
+    "tags": {
+      "all": "All",
+      "allTags": "All Tags",
+      "noMatches": "No matching tags",
+      "none": "No tags found",
+      "setColor": "Set tag color",
+      "showAll": "Show all"
+    },
+    "timelineDivider": "Timeline"
+  },
+  "sizes": {
+    "extraThick": "Extra Thick",
+    "normal": "Normal",
+    "thick": "Thick",
+    "thin": "Thin"
+  },
+  "sources": {
+    "add": "Add source",
+    "feature": "Set as featured link",
+    "fields": {
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Author, year, notes…",
+      "title": "Title",
+      "titlePlaceholder": "Source title",
+      "url": "URL (optional)"
+    },
+    "heading": "Sources",
+    "unfeature": "Remove featured link"
+  },
+  "spreadsheet": {
+    "fields": "Fields",
+    "groupName": "Group name",
+    "iconKey": "icon key",
+    "imageUrl": "Paste image URL or path",
+    "noteFilename": "filename.md",
+    "searchExisting": "Search existing…"
+  },
+  "thumbnailFit": {
+    "fill": "Fill",
+    "fit": "Fit",
+    "label": "Thumbnail fit"
+  },
+  "thumbnailStyles": {
+    "banner": "Top banner",
+    "circleFill": "Circle fill",
+    "squareFill": "Square fill",
+    "strip": "Left strip"
+  },
+  "toolbar": {
+    "backToFiles": "Back to Files",
+    "export": "Export",
+    "filter": "Filter",
+    "mapView": "Map View",
+    "new": "New",
+    "searchPlaceholder": "Search…",
+    "settings": "Settings",
+    "spreadsheetView": "Spreadsheet view",
+    "timelineSettings": "Timeline settings",
+    "timelineView": "Timeline View",
+    "zoomIn": "Zoom in",
+    "zoomInTooltip": "Zoom in (+)",
+    "zoomOut": "Zoom out",
+    "zoomOutTooltip": "Zoom out (-)"
+  },
+  "untitledElement": "(untitled)",
+  "wiki": {
+    "add": {
+      "subtitle": "Link a MediaWiki article or section",
+      "title": "Add wiki"
+    },
+    "errors": {
+      "enterValidUrl": "Enter a valid MediaWiki URL (e.g., https://en.wikipedia.org/wiki/Ancient_Greece)",
+      "invalidUrl": "Invalid wiki URL"
+    },
+    "heading": "Wiki",
+    "loading": "Loading wiki article...",
+    "openArticle": "Open article",
+    "openInBrowser": "Open in browser",
+    "reload": "Reload article",
+    "urlLabel": "URL",
+    "urlPlaceholder": "https://en.wikipedia.org/wiki/… or …/wiki/Page#Section"
+  }
+}

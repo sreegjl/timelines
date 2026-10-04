@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, ChevronDown, Pencil, Trash2, ExternalLink } from "lucide-react";
 
 export default function SourcesSection({ sources, sourceLink, isEditMode, onSourcesChange }) {
+  const { t } = useTranslation("timeline");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -14,9 +16,9 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
   const resetForm = () => { setTitle(""); setUrl(""); setDescription(""); };
 
   const handleAdd = () => {
-    const t = title.trim();
-    if (!t) return;
-    onSourcesChange([...srcList, { title: t, url: url.trim(), description: description.trim() }], sourceLink);
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+    onSourcesChange([...srcList, { title: trimmedTitle, url: url.trim(), description: description.trim() }], sourceLink);
     resetForm();
     setIsFormOpen(false);
   };
@@ -30,10 +32,10 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
   };
 
   const handleSaveEdit = () => {
-    const t = title.trim();
-    if (!t) return;
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
     const next = srcList.map((src, i) =>
-      i === editingIndex ? { title: t, url: url.trim(), description: description.trim() } : src
+      i === editingIndex ? { title: trimmedTitle, url: url.trim(), description: description.trim() } : src
     );
     onSourcesChange(next, sourceLink);
     setEditingIndex(null);
@@ -59,7 +61,7 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
       <>
         <div className="note-divider" />
         <button type="button" className="rp-note-header sources-collapse-btn" onClick={() => setIsCollapsed(v => !v)}>
-          <span className="rp-sources-label"><Link size={12} strokeWidth={2} />Sources</span>
+          <span className="rp-sources-label"><Link size={12} strokeWidth={2} />{t("sources.heading", "Sources")}</span>
           <span className="sources-collapse-right">
             <span className="rp-note-meta">{srcList.length}</span>
             <ChevronDown size={14} style={{ transform: isCollapsed ? "rotate(-90deg)" : "none", transition: "transform 0.15s ease", color: "var(--ui-muted)" }} />
@@ -74,7 +76,7 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
                   <div className="wiki-url-card-title">{src.title}</div>
                   {(src.description || src.citation) && <div className="wiki-url-card-host">{src.description || src.citation}</div>}
                 </div>
-                {src.url && <a href={src.url} target="_blank" rel="noopener noreferrer" className="wiki-url-card-btn" title="Open"><ExternalLink size={13} /></a>}
+                {src.url && <a href={src.url} target="_blank" rel="noopener noreferrer" className="wiki-url-card-btn" title={t("common:actions.open", "Open")}><ExternalLink size={13} /></a>}
               </div>
             ))}
           </div>
@@ -87,7 +89,7 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
   return (
     <div className="sources-edit-section">
       <button type="button" className="rp-note-header sources-collapse-btn" onClick={() => setIsCollapsed(v => !v)}>
-        <span className="rp-sources-label"><Link size={12} strokeWidth={2} />Sources</span>
+        <span className="rp-sources-label"><Link size={12} strokeWidth={2} />{t("sources.heading", "Sources")}</span>
         <span className="sources-collapse-right">
           {srcList.length > 0 && <span className="rp-note-meta">{srcList.length}</span>}
           <ChevronDown size={14} style={{ transform: isCollapsed ? "rotate(-90deg)" : "none", transition: "transform 0.15s ease", color: "var(--ui-muted)" }} />
@@ -99,20 +101,20 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
             editingIndex === i ? (
               <div key={`${src.title}-${i}`} className="source-add-form" style={{ marginTop: 0, paddingTop: 8, borderTop: "none" }}>
                 <div className="source-field">
-                  <label className="source-field-label">Title</label>
+                  <label className="source-field-label">{t("sources.fields.title", "Title")}</label>
                   <input type="text" className="source-field-input" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") cancelEdit(); }} autoFocus />
                 </div>
                 <div className="source-field">
-                  <label className="source-field-label">URL (optional)</label>
+                  <label className="source-field-label">{t("sources.fields.url", "URL (optional)")}</label>
                   <input type="text" className="source-field-input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" onKeyDown={(e) => { if (e.key === "Escape") cancelEdit(); }} />
                 </div>
                 <div className="source-field">
-                  <label className="source-field-label">Description (optional)</label>
-                  <textarea className="source-field-input source-field-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Author, year, notes…" rows={2} onKeyDown={(e) => { if (e.key === "Escape") cancelEdit(); }} />
+                  <label className="source-field-label">{t("sources.fields.description", "Description (optional)")}</label>
+                  <textarea className="source-field-input source-field-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("sources.fields.descriptionPlaceholder", "Author, year, notes…")} rows={2} onKeyDown={(e) => { if (e.key === "Escape") cancelEdit(); }} />
                 </div>
                 <div className="source-add-actions">
-                  <button type="button" className="btn-secondary" onClick={cancelEdit}>Cancel</button>
-                  <button type="button" className="btn-primary" onClick={handleSaveEdit}>Save</button>
+                  <button type="button" className="btn-secondary" onClick={cancelEdit}>{t("common:actions.cancel", "Cancel")}</button>
+                  <button type="button" className="btn-primary" onClick={handleSaveEdit}>{t("common:actions.save", "Save")}</button>
                 </div>
               </div>
             ) : (
@@ -127,12 +129,12 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
                     <button
                       type="button"
                       className={`wiki-url-card-btn${sourceLink === src.url ? " source-link-active" : ""}`}
-                      title={sourceLink === src.url ? "Remove featured link" : "Set as featured link"}
+                      title={sourceLink === src.url ? t("sources.unfeature", "Remove featured link") : t("sources.feature", "Set as featured link")}
                       onClick={() => handleToggleSourceLink(src)}
                     ><Link size={13} /></button>
                   )}
-                  <button type="button" className="wiki-url-card-btn" onClick={() => handleEdit(i)} title="Edit"><Pencil size={13} /></button>
-                  <button type="button" className="wiki-url-card-btn wiki-url-card-btn-remove" onClick={() => handleRemove(i)} title="Remove"><Trash2 size={13} /></button>
+                  <button type="button" className="wiki-url-card-btn" onClick={() => handleEdit(i)} title={t("common:actions.edit", "Edit")}><Pencil size={13} /></button>
+                  <button type="button" className="wiki-url-card-btn wiki-url-card-btn-remove" onClick={() => handleRemove(i)} title={t("common:actions.remove", "Remove")}><Trash2 size={13} /></button>
                 </div>
               </div>
             )
@@ -142,20 +144,20 @@ export default function SourcesSection({ sources, sourceLink, isEditMode, onSour
       {!isCollapsed && (isFormOpen ? (
         <div className="source-add-form">
           <div className="source-field">
-            <label className="source-field-label">Title</label>
-            <input type="text" className="source-field-input" placeholder="Source title" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIsFormOpen(false); }} autoFocus />
+            <label className="source-field-label">{t("sources.fields.title", "Title")}</label>
+            <input type="text" className="source-field-input" placeholder={t("sources.fields.titlePlaceholder", "Source title")} value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIsFormOpen(false); }} autoFocus />
           </div>
           <div className="source-field">
-            <label className="source-field-label">URL (optional)</label>
+            <label className="source-field-label">{t("sources.fields.url", "URL (optional)")}</label>
             <input type="text" className="source-field-input" placeholder="https://…" value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIsFormOpen(false); }} />
           </div>
           <div className="source-field">
-            <label className="source-field-label">Description (optional)</label>
-            <textarea className="source-field-input source-field-textarea" placeholder="Author, year, notes…" value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIsFormOpen(false); }} rows={3} />
+            <label className="source-field-label">{t("sources.fields.description", "Description (optional)")}</label>
+            <textarea className="source-field-input source-field-textarea" placeholder={t("sources.fields.descriptionPlaceholder", "Author, year, notes…")} value={description} onChange={(e) => setDescription(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setIsFormOpen(false); }} rows={3} />
           </div>
           <div className="source-add-actions">
-            <button type="button" className="btn-secondary" onClick={() => { setIsFormOpen(false); resetForm(); }}>Cancel</button>
-            <button type="button" className="btn-primary" onClick={handleAdd}>Add source</button>
+            <button type="button" className="btn-secondary" onClick={() => { setIsFormOpen(false); resetForm(); }}>{t("common:actions.cancel", "Cancel")}</button>
+            <button type="button" className="btn-primary" onClick={handleAdd}>{t("sources.add", "Add source")}</button>
           </div>
         </div>
       ) : (

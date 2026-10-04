@@ -1,0 +1,36 @@
+# Fails a PR that adds or changes a UI string without regenerating the locale catalogs.
+# Fix locally with: npm run i18n:extract
+name: i18n Catalog Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'i18next-parser.config.js'
+      - '.github/workflows/i18n-check.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-catalogs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify locale catalogs are up to date
+        run: npm run i18n:check

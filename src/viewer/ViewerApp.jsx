@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import TimelineView from "../components/TimelineView";
 import SpreadsheetView from "../components/SpreadsheetView";
 import Sidebar from "../components/Sidebar";
@@ -217,6 +218,7 @@ function sanitizeForBrowser(data) {
 }
 
 export default function ViewerApp() {
+  const { t } = useTranslation(["viewer", "common"]);
   const [timelineData, setTimelineData] = useState(null);
   const [isThemeReady, setIsThemeReady] = useState(true);
   // Sync the date-format lens with the loaded timeline before children render.
@@ -336,7 +338,7 @@ export default function ViewerApp() {
   const handleFile = useCallback((file) => {
     if (!file) return;
     if (!/\.(timeline|json)$/i.test(file.name)) {
-      setLoadError("Unsupported file type — drop a .timeline file.");
+      setLoadError(t("errors.unsupportedFile", "Unsupported file type — drop a .timeline file."));
       return;
     }
     const reader = new FileReader();
@@ -345,16 +347,16 @@ export default function ViewerApp() {
         loadTimelineBuffer(reader.result);
         window.history.replaceState(null, "", viewerBasePath() + window.location.search);
       } catch (err) {
-        setLoadError(`Could not read timeline: ${err.message}`);
+        setLoadError(t("errors.readFailed", "Could not read timeline: {{message}}", { message: err.message }));
       }
     };
-    reader.onerror = () => setLoadError("Could not read the dropped file.");
+    reader.onerror = () => setLoadError(t("errors.dropReadFailed", "Could not read the dropped file."));
     reader.readAsArrayBuffer(file);
-  }, [loadTimelineBuffer]);
+  }, [loadTimelineBuffer, t]);
 
   const loadFromGitHub = useCallback(async (segments) => {
     if (!/\.(timeline|json)$/i.test(segments[segments.length - 1])) {
-      setLoadError("The link must point to a .timeline file.");
+      setLoadError(t("errors.linkNotTimeline", "The link must point to a .timeline file."));
       return;
     }
     setIsRemoteLoading(true);
@@ -365,11 +367,11 @@ export default function ViewerApp() {
       loadTimelineBuffer(await res.arrayBuffer());
       window.history.replaceState(null, "", deepLinkUrl(segments));
     } catch (err) {
-      setLoadError(`Could not load from GitHub: ${err.message}`);
+      setLoadError(t("errors.githubFailed", "Could not load from GitHub: {{message}}", { message: err.message }));
     } finally {
       setIsRemoteLoading(false);
     }
-  }, [loadTimelineBuffer]);
+  }, [loadTimelineBuffer, t]);
 
   useEffect(() => {
     // Handoff from the website's landing page (same origin): bare timelines
@@ -391,7 +393,7 @@ export default function ViewerApp() {
         return;
       }
     } catch (err) {
-      setLoadError(`Could not read timeline: ${err.message}`);
+      setLoadError(t("errors.readFailed", "Could not read timeline: {{message}}", { message: err.message }));
       return;
     }
     const segments = parseDeepLink();
@@ -403,7 +405,7 @@ export default function ViewerApp() {
     if (window.location.pathname.startsWith("/viewer/")) {
       window.location.replace("/viewer-landing/");
     }
-  }, [loadFromGitHub, loadTimelineText, loadTimelineBuffer]);
+  }, [loadFromGitHub, loadTimelineText, loadTimelineBuffer, t]);
 
   // preventDefault on window keeps the browser from navigating to dropped files
   useEffect(() => {
@@ -596,17 +598,16 @@ export default function ViewerApp() {
     return (
       <div className="viewer-landing">
         <div className={`viewer-landing-card${isDragOver ? " is-drag-over" : ""}`}>
-          <h1 className="viewer-landing-title">Timelines Viewer</h1>
+          <h1 className="viewer-landing-title">{t("landing.title", "Timelines Viewer")}</h1>
           <p className="viewer-landing-subtitle">
-            Drop a <strong>.timeline</strong> file anywhere on this page to view it.
-            Nothing is uploaded — the file stays in your browser.
+            <Trans i18nKey="landing.subtitle" ns="viewer">Drop a <strong>.timeline</strong> file anywhere on this page to view it. Nothing is uploaded — the file stays in your browser.</Trans>
           </p>
           <button
             type="button"
             className="viewer-landing-browse"
             onClick={() => fileInputRef.current?.click()}
           >
-            Browse for file…
+            {t("landing.browse", "Browse for file…")}
           </button>
           <input
             ref={fileInputRef}
@@ -615,26 +616,26 @@ export default function ViewerApp() {
             style={{ display: "none" }}
             onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }}
           />
-          <div className="viewer-landing-or">or</div>
+          <div className="viewer-landing-or">{t("landing.or", "or")}</div>
           <form
             className="viewer-landing-gh"
             onSubmit={(e) => {
               e.preventDefault();
               const segments = parseGitHubLink(ghInput);
               if (segments) loadFromGitHub(segments);
-              else setLoadError("That doesn't look like a GitHub file link.");
+              else setLoadError(t("errors.notGithubLink", "That doesn't look like a GitHub file link."));
             }}
           >
             <input
               className="viewer-landing-gh-input"
               name="github-link"
-              placeholder="Paste a GitHub link to a .timeline file"
+              placeholder={t("landing.githubPlaceholder", "Paste a GitHub link to a .timeline file")}
               value={ghInput}
               onChange={(e) => setGhInput(e.target.value)}
               spellCheck={false}
             />
             <button type="submit" className="viewer-landing-browse" disabled={isRemoteLoading}>
-              {isRemoteLoading ? "Loading…" : "Load"}
+              {isRemoteLoading ? t("common:loading", "Loading…") : t("landing.load", "Load")}
             </button>
           </form>
           {loadError && <div className="viewer-landing-error">{loadError}</div>}
@@ -644,7 +645,7 @@ export default function ViewerApp() {
   }
 
   if (!isThemeReady) {
-    return <div className="viewer-loading">Loading…</div>;
+    return <div className="viewer-loading">{t("common:loading", "Loading…")}</div>;
   }
 
   const selectedElement = timelineData.elements.find((el) => el.id === selectedId);
@@ -659,7 +660,7 @@ export default function ViewerApp() {
     <div className="app-shell">
       {viewMode !== "spreadsheet" && !(isCompact && isRightPanelVisible) && (
         <aside className="app-sidebar overlay-sidebar" style={{ width: currentLeftWidth }}>
-          <ErrorBoundary name="Sidebar">
+          <ErrorBoundary name={t("common:panels.sidebar", "Sidebar")}>
             <Sidebar
               readOnly
               isCollapsed={isLeftCollapsed}
@@ -690,7 +691,7 @@ export default function ViewerApp() {
 
       <main className="app-content" style={{ display: rightMaximized ? "none" : "block" }}>
         {viewMode === "spreadsheet" ? (
-          <ErrorBoundary name="Spreadsheet">
+          <ErrorBoundary name={t("common:panels.spreadsheet", "Spreadsheet")}>
             <SpreadsheetView
               readOnly
               timelineData={filteredTimelineData}
@@ -712,7 +713,7 @@ export default function ViewerApp() {
             />
           </ErrorBoundary>
         ) : (
-          <ErrorBoundary name="Timeline">
+          <ErrorBoundary name={t("common:panels.timeline", "Timeline")}>
             <TimelineView
               readOnly
               ref={timelineViewRef}
@@ -751,7 +752,7 @@ export default function ViewerApp() {
               : RIGHT_PANEL_WIDTH,
           }}
         >
-          <ErrorBoundary name="Right panel">
+          <ErrorBoundary name={t("common:panels.rightPanel", "Right panel")}>
             <RightPanel
               readOnly
               onSelect={handleSelect}

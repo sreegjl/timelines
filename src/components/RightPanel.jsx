@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Maximize2, Minimize2, Underline, Link, Trash2, Unlink, ChevronLeft, ChevronRight, ChevronDown, Pencil, ExternalLink, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import WikiSection from "./WikiSection";
@@ -58,6 +59,7 @@ const parseTypedTime = (raw) => {
 };
 import { formatYear, withApproxLabel, formatApproxRange, DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
+import { validationMessage } from "../i18n/validationMessages";
 import { normalizeColor } from "../utils/colorUtils";
 import ColorPicker from "./ColorPicker";
 
@@ -106,6 +108,19 @@ export default function RightPanel({
   coordPickTargetId = null,
   onRequestCoordPick,
 }) {
+  const { t } = useTranslation("timeline");
+  // Listed statically so i18next-parser sees every option key.
+  const dynamicDateLabels = useMemo(() => ({
+    current: t("rightPanel.dynamicDates.today", "Today"),
+    "current-month": t("rightPanel.dynamicDates.thisMonth", "This month"),
+    "current-year": t("rightPanel.dynamicDates.thisYear", "This year"),
+  }), [t]);
+  const strokeStyleLabels = useMemo(() => ({
+    solid: t("lineStyles.solid", "Solid"),
+    dashed: t("lineStyles.dashed", "Dashed"),
+    dotted: t("lineStyles.dotted", "Dotted"),
+    none: t("lineStyles.none", "None"),
+  }), [t]);
   const [formData, setFormData] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -210,8 +225,8 @@ export default function RightPanel({
       <button
         type="button"
         className={`edit-input-icon-button edit-input-icon-button-dynamic${calendarMenuField === field ? " is-open" : ""}`}
-        aria-label="Open date options"
-        title="Pick a date, or insert a dynamic date"
+        aria-label={t("rightPanel.dateOptions.aria", "Open date options")}
+        title={t("rightPanel.dateOptions.title", "Pick a date, or insert a dynamic date")}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setCalendarMenuField((v) => (v === field ? null : field))}
       >
@@ -238,7 +253,7 @@ export default function RightPanel({
               className="span-relation-dropdown-item"
               onMouseDown={() => applyDynamicDate(field, opt.value)}
             >
-              {opt.label}
+              {dynamicDateLabels[opt.value] || opt.label}
             </button>
           ))}
         </div>
@@ -307,11 +322,11 @@ export default function RightPanel({
         </button>
         {timeMenuField === inputField && (
           <div className="span-relation-dropdown-menu dynamic-date-menu edit-time-menu">
-            <div className="edit-time-menu-label">Time</div>
+            <div className="edit-time-menu-label">{t("fields.time", "Time")}</div>
             <input
               type="text"
               className="edit-time-menu-input"
-              placeholder="e.g. 3:30 PM"
+              placeholder={t("rightPanel.timePlaceholder", "e.g. 3:30 PM")}
               value={displayValue}
               autoFocus
               onChange={(e) => {
@@ -339,7 +354,7 @@ export default function RightPanel({
                   {formatTimeOfDay(slot)}
                 </button>
               )) : (
-                <div className="edit-time-preset-empty">No matching times</div>
+                <div className="edit-time-preset-empty">{t("rightPanel.noMatchingTimes", "No matching times")}</div>
               )}
             </div>
             {timeValue && (
@@ -736,8 +751,8 @@ export default function RightPanel({
             type="button"
             className={`event-style-option${isActive ? " is-active" : ""}`}
             aria-pressed={isActive ? "true" : "false"}
-            aria-label={option.label}
-            title={option.label}
+            aria-label={strokeStyleLabels[option.value] || option.label}
+            title={strokeStyleLabels[option.value] || option.label}
             onClick={() => {
               const next = { ...formData, [field]: option.value };
               setFormData(next);
@@ -979,7 +994,7 @@ export default function RightPanel({
     return (
       <div className="right-panel">
         <div className="right-panel-header">
-          <h2>No Selection</h2>
+          <h2>{t("rightPanel.noSelection", "No Selection")}</h2>
         </div>
       </div>
     );
@@ -1007,7 +1022,7 @@ export default function RightPanel({
             <button
               className="close-button"
               onClick={onClose}
-              title="Close panel"
+              title={t("rightPanel.closePanel", "Close panel")}
             >
               <X size={18} />
             </button>
@@ -1029,7 +1044,7 @@ export default function RightPanel({
           <div className="view-mode">
             {/* Title */}
             <div className="view-group view-group-title">
-              <label>Name</label>
+              <label>{t("fields.name", "Name")}</label>
               <div className="view-separator" />
               <p className="view-title-with-icon">
                 {formData.icon && (() => { const Icon = ICON_MAP[formData.icon]; return Icon ? <Icon size={14} className="view-title-icon" /> : null; })()}
@@ -1040,7 +1055,7 @@ export default function RightPanel({
             {/* Date/Start/End based on type */}
             {formData.type === "event" ? (
                 <div className="view-group">
-                  <label>Date</label>
+                  <label>{t("fields.date", "Date")}</label>
                   <div className="view-separator" />
                   <p>
                     {withApproxLabel(
@@ -1052,7 +1067,7 @@ export default function RightPanel({
                 </div>
             ) : (
               <div className="view-group">
-                <label>Date</label>
+                <label>{t("fields.date", "Date")}</label>
                 <div className="view-separator" />
                 <p>
                   {formatApproxRange(
@@ -1078,7 +1093,7 @@ export default function RightPanel({
               if (!duration) return null;
               return (
                 <div className="view-group">
-                  <label>Duration</label>
+                  <label>{t("fields.duration", "Duration")}</label>
                   <div className="view-separator" />
                   <p>{duration}</p>
                 </div>
@@ -1090,7 +1105,7 @@ export default function RightPanel({
             {/* Parent (events only) */}
             {formData.type === "event" && formData.parents && formData.parents.length > 0 && formData.parents[0] && (
               <div className="view-group">
-                <label>Parent</label>
+                <label>{t("fields.parent", "Parent")}</label>
                 <div className="view-separator" />
                 <button
                   type="button"
@@ -1105,7 +1120,7 @@ export default function RightPanel({
             {/* Parent span (spans only) */}
             {formData.type === "span" && formData.parent && (
               <div className="view-group">
-                <label>Parent</label>
+                <label>{t("fields.parent", "Parent")}</label>
                 <div className="view-separator" />
                 <button
                   type="button"
@@ -1121,7 +1136,7 @@ export default function RightPanel({
             {/* Merge target (spans only) */}
             {formData.type === "span" && formData.mergeParent && (
               <div className="view-group">
-                <label>Merge Into</label>
+                <label>{t("fields.mergeInto", "Merge Into")}</label>
                 <div className="view-separator" />
                 <button
                   type="button"
@@ -1135,7 +1150,7 @@ export default function RightPanel({
 
             {formData.type === "span" && formData.extendFrom && (
               <div className="view-group">
-                <label>Extend From</label>
+                <label>{t("fields.extendFrom", "Extend From")}</label>
                 <div className="view-separator" />
                 <button
                   type="button"
@@ -1150,7 +1165,7 @@ export default function RightPanel({
             {/* Tags */}
             {Array.isArray(formData.tags) && formData.tags.length > 0 && (
               <div className="view-group view-group-chips">
-                <label>Tags</label>
+                <label>{t("fields.tags", "Tags")}</label>
                 <div className="view-separator" />
                 <div className="tag-chip-list">
                   {formData.tags.map((tag) => {
@@ -1184,7 +1199,7 @@ export default function RightPanel({
               const group = groups.find((g) => g.id === formData.groupId);
               return group ? (
                 <div className="view-group">
-                  <label>Group</label>
+                  <label>{t("fields.group", "Group")}</label>
                   <div className="view-separator" />
                   <p>{group.title || group.id}</p>
                 </div>
@@ -1193,7 +1208,7 @@ export default function RightPanel({
 
             {timelineData?.file?.useMaps && (formData.lat != null || formData.lng != null) && (
               <div className="view-group">
-                <label>Coordinates</label>
+                <label>{t("fields.coordinates", "Coordinates")}</label>
                 <div className="view-separator" />
                 <p>{[formData.lat, formData.lng].filter((v) => v !== "" && v != null).join(", ")}</p>
               </div>
@@ -1203,7 +1218,7 @@ export default function RightPanel({
               <>
                 <div className="note-divider" />
                 <button type="button" className="rp-note-header sources-collapse-btn" onClick={() => setIsNoteCollapsed(v => !v)}>
-                  <span className="rp-note-label rp-note-label-note">Note</span>
+                  <span className="rp-note-label rp-note-label-note">{t("noteEditor.label", "Note")}</span>
                   <span className="sources-collapse-right">
                     {noteWordCount > 0 && <span className="rp-note-meta">markdown · {noteWordCount} words</span>}
                     <ChevronDown size={14} style={{transform: isNoteCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s ease', color: 'var(--ui-muted)'}} />
@@ -1252,14 +1267,14 @@ export default function RightPanel({
               <div className="validation-errors">
                 {validationErrors.map((error, idx) => (
                   <div key={idx} className="validation-error">
-                    {error}
+                    {validationMessage(error, t)}
                   </div>
                 ))}
               </div>
             )}
 
             <SectionHeader
-              title="Details"
+              title={t("rightPanel.sections.details", "Details")}
               isOpen={isDetailsOpen}
               onToggle={() => setIsDetailsOpen(v => !v)}
               summary={formData.title || ""}
@@ -1270,7 +1285,7 @@ export default function RightPanel({
             {/* Title */}
             <div className="form-group">
               <div className="edit-row edit-row-title">
-                <label htmlFor="title">Name</label>
+                <label htmlFor="title">{t("fields.name", "Name")}</label>
                 <div className="edit-separator" />
                 <textarea
                   ref={titleTextareaRef}
@@ -1288,7 +1303,7 @@ export default function RightPanel({
             {formData.type === "span" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="description">Description</label>
+                  <label htmlFor="description">{t("fields.description", "Description")}</label>
                   <div className="edit-separator" />
                   <input
                     id="description"
@@ -1298,7 +1313,7 @@ export default function RightPanel({
                     onBlur={(e) => commitDraft({ ...formData, description: e.target.value })}
                     className="edit-input"
                     maxLength={200}
-                    placeholder="Short description..."
+                    placeholder={t("fields.descriptionPlaceholder", "Short description...")}
                   />
                 </div>
               </div>
@@ -1308,7 +1323,7 @@ export default function RightPanel({
             {formData.type === "event" ? (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="date">Date</label>
+                  <label htmlFor="date">{t("fields.date", "Date")}</label>
                   <div className="edit-separator" />
                   {(() => {
                     const showTimeIcon = parseTimelineInput(formData.dateInput).precision === "day";
@@ -1341,7 +1356,7 @@ export default function RightPanel({
               <>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="start">Start Date</label>
+                    <label htmlFor="start">{t("fields.startDate", "Start Date")}</label>
                     <div className="edit-separator" />
                     {(() => {
                       const showTimeIcon = parseTimelineInput(formData.startInput).precision === "day";
@@ -1372,7 +1387,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="end">End Date</label>
+                    <label htmlFor="end">{t("fields.endDate", "End Date")}</label>
                     <div className="edit-separator" />
                     {(() => {
                       const showTimeIcon = parseTimelineInput(formData.endInput).precision === "day";
@@ -1406,8 +1421,8 @@ export default function RightPanel({
 
             {/* Approximate date marker — one flag per date, so a range can mark either end */}
             {(formData.type === "event"
-              ? [{ field: "approximate", label: "Approximate" }]
-              : [{ field: "approxStart", label: "Approximate Start" }, { field: "approxEnd", label: "Approximate End" }]
+              ? [{ field: "approximate", label: t("fields.approximate", "Approximate") }]
+              : [{ field: "approxStart", label: t("fields.approximateStart", "Approximate Start") }, { field: "approxEnd", label: t("fields.approximateEnd", "Approximate End") }]
             ).map(({ field, label }) => (
               <div className="form-group" key={field}>
                 <div className="edit-row" title={`Prefixes the displayed date with "${approxMarker}"`}>
@@ -1438,7 +1453,7 @@ export default function RightPanel({
             {formData.type === "event" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="parents">Parent</label>
+                  <label htmlFor="parents">{t("fields.parent", "Parent")}</label>
                   <div className="edit-separator" />
                   <div className="span-relation-wrap">
                     {formData.parents?.[0] ? (
@@ -1457,7 +1472,7 @@ export default function RightPanel({
                           onChange={(e) => { setParentQuery(e.target.value); setIsParentMenuOpen(true); }}
                           onFocus={() => setIsParentMenuOpen(true)}
                           onBlur={handleParentBlur}
-                          placeholder="Search span..." className="edit-input branch-input"
+                          placeholder={t("rightPanel.searchSpan", "Search span...")} className="edit-input branch-input"
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const choice = parentSuggestions[0]; if (choice) { const next = { ...formData, parents: [choice.id], groupId: choice.groupId ?? formData.groupId }; setFormData(next); commitDraft(next); setParentQuery(""); setIsParentMenuOpen(false); } } }}
                         />
                         {isParentMenuOpen && (
@@ -1466,7 +1481,7 @@ export default function RightPanel({
                               <button key={span.id} type="button" className="branch-suggestion-item" onMouseDown={(e) => { e.preventDefault(); const next = { ...formData, parents: [span.id], groupId: span.groupId ?? formData.groupId }; setFormData(next); commitDraft(next); setParentQuery(""); setIsParentMenuOpen(false); }}>
                                 <span className="branch-suggestion-title">{span.title || span.id}</span>
                               </button>
-                            )) : <div className="branch-suggestion-empty">No matching spans</div>}
+                            )) : <div className="branch-suggestion-empty">{t("rightPanel.noMatchingSpans", "No matching spans")}</div>}
                           </div>
                         )}
                       </div>
@@ -1480,7 +1495,7 @@ export default function RightPanel({
             {formData.type === "span" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="spanParent">Parent</label>
+                  <label htmlFor="spanParent">{t("fields.parent", "Parent")}</label>
                   <div className="edit-separator" />
                   <div className="span-relation-wrap">
                     <div className="span-relation-dropdown">
@@ -1508,7 +1523,7 @@ export default function RightPanel({
                               setIsSpanRelationOpen(false);
                               setSpanParentQuery("");
                             }}
-                          >Branch from</button>
+                          >{t("rightPanel.branchFrom", "Branch from")}</button>
                           <button
                             type="button"
                             className={`span-relation-dropdown-item${spanRelationType === "extend" ? " active" : ""}${!extendEnabled ? " disabled" : ""}`}
@@ -1525,7 +1540,7 @@ export default function RightPanel({
                               setIsSpanRelationOpen(false);
                               setSpanParentQuery("");
                             }}
-                          >Extend from</button>
+                          >{t("rightPanel.extendFrom", "Extend from")}</button>
                         </div>
                       )}
                     </div>
@@ -1545,12 +1560,12 @@ export default function RightPanel({
                           onChange={(e) => { setSpanParentQuery(e.target.value); setIsSpanParentMenuOpen(true); }}
                           onFocus={() => setIsSpanParentMenuOpen(true)}
                           onBlur={handleSpanParentBlur}
-                          placeholder="Search span..." className="edit-input branch-input" maxLength={ID_MAX_LENGTH}
+                          placeholder={t("rightPanel.searchSpan", "Search span...")} className="edit-input branch-input" maxLength={ID_MAX_LENGTH}
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const suggestions = spanRelationType === "branch" ? spanParentSuggestions : extendFromSuggestions; if (suggestions.length > 0) { if (spanRelationType === "branch") setSpanParent(suggestions[0].id); else setExtendFrom(suggestions[0].id); } } }}
                         />
                         {isSpanParentMenuOpen && spanParentQuery.trim().length > 0 && (() => {
                           const suggestions = spanRelationType === "branch" ? spanParentSuggestions : extendFromSuggestions;
-                          const emptyMsg = spanRelationType === "branch" ? "No matching spans" : "No contiguous spans";
+                          const emptyMsg = spanRelationType === "branch" ? t("rightPanel.noMatchingSpans", "No matching spans") : t("rightPanel.noContiguousSpans", "No contiguous spans");
                           return (
                             <div className="branch-suggestions">
                               {suggestions.length > 0 ? suggestions.map((span) => (
@@ -1571,7 +1586,7 @@ export default function RightPanel({
             {formData.type === "span" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="mergeParent">Merge Into</label>
+                  <label htmlFor="mergeParent">{t("fields.mergeInto", "Merge Into")}</label>
                   <div className="edit-separator" />
                   <div className="span-relation-wrap"><div className="branch-picker">
                     {formData.mergeParent ? (
@@ -1590,7 +1605,7 @@ export default function RightPanel({
                           onChange={(e) => { setMergeParentQuery(e.target.value); setIsMergeParentMenuOpen(true); }}
                           onFocus={() => setIsMergeParentMenuOpen(true)}
                           onBlur={handleMergeParentBlur}
-                          placeholder="Search span..." className="edit-input branch-input" maxLength={ID_MAX_LENGTH}
+                          placeholder={t("rightPanel.searchSpan", "Search span...")} className="edit-input branch-input" maxLength={ID_MAX_LENGTH}
                           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (mergeParentSuggestions.length > 0) setMergeParent(mergeParentSuggestions[0].id); } }}
                         />
                         {isMergeParentMenuOpen && mergeParentQuery.trim().length > 0 && (
@@ -1599,7 +1614,7 @@ export default function RightPanel({
                               <button key={span.id} type="button" className="branch-suggestion-item" onMouseDown={(e) => { e.preventDefault(); setMergeParent(span.id); }}>
                                 <span className="branch-suggestion-title">{span.title || span.id}</span>
                               </button>
-                            )) : <div className="branch-suggestion-empty">No matching spans</div>}
+                            )) : <div className="branch-suggestion-empty">{t("rightPanel.noMatchingSpans", "No matching spans")}</div>}
                           </div>
                         )}
                       </>
@@ -1614,7 +1629,7 @@ export default function RightPanel({
             {/* Tags */}
             <div className="form-group">
               <div className="edit-row edit-row-tags">
-                <label htmlFor="tags">Tags</label>
+                <label htmlFor="tags">{t("fields.tags", "Tags")}</label>
                 <div className="tag-edit-flow">
                   {Array.isArray(formData.tags) && formData.tags.map((tag) => (
                     <div key={tag} className="tag-edit-chip">
@@ -1644,7 +1659,7 @@ export default function RightPanel({
                       }}
                       onFocus={() => { clearTimeout(tagMenuTimeoutRef.current); setIsTagMenuOpen(true); }}
                       onBlur={handleTagBlur}
-                      placeholder="add tag..."
+                      placeholder={t("fields.addTag", "add tag...")}
                       className="tag-edit-input"
                       style={{display: isTagMenuOpen ? 'block' : 'none'}}
                       maxLength={TAG_MAX_LENGTH}
@@ -1684,7 +1699,7 @@ export default function RightPanel({
               return (
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="groupId">Group</label>
+                    <label htmlFor="groupId">{t("fields.group", "Group")}</label>
                     <div className="edit-separator" />
                     <div className="edit-select-wrap">
                       <select
@@ -1698,7 +1713,7 @@ export default function RightPanel({
                           commitDraft(next);
                         }}
                       >
-                        <option value="">Inherit</option>
+                        <option value="">{t("options.inherit", "Inherit")}</option>
                         {groups.map((g) => (
                           <option key={g.id} value={g.id}>{g.title || g.id}</option>
                         ))}
@@ -1713,7 +1728,7 @@ export default function RightPanel({
             {timelineData?.file?.useMaps && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label>Coordinates</label>
+                  <label>{t("fields.coordinates", "Coordinates")}</label>
                   <div className="edit-separator" />
                   <div className="coord-inputs">
                     {onRequestCoordPick && selectedElement?.id && (() => {
@@ -1724,7 +1739,7 @@ export default function RightPanel({
                           type="button"
                           className={`coord-pick-button${isPicking ? " is-active" : ""}`}
                           onClick={() => onRequestCoordPick(selectedElement.id, formData.title)}
-                          aria-label="Pick coordinates on the map"
+                          aria-label={t("fields.pickCoordinates", "Pick coordinates on the map")}
                           aria-pressed={isPicking}
                           title={isPicking ? "Cancel picking" : "Pick coordinates on the map"}
                         >
@@ -1739,7 +1754,7 @@ export default function RightPanel({
                       value={formData.lat ?? ""}
                       onChange={(e) => handleChange("lat", e.target.value === "" ? null : Number(e.target.value))}
                       onBlur={(e) => commitDraft({ ...formData, lat: e.target.value === "" ? null : Number(e.target.value) })}
-                      placeholder="lat"
+                      placeholder={t("fields.lat", "lat")}
                       step="any"
                     />
                     <span className="coord-sep">,</span>
@@ -1750,7 +1765,7 @@ export default function RightPanel({
                       value={formData.lng ?? ""}
                       onChange={(e) => handleChange("lng", e.target.value === "" ? null : Number(e.target.value))}
                       onBlur={(e) => commitDraft({ ...formData, lng: e.target.value === "" ? null : Number(e.target.value) })}
-                      placeholder="lng"
+                      placeholder={t("fields.lng", "lng")}
                       step="any"
                     />
                   </div>
@@ -1761,7 +1776,7 @@ export default function RightPanel({
             </>}
 
             <SectionHeader
-              title="Display"
+              title={t("rightPanel.sections.display", "Display")}
               isOpen={isDisplayOpen}
               onToggle={() => setIsDisplayOpen(v => !v)}
               summary={[
@@ -1782,14 +1797,14 @@ export default function RightPanel({
               return (
                 <div className="form-group">
                   <div className="edit-row">
-                    <label>color</label>
+                    <label>{t("fields.colorLower", "color")}</label>
                     <div className="edit-separator" />
                     <div className="event-color-wrap">
                       {isCustom ? (
                         <button
                           type="button"
                           className="event-color-revert"
-                          title="Revert to inherited"
+                          title={t("rightPanel.revertInherited", "Revert to inherited")}
                           onClick={() => {
                             const next = { ...formData };
                             delete next.color;
@@ -1813,16 +1828,16 @@ export default function RightPanel({
                       />
                       {isCustom ? (
                         <span className="event-color-text">
-                          <span className="event-color-status">Custom</span>
+                          <span className="event-color-status">{t("colorStatus.custom", "Custom")}</span>
                           <span className="event-color-hex">{formData.color}</span>
                         </span>
                       ) : inheritedColor ? (
                         <span className="event-color-text">
-                          <span className="event-color-status">Inherited</span>
+                          <span className="event-color-status">{t("colorStatus.inherited", "Inherited")}</span>
                         </span>
                       ) : (
                         <span className="event-color-text">
-                          <span className="event-color-status">Default</span>
+                          <span className="event-color-status">{t("colorStatus.default", "Default")}</span>
                         </span>
                       )}
                     </div>
@@ -1835,7 +1850,7 @@ export default function RightPanel({
             {formData.type !== "event" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="color">Color</label>
+                  <label htmlFor="color">{t("fields.color", "Color")}</label>
                   <div className="edit-separator" />
                   <div className="edit-color-wrap">
                     <ColorPicker
@@ -1870,7 +1885,7 @@ export default function RightPanel({
             {formData.type === "span" && (
               <div className="form-group">
                 <div className="edit-row">
-                  <label htmlFor="spanSize">Size</label>
+                  <label htmlFor="spanSize">{t("fields.size", "Size")}</label>
                   <div className="edit-separator" />
                   <div className="edit-select-wrap">
                     <select
@@ -1889,9 +1904,9 @@ export default function RightPanel({
                         commitDraft(next);
                       }}
                     >
-                      <option value="thin">Thin</option>
-                      <option value="normal">Normal</option>
-                      <option value="thick">Thick</option>
+                      <option value="thin">{t("sizes.thin", "Thin")}</option>
+                      <option value="normal">{t("sizes.normal", "Normal")}</option>
+                      <option value="thick">{t("sizes.thick", "Thick")}</option>
                     </select>
                   </div>
                 </div>
@@ -1902,7 +1917,7 @@ export default function RightPanel({
               <>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideSpanDetails">Hide Details</label>
+                    <label htmlFor="hideSpanDetails">{t("fields.hideDetails", "Hide Details")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -1923,7 +1938,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideSpanYears">Hide Date</label>
+                    <label htmlFor="hideSpanYears">{t("fields.hideDate", "Hide Date")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -1948,7 +1963,7 @@ export default function RightPanel({
               <>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="eraSize">Size</label>
+                    <label htmlFor="eraSize">{t("fields.size", "Size")}</label>
                     <div className="edit-separator" />
                     <div className="edit-select-wrap">
                       <select
@@ -1967,16 +1982,16 @@ export default function RightPanel({
                           commitDraft(next);
                         }}
                       >
-                        <option value="normal">Normal</option>
-                        <option value="thick">Thick</option>
-                        <option value="extra-thick">Extra Thick</option>
+                        <option value="normal">{t("sizes.normal", "Normal")}</option>
+                        <option value="thick">{t("sizes.thick", "Thick")}</option>
+                        <option value="extra-thick">{t("sizes.extraThick", "Extra Thick")}</option>
                       </select>
                     </div>
                   </div>
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideEraDetails">Hide Details</label>
+                    <label htmlFor="hideEraDetails">{t("fields.hideDetails", "Hide Details")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -1996,7 +2011,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="fuzzyStart">Fuzzy Start</label>
+                    <label htmlFor="fuzzyStart">{t("fields.fuzzyStart", "Fuzzy Start")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -2016,7 +2031,7 @@ export default function RightPanel({
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="fuzzyEnd">Fuzzy End</label>
+                    <label htmlFor="fuzzyEnd">{t("fields.fuzzyEnd", "Fuzzy End")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -2076,7 +2091,7 @@ export default function RightPanel({
                     <button
                       type="button"
                       className="thumbnail-full-action-btn"
-                      title="Replace"
+                      title={t("common:actions.replace", "Replace")}
                       onClick={async () => {
                         const url = await handlePickThumbnail();
                         if (!url) return;
@@ -2088,7 +2103,7 @@ export default function RightPanel({
                     <button
                       type="button"
                       className="thumbnail-full-action-btn"
-                      title="Remove"
+                      title={t("common:actions.remove", "Remove")}
                       onClick={() => {
                         const next = { ...formData };
                         delete next.thumbnail;
@@ -2115,14 +2130,14 @@ export default function RightPanel({
                         commitDraft(next);
                       }}
                     >
-                      <option value="strip">Left strip</option>
-                      <option value="banner">Top banner</option>
-                      <option value="square-fill">Square fill</option>
-                      <option value="circle-fill">Circle fill</option>
+                      <option value="strip">{t("thumbnailStyles.strip", "Left strip")}</option>
+                      <option value="banner">{t("thumbnailStyles.banner", "Top banner")}</option>
+                      <option value="square-fill">{t("thumbnailStyles.squareFill", "Square fill")}</option>
+                      <option value="circle-fill">{t("thumbnailStyles.circleFill", "Circle fill")}</option>
                     </select>
                   </div>
-                  <div className="thumbnail-fit-seg" role="group" aria-label="Thumbnail fit">
-                    {[{ value: "cover", label: "Fill" }, { value: "contain", label: "Fit" }].map(({ value, label }) => (
+                  <div className="thumbnail-fit-seg" role="group" aria-label={t("thumbnailFit.label", "Thumbnail fit")}>
+                    {[{ value: "cover", label: t("thumbnailFit.fill", "Fill") }, { value: "contain", label: t("thumbnailFit.fit", "Fit") }].map(({ value, label }) => (
                       <button
                         key={value}
                         type="button"
@@ -2165,13 +2180,13 @@ export default function RightPanel({
                     }}
                   >
                     <ImagePlus size={28} strokeWidth={1.5} className="thumbnail-dropzone-icon" />
-                    <span className="thumbnail-dropzone-title">Drop image or click to upload</span>
+                    <span className="thumbnail-dropzone-title">{t("rightPanel.dropImage", "Drop image or click to upload")}</span>
                     <span className="thumbnail-dropzone-subtitle">PNG · JPG · SVG · up to 10 MB</span>
                   </button>
                   <button
                     type="button"
                     className={`thumbnail-url-icon-btn${isThumbnailUrlMode ? " is-active" : ""}`}
-                    title="Paste image URL"
+                    title={t("rightPanel.pasteImageUrl", "Paste image URL")}
                     onClick={() => { setIsThumbnailUrlMode(v => !v); setThumbnailUrlInput(""); }}
                   >
                     <Link size={12} />
@@ -2210,7 +2225,7 @@ export default function RightPanel({
                           setIsThumbnailUrlMode(false);
                           setThumbnailUrlInput("");
                         }}
-                      >Add</button>
+                      >{t("common:actions.add", "Add")}</button>
                     </div>
                   )}
                 </div>
@@ -2221,7 +2236,7 @@ export default function RightPanel({
             {/* Icon */}
             <div className="form-group">
               <div className="edit-row">
-                <label>Icon</label>
+                <label>{t("fields.icon", "Icon")}</label>
                 <div className="edit-separator" />
                 <IconPicker
                   key={`icon-${selectedElement?.id}`}
@@ -2242,21 +2257,21 @@ export default function RightPanel({
               <>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label>Line Style</label>
+                    <label>{t("fields.lineStyle", "Line Style")}</label>
                     <div className="edit-separator" />
                     {renderEventStrokeStyleControl("eventLineStyle", formData.eventLineStyle, "Event line style", "line")}
                   </div>
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label>Border Style</label>
+                    <label>{t("fields.borderStyle", "Border Style")}</label>
                     <div className="edit-separator" />
                     {renderEventStrokeStyleControl("eventBorderStyle", formData.eventBorderStyle, "Event border style", "border")}
                   </div>
                 </div>
                 <div className="form-group">
                   <div className="edit-row">
-                    <label htmlFor="hideEventYears">Hide Date</label>
+                    <label htmlFor="hideEventYears">{t("fields.hideDate", "Hide Date")}</label>
                     <div className="edit-separator" />
                     <label className="settings-toggle" style={{gridColumn: 2, justifySelf: 'end'}}>
                       <input
@@ -2302,13 +2317,13 @@ export default function RightPanel({
                                   handleChange("breaks", nextBreaks);
                                   commitDraft({ ...formData, breaks: nextBreaks });
                                 }}
-                                aria-label="Remove break"
+                                aria-label={t("rightPanel.removeBreak", "Remove break")}
                               >
                                 ×
                               </button>
                             </div>
                             <div className="break-field">
-                              <label>date</label>
+                              <label>{t("fields.dateLower", "date")}</label>
                               <input
                                 type="text"
                                 inputMode="numeric"
@@ -2331,7 +2346,7 @@ export default function RightPanel({
                               />
                             </div>
                             <div className="break-field">
-                              <label>label</label>
+                              <label>{t("fields.labelLower", "label")}</label>
                               <input
                                 type="text"
                                 value={brk.label ?? ""}
@@ -2345,7 +2360,7 @@ export default function RightPanel({
                               />
                             </div>
                             <div className="break-field">
-                              <label>color</label>
+                              <label>{t("fields.colorLower", "color")}</label>
                               <div className="break-color-wrap">
                                 <ColorPicker
                                   value={brk.color || formData.color || "#808080"}
@@ -2380,7 +2395,7 @@ export default function RightPanel({
                               </div>
                             </div>
                             <div className="break-field">
-                              <label>size</label>
+                              <label>{t("fields.sizeLower", "size")}</label>
                               <select
                                 className="edit-select"
                                 style={{ fontSize: "var(--text-xs)", padding: "3px 20px 3px 6px", minWidth: 0 }}
@@ -2398,10 +2413,10 @@ export default function RightPanel({
                                   commitDraft({ ...formData, breaks: nextBreaks });
                                 }}
                               >
-                                <option value="">Inherit</option>
-                                <option value="thin">Thin</option>
-                                <option value="normal">Normal</option>
-                                <option value="thick">Thick</option>
+                                <option value="">{t("options.inherit", "Inherit")}</option>
+                                <option value="thin">{t("sizes.thin", "Thin")}</option>
+                                <option value="normal">{t("sizes.normal", "Normal")}</option>
+                                <option value="thick">{t("sizes.thick", "Thick")}</option>
                               </select>
                             </div>
                           </div>
@@ -2441,7 +2456,7 @@ export default function RightPanel({
             </>}
 
             <SectionHeader
-              title="Notes & Sources"
+              title={t("rightPanel.sections.notes", "Notes & Sources")}
               isOpen={isNotesOpen}
               onToggle={() => setIsNotesOpen(v => !v)}
               summary={(() => {
@@ -2462,8 +2477,8 @@ export default function RightPanel({
                     <button type="button" className="note-create-card" onClick={() => setIsNoteAddOpen(v => !v)}>
                       <div className="note-create-card-icon"><FileText size={18} /></div>
                       <div className="note-create-card-text">
-                        <span className="note-create-card-title">Add note</span>
-                        <span className="note-create-card-subtitle">Attach a note to this event</span>
+                        <span className="note-create-card-title">{t("noteEditor.addTitle", "Add note")}</span>
+                        <span className="note-create-card-subtitle">{t("noteEditor.addSubtitle", "Attach a note to this event")}</span>
                       </div>
                     </button>
                     {isNoteAddOpen && (
@@ -2484,7 +2499,7 @@ export default function RightPanel({
               ) : (
                 <div className="note-editor-card">
                   <div className="rp-note-header">
-                    <span className="rp-note-label rp-note-label-note">Note</span>
+                    <span className="rp-note-label rp-note-label-note">{t("noteEditor.label", "Note")}</span>
                     {noteWordCount > 0 && (
                       <span className="rp-note-meta">markdown · {noteWordCount} words</span>
                     )}
@@ -2557,7 +2572,7 @@ export default function RightPanel({
                 className="rp-action-delete"
                 type="button"
                 onClick={() => onRequestDelete?.(formData.id)}
-                title="Delete"
+                title={t("common:actions.delete", "Delete")}
               >
                 <Trash2 size={15} />
               </button>

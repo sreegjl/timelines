@@ -28,6 +28,12 @@ Timelines Studio is a free, open-source app for creating customizable, interacti
 - **Local-first:** everything is stored on your device as plain `.timeline` and `.md` files. Free and open source under GPL-3.0.
 - **Web viewer:** open any `.timeline` file in the browser at [timelines.studio/viewer](https://www.timelines.studio/viewer), and if the file lives in a GitHub repo, paste its link to get a shareable URL anyone can view without installing the app.
 
+## Translations
+
+The interface is translatable. Locale files live in `src/locales/<code>/` as plain JSON,
+and a language picker sits in App Settings under General, with English as the fallback.
+See [CONTRIBUTING-i18n.md](CONTRIBUTING-i18n.md) to add a language.
+
 ## Installing
 
 Download the installer for your platform from the [Releases page](https://github.com/sreegjl/timelines/releases).

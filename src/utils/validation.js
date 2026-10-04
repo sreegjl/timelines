@@ -87,16 +87,16 @@ export const validateScaleSection = (item) => {
   const endRaw = item?.end?.trim() || "";
   const scaleRaw = item?.scale?.trim() || "";
   if (!startRaw && !endRaw && !scaleRaw) return null;
-  if (!startRaw || !endRaw) return "Both start and end required";
+  if (!startRaw || !endRaw) return "scaleBothRequired";
 
   const parsedStart = parseTimelineInput(startRaw);
   const parsedEnd = parseTimelineInput(endRaw);
-  if (!Number.isFinite(parsedStart.value)) return "Invalid start date";
-  if (!Number.isFinite(parsedEnd.value)) return "Invalid end date";
-  if (parsedStart.value === parsedEnd.value) return "Start and end must differ";
+  if (!Number.isFinite(parsedStart.value)) return "scaleInvalidStart";
+  if (!Number.isFinite(parsedEnd.value)) return "scaleInvalidEnd";
+  if (parsedStart.value === parsedEnd.value) return "scaleMustDiffer";
 
   const scaleNum = Number(scaleRaw);
-  if (!Number.isFinite(scaleNum) || scaleNum < 0 || scaleNum > 2) return "Scale must be 0–2";
+  if (!Number.isFinite(scaleNum) || scaleNum < 0 || scaleNum > 2) return "scaleOutOfRange";
   return null;
 };
 
@@ -120,7 +120,7 @@ const validateEventParents = (draft, timelineData) => {
     const eventDate = parseTimelineInput(draft.dateInput).value;
 
     if (eventDate === null) {
-      errors.push("Event date must be a number or MM/DD/YYYY.");
+      errors.push("eventDateInvalid");
       return errors;
     }
 
@@ -150,22 +150,22 @@ export const buildValidatedUpdate = (draft, timelineData) => {
   const timelineEnd = timelineData?.file?.end;
 
   if (draft.type === "event" && parsedDate.value === null) {
-    errors.push("Event date must be a number or MM/DD/YYYY.");
+    errors.push("eventDateInvalid");
   }
   if (draft.type !== "event" && (parsedStart.value === null || parsedEnd.value === null)) {
-    errors.push("Start and end must be numbers or MM/DD/YYYY.");
+    errors.push("startEndInvalid");
   }
   if (draft.type === "event" && parsedDate.value !== null) {
     if (parsedDate.value < timelineStart || parsedDate.value > timelineEnd) {
-      errors.push("Event date must be within the timeline bounds.");
+      errors.push("eventOutOfBounds");
     }
   }
   if (draft.type !== "event" && parsedStart.value !== null && parsedEnd.value !== null) {
     if (parsedStart.value >= parsedEnd.value) {
-      errors.push("Start must be before End.");
+      errors.push("startAfterEnd");
     }
     if (parsedEnd.value <= timelineStart || parsedStart.value >= timelineEnd) {
-      errors.push("Span/Era must overlap with the timeline range.");
+      errors.push("spanOutOfRange");
     }
   }
 
@@ -179,7 +179,7 @@ export const buildValidatedUpdate = (draft, timelineData) => {
     } else if (parsedStart.value !== null) {
       const parentEnd = getSpanNumericEnd(extendParent);
       if (!Number.isFinite(parentEnd) || Math.abs(parentEnd - parsedStart.value) >= 1e-6) {
-        errors.push("Extend From only works when the selected span ends exactly at this span's start.");
+        errors.push("extendFromMismatch");
       }
     }
   }

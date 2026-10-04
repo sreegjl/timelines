@@ -1,8 +1,10 @@
 import { ArrowLeft, Plus, X } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
+import { validationMessage } from "../i18n/validationMessages";
 import { themeOptionLabel } from "../utils/themeLoader";
 import { DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
 import useEscapeKey from "../hooks/useEscapeKey";
@@ -37,6 +39,23 @@ export default function SettingsModal({
   onMigrateOldThemes,
   layoutOptions = [],
 }) {
+  const { t } = useTranslation("settings");
+  // Listed statically so i18next-parser sees every marker key.
+  const markerLabels = useMemo(() => ({
+    pin: t("maps.markers.pin", "Pin"),
+    circle: t("maps.markers.circle", "Circle"),
+    square: t("maps.markers.square", "Square"),
+    diamond: t("maps.markers.diamond", "Diamond"),
+    triangle: t("maps.markers.triangle", "Triangle"),
+  }), [t]);
+  // Validation stores codes, not text, so the debounced save effect never depends on t.
+  const validationMessages = useMemo(() => ({
+    nameRequired: t("errors.nameRequired", "Timeline name is required."),
+    nameAlphanumeric: t("errors.nameAlphanumeric", "Timeline name must include at least one letter or number."),
+    startInvalid: t("errors.startInvalid", "Start point must be a number or MM/DD/YYYY."),
+    endInvalid: t("errors.endInvalid", "End point must be a number or MM/DD/YYYY."),
+    startAfterEnd: t("errors.startAfterEnd", "Start point must be less than end point."),
+  }), [t]);
   const [title, setTitle] = useState("");
   // Title drives the filename on disk, so it only commits on blur/Enter/close, not per keystroke
   const [committedTitle, setCommittedTitle] = useState("");
@@ -361,23 +380,23 @@ export default function SettingsModal({
       const errors = [];
 
       if (!title.trim()) {
-        errors.push("Timeline name is required.");
+        errors.push("nameRequired");
       } else if (!sanitizeTitle(title)) {
-        errors.push("Timeline name must include at least one letter or number.");
+        errors.push("nameAlphanumeric");
       }
 
       if (!Number.isFinite(parsedStart.value)) {
-        errors.push("Start point must be a number or MM/DD/YYYY.");
+        errors.push("startInvalid");
       }
       if (!Number.isFinite(parsedEnd.value)) {
-        errors.push("End point must be a number or MM/DD/YYYY.");
+        errors.push("endInvalid");
       }
       if (
         Number.isFinite(parsedStart.value) &&
         Number.isFinite(parsedEnd.value) &&
         parsedStart.value >= parsedEnd.value
       ) {
-        errors.push("Start point must be less than end point.");
+        errors.push("startAfterEnd");
       }
 
       if (errors.length > 0) {
@@ -485,7 +504,7 @@ export default function SettingsModal({
   ).sort((a, b) => a.localeCompare(b));
 
   const fontOptions = [
-    { value: "default", label: "Default (App Font)" },
+    { value: "default", label: t("appearance.font.default", "Default (App Font)") },
     { value: "Inter", label: "Inter" },
     ...fontNames.map((name) => ({ value: name, label: name })),
   ];
@@ -519,11 +538,11 @@ export default function SettingsModal({
           <button
             className="settings-back-button"
             onClick={handleClose}
-            aria-label="Close settings"
+            aria-label={t("close", "Close settings")}
           >
             <ArrowLeft size={20} strokeWidth={2} />
           </button>
-          <h2 className="settings-title">SETTINGS</h2>
+          <h2 className="settings-title">{t("title", "SETTINGS")}</h2>
         </div>
 
         {(renameErrorMessage || validationErrors.length > 0) && (
@@ -535,7 +554,7 @@ export default function SettingsModal({
             )}
             {validationErrors.map((error, index) => (
               <div key={index} className="settings-error">
-                {error}
+                {validationMessages[error] || error}
               </div>
             ))}
           </div>
@@ -548,21 +567,21 @@ export default function SettingsModal({
               className={`settings-sidebar-item${settingsSection === "general" ? " is-active" : ""}`}
               onClick={() => setSettingsSection("general")}
             >
-              General
+              {t("sections.general", "General")}
             </button>
             <button
               type="button"
               className={`settings-sidebar-item${settingsSection === "appearance" ? " is-active" : ""}`}
               onClick={() => setSettingsSection("appearance")}
             >
-              Appearance
+              {t("sections.appearance", "Appearance")}
             </button>
             <button
               type="button"
               className={`settings-sidebar-item${settingsSection === "advanced" ? " is-active" : ""}`}
               onClick={() => setSettingsSection("advanced")}
             >
-              Advanced
+              {t("sections.advanced", "Advanced")}
             </button>
             {useMaps && (
               <button
@@ -570,7 +589,7 @@ export default function SettingsModal({
                 className={`settings-sidebar-item${settingsSection === "maps" ? " is-active" : ""}`}
                 onClick={() => setSettingsSection("maps")}
               >
-                Maps
+                {t("sections.maps", "Maps")}
               </button>
             )}
           </div>
@@ -580,9 +599,9 @@ export default function SettingsModal({
             <>
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">App Settings</div>
+                <div className="settings-row-label">{t("appSettings.label", "App Settings")}</div>
                 <div className="settings-row-description">
-                  Open global settings for themes and files.
+                  {t("appSettings.description", "Open global settings for themes and files.")}
                 </div>
               </div>
               <div className="settings-row-right">
@@ -591,15 +610,15 @@ export default function SettingsModal({
                   className="settings-folder-button"
                   onClick={onOpenAppSettings}
                 >
-                  Open App Settings
+                  {t("appSettings.open", "Open App Settings")}
                 </button>
               </div>
             </div>
             {/* Timeline Name */}
             <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Name</div>
-              <div className="settings-row-description">Your file will be saved as: {sanitizeTitle(title) || "untitled"}.timeline</div>
+              <div className="settings-row-label">{t("general.name.label", "Timeline Name")}</div>
+              <div className="settings-row-description">{t("general.name.description", "Your file will be saved as: {{filename}}.timeline", { filename: sanitizeTitle(title) || "untitled" })}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -614,7 +633,7 @@ export default function SettingsModal({
                 }}
                 onBlur={commitTitle}
                 onKeyDown={(e) => { if (e.key === "Enter") commitTitle(); }}
-                placeholder="Enter timeline name"
+                placeholder={t("general.name.placeholder", "Enter timeline name")}
                 maxLength={100}
               />
             </div>
@@ -623,8 +642,8 @@ export default function SettingsModal({
           {/* Start Point */}
           <div className="settings-row no-border-bottom">
             <div className="settings-row-left">
-              <div className="settings-row-label">Start Point</div>
-              <div className="settings-row-description">The first year/date shown on the timeline.</div>
+              <div className="settings-row-label">{t("general.start.label", "Start Point")}</div>
+              <div className="settings-row-description">{t("general.start.description", "The first year/date shown on the timeline.")}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -644,8 +663,8 @@ export default function SettingsModal({
           {/* End Point */}
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">End Point</div>
-              <div className="settings-row-description">The last year/date shown on the timeline.</div>
+              <div className="settings-row-label">{t("general.end.label", "End Point")}</div>
+              <div className="settings-row-description">{t("general.end.description", "The last year/date shown on the timeline.")}</div>
             </div>
             <div className="settings-row-right">
               <input
@@ -665,8 +684,8 @@ export default function SettingsModal({
           {/* Timeline Length */}
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Length</div>
-              <div className="settings-row-description">Higher values can fit more events with less overlap.</div>
+              <div className="settings-row-label">{t("general.length.label", "Timeline Length")}</div>
+              <div className="settings-row-description">{t("general.length.description", "Higher values can fit more events with less overlap.")}</div>
             </div>
             <div className="settings-row-right">
               <div className="settings-slider-wrap">
@@ -720,8 +739,8 @@ export default function SettingsModal({
           {/* Tick Density */}
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Tick Density</div>
-              <div className="settings-row-description">Control how many tick marks appear on the timeline axis.</div>
+              <div className="settings-row-label">{t("general.tickDensity.label", "Tick Density")}</div>
+              <div className="settings-row-description">{t("general.tickDensity.description", "Control how many tick marks appear on the timeline axis.")}</div>
             </div>
             <div className="settings-row-right">
               <div className="settings-slider-wrap">
@@ -775,8 +794,8 @@ export default function SettingsModal({
           {/* Scale Type */}
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Scale Type</div>
-              <div className="settings-row-description">How time is distributed along the timeline axis.</div>
+              <div className="settings-row-label">{t("general.scaleType.label", "Scale Type")}</div>
+              <div className="settings-row-description">{t("general.scaleType.description", "How time is distributed along the timeline axis.")}</div>
             </div>
             <div className="settings-row-right">
               <select
@@ -784,8 +803,8 @@ export default function SettingsModal({
                 value={scaleType}
                 onChange={(e) => setScaleType(e.target.value)}
               >
-                <option value="default">Default</option>
-                <option value="logarithmic">Logarithmic Scaling</option>
+                <option value="default">{t("general.scaleType.default", "Default")}</option>
+                <option value="logarithmic">{t("general.scaleType.logarithmic", "Logarithmic Scaling")}</option>
               </select>
             </div>
           </div>
@@ -794,8 +813,8 @@ export default function SettingsModal({
           {scaleType === "logarithmic" && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Log Scale Factor</div>
-                <div className="settings-row-description">Controls the strength of the logarithmic curve. Higher values compress recent time more.</div>
+                <div className="settings-row-label">{t("general.logScale.label", "Log Scale Factor")}</div>
+                <div className="settings-row-description">{t("general.logScale.description", "Controls the strength of the logarithmic curve. Higher values compress recent time more.")}</div>
               </div>
               <div className="settings-row-right">
                 <input
@@ -817,7 +836,7 @@ export default function SettingsModal({
           {scaleType !== "logarithmic" && (
           <div className="settings-row settings-row-scale-sections">
             <div className="settings-row-left">
-              <div className="settings-row-label">Scale Sections</div>
+              <div className="settings-row-label">{t("general.scaleSections.label", "Scale Sections")}</div>
               <div className="settings-row-description">
                 Squish or stretch spans of time.
               </div>
@@ -831,7 +850,7 @@ export default function SettingsModal({
                       className={`settings-input settings-scale-section-input ${scaleSectionErrors[index] ? 'settings-input-error' : ''}`}
                       value={section.start}
                       onChange={(e) => updateScaleSection(index, "start", e.target.value)}
-                      placeholder="Start"
+                      placeholder={t("general.scaleSections.start", "Start")}
                       maxLength={20}
                     />
                     <span className="settings-scale-section-separator">–</span>
@@ -840,7 +859,7 @@ export default function SettingsModal({
                       className={`settings-input settings-scale-section-input ${scaleSectionErrors[index] ? 'settings-input-error' : ''}`}
                       value={section.end}
                       onChange={(e) => updateScaleSection(index, "end", e.target.value)}
-                      placeholder="End"
+                      placeholder={t("general.scaleSections.end", "End")}
                       maxLength={20}
                     />
                     <input
@@ -848,7 +867,7 @@ export default function SettingsModal({
                       className={`settings-input settings-scale-section-scale ${scaleSectionErrors[index] ? 'settings-input-error' : ''}`}
                       value={section.scale}
                       onChange={(e) => updateScaleSection(index, "scale", e.target.value)}
-                      placeholder="Scale"
+                      placeholder={t("general.scaleSections.scale", "Scale")}
                       min={0}
                       max={2}
                       step={0.1}
@@ -857,8 +876,8 @@ export default function SettingsModal({
                       type="button"
                       className={`settings-scale-section-break-toggle${section.showBreak !== false ? " active" : ""}`}
                       onClick={() => updateScaleSection(index, "showBreak", section.showBreak === false ? true : false)}
-                      aria-label="Toggle axis break marker"
-                      title="Show axis break marker"
+                      aria-label={t("general.scaleSections.toggleBreak", "Toggle axis break marker")}
+                      title={t("general.scaleSections.showBreak", "Show axis break marker")}
                     >
                       <svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true">
                         <line x1="1" y1="13" x2="6" y2="1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -869,13 +888,13 @@ export default function SettingsModal({
                       type="button"
                       className="settings-scale-section-remove"
                       onClick={() => removeScaleSection(index)}
-                      aria-label="Remove scale section"
+                      aria-label={t("general.scaleSections.remove", "Remove scale section")}
                     >
                       <X size={14} />
                     </button>
                   </div>
                   {scaleSectionErrors[index] && (
-                    <div className="settings-scale-section-error">{scaleSectionErrors[index]}</div>
+                    <div className="settings-scale-section-error">{validationMessage(scaleSectionErrors[index], t)}</div>
                   )}
                 </div>
               ))}
@@ -885,7 +904,7 @@ export default function SettingsModal({
                 onClick={addScaleSection}
               >
                 <Plus size={14} />
-                <span>Add Section</span>
+                <span>{t("general.scaleSections.add", "Add Section")}</span>
               </button>
             </div>
           </div>
@@ -894,8 +913,8 @@ export default function SettingsModal({
               {/* Negative Era */}
               <div className="settings-row no-border-bottom">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Negative Era</div>
-                  <div className="settings-row-description">Optional label for negative years (e.g., BCE).</div>
+                  <div className="settings-row-label">{t("general.negativeEra.label", "Negative Era")}</div>
+                  <div className="settings-row-description">{t("general.negativeEra.description", "Optional label for negative years (e.g., BCE).")}</div>
                 </div>
                 <div className="settings-row-right">
                   <input
@@ -903,7 +922,7 @@ export default function SettingsModal({
                     className="settings-input settings-input-small"
                     value={negID}
                     onChange={(e) => setNegID(e.target.value)}
-                    placeholder="e.g., BCE"
+                    placeholder={t("general.negativeEra.placeholder", "e.g., BCE")}
                     maxLength={10}
                   />
                 </div>
@@ -912,8 +931,8 @@ export default function SettingsModal({
               {/* Positive Era */}
               <div className="settings-row no-border-bottom">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Positive Era</div>
-                  <div className="settings-row-description">Optional label for positive years (e.g., CE).</div>
+                  <div className="settings-row-label">{t("general.positiveEra.label", "Positive Era")}</div>
+                  <div className="settings-row-description">{t("general.positiveEra.description", "Optional label for positive years (e.g., CE).")}</div>
                 </div>
                 <div className="settings-row-right">
                   <input
@@ -921,7 +940,7 @@ export default function SettingsModal({
                     className="settings-input settings-input-small"
                     value={posID}
                     onChange={(e) => setPosID(e.target.value)}
-                    placeholder="e.g., CE"
+                    placeholder={t("general.positiveEra.placeholder", "e.g., CE")}
                     maxLength={10}
                   />
                 </div>
@@ -930,8 +949,8 @@ export default function SettingsModal({
               {/* Approximate Date */}
               <div className="settings-row no-border-bottom">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Approximate Date</div>
-                  <div className="settings-row-description">Prefix for elements marked approximate (e.g., c., ca., circa).</div>
+                  <div className="settings-row-label">{t("general.approxDate.label", "Approximate Date")}</div>
+                  <div className="settings-row-description">{t("general.approxDate.description", "Prefix for elements marked approximate (e.g., c., ca., circa).")}</div>
                 </div>
                 <div className="settings-row-right">
                   <input
@@ -948,8 +967,8 @@ export default function SettingsModal({
               {/* Duration Unit */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Duration Unit</div>
-                  <div className="settings-row-description">What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.</div>
+                  <div className="settings-row-label">{t("general.durationUnit.label", "Duration Unit")}</div>
+                  <div className="settings-row-description">{t("general.durationUnit.description", "What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <input
@@ -957,7 +976,7 @@ export default function SettingsModal({
                     className="settings-input settings-input-small"
                     value={durationUnit}
                     onChange={(e) => setDurationUnit(e.target.value)}
-                    placeholder="yrs"
+                    placeholder={t("general.durationUnit.placeholder", "yrs")}
                     maxLength={12}
                   />
                 </div>
@@ -970,8 +989,8 @@ export default function SettingsModal({
             <>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Theme</div>
-                  <div className="settings-row-description">Choose a color theme for the timeline.</div>
+                  <div className="settings-row-label">{t("appearance.theme.label", "Theme")}</div>
+                  <div className="settings-row-description">{t("appearance.theme.description", "Choose a color theme for the timeline.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <div className="settings-folder settings-folder-column">
@@ -983,7 +1002,7 @@ export default function SettingsModal({
                         onThemeChange?.(e.target.value);
                       }}
                     >
-                      <option value="default">Default (App Theme)</option>
+                      <option value="default">{t("appearance.theme.default", "Default (App Theme)")}</option>
                       {Object.entries(themes || {}).map(([key, theme]) => (
                         <option key={key} value={key}>
                           {themeOptionLabel(key, theme)}
@@ -992,12 +1011,20 @@ export default function SettingsModal({
                     </select>
                     {themeMigrationStatus?.count != null ? (
                       <div className="theme-migration-notice">
-                        {themeMigrationStatus.count} theme{themeMigrationStatus.count === 1 ? "" : "s"} updated.
+                        {t("appearance.themeMigration.updated", {
+                          count: themeMigrationStatus.count,
+                          defaultValue_one: "{{count}} theme updated.",
+                          defaultValue_other: "{{count}} themes updated.",
+                        })}
                       </div>
                     ) : oldFormatThemeCount > 0 ? (
                       <div className="theme-migration-notice">
                         <span>
-                          {oldFormatThemeCount} theme{oldFormatThemeCount === 1 ? "" : "s"} are using an older format. Update all?
+                          {t("appearance.themeMigration.pending", {
+                            count: oldFormatThemeCount,
+                            defaultValue_one: "{{count}} theme is using an older format. Update all?",
+                            defaultValue_other: "{{count}} themes are using an older format. Update all?",
+                          })}
                         </span>
                         <button
                           type="button"
@@ -1005,7 +1032,7 @@ export default function SettingsModal({
                           onClick={handleMigrateOldThemes}
                           disabled={themeMigrationStatus === "migrating"}
                         >
-                          {themeMigrationStatus === "migrating" ? "Updating..." : "Update All"}
+                          {themeMigrationStatus === "migrating" ? t("appearance.themeMigration.updating", "Updating...") : t("appearance.themeMigration.updateAll", "Update All")}
                         </button>
                       </div>
                     ) : null}
@@ -1015,8 +1042,8 @@ export default function SettingsModal({
 
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Font</div>
-                  <div className="settings-row-description">Choose a font for this timeline.</div>
+                  <div className="settings-row-label">{t("appearance.font.label", "Font")}</div>
+                  <div className="settings-row-description">{t("appearance.font.description", "Choose a font for this timeline.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1036,8 +1063,8 @@ export default function SettingsModal({
               {/* Show Grid */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Show Grid</div>
-                  <div className="settings-row-description">Display subtle vertical grid lines aligned with tick marks.</div>
+                  <div className="settings-row-label">{t("appearance.showGrid.label", "Show Grid")}</div>
+                  <div className="settings-row-description">{t("appearance.showGrid.description", "Display subtle vertical grid lines aligned with tick marks.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1054,8 +1081,8 @@ export default function SettingsModal({
               {/* Today Marker */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Today Marker</div>
-                  <div className="settings-row-description">Display a vertical line at the current date.</div>
+                  <div className="settings-row-label">{t("appearance.todayMarker.label", "Today Marker")}</div>
+                  <div className="settings-row-description">{t("appearance.todayMarker.description", "Display a vertical line at the current date.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1072,8 +1099,8 @@ export default function SettingsModal({
               {/* Show Durations */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Show Durations</div>
-                  <div className="settings-row-description">Display how long each span and era lasts beside its date range.</div>
+                  <div className="settings-row-label">{t("appearance.showDurations.label", "Show Durations")}</div>
+                  <div className="settings-row-description">{t("appearance.showDurations.description", "Display how long each span and era lasts beside its date range.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1090,8 +1117,8 @@ export default function SettingsModal({
               {/* Event Size */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Event Size</div>
-                  <div className="settings-row-description">Control the size of event boxes ({eventWidth}px{eventWidth === 150 ? "" : " · default: 150"}).</div>
+                  <div className="settings-row-label">{t("appearance.eventSize.label", "Event Size")}</div>
+                  <div className="settings-row-description">{t("appearance.eventSize.description", "Control the size of event boxes ({{size}}px{{suffix}}).", { size: eventWidth, suffix: eventWidth === 150 ? "" : " · default: 150" })}</div>
                 </div>
                 <div className="settings-row-right" style={{ minWidth: 120 }}>
                   <input
@@ -1109,8 +1136,8 @@ export default function SettingsModal({
               {/* Event Font Size */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Event Font Size</div>
-                  <div className="settings-row-description">Control the text size inside event boxes ({eventFontSize}px{eventFontSize === 10 ? "" : " · default: 10"}).</div>
+                  <div className="settings-row-label">{t("appearance.eventFontSize.label", "Event Font Size")}</div>
+                  <div className="settings-row-description">{t("appearance.eventFontSize.description", "Control the text size inside event boxes ({{size}}px{{suffix}}).", { size: eventFontSize, suffix: eventFontSize === 10 ? "" : " · default: 10" })}</div>
                 </div>
                 <div className="settings-row-right" style={{ minWidth: 120 }}>
                   <input
@@ -1128,8 +1155,8 @@ export default function SettingsModal({
               {/* Fixed Event Height */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Fixed Event Height</div>
-                  <div className="settings-row-description">Lock all events to a single-line height, truncating long titles with ellipsis.</div>
+                  <div className="settings-row-label">{t("appearance.fixedEventHeight.label", "Fixed Event Height")}</div>
+                  <div className="settings-row-description">{t("appearance.fixedEventHeight.description", "Lock all events to a single-line height, truncating long titles with ellipsis.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1146,8 +1173,8 @@ export default function SettingsModal({
               {/* Thin Connectors */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Thin Connectors</div>
-                  <div className="settings-row-description">Use thin-style span connectors with rounded endpoints.</div>
+                  <div className="settings-row-label">{t("appearance.thinConnectors.label", "Thin Connectors")}</div>
+                  <div className="settings-row-description">{t("appearance.thinConnectors.description", "Use thin-style span connectors with rounded endpoints.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1164,8 +1191,8 @@ export default function SettingsModal({
               {/* Span Color Events */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Color Events by Parent Span</div>
-                  <div className="settings-row-description">Tint event backgrounds to match their parent span's color.</div>
+                  <div className="settings-row-label">{t("appearance.spanColorEvents.label", "Color Events by Parent Span")}</div>
+                  <div className="settings-row-description">{t("appearance.spanColorEvents.description", "Tint event backgrounds to match their parent span's color.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1182,8 +1209,8 @@ export default function SettingsModal({
               {/* Secondary Background */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Use Secondary Color for Timeline Background</div>
-                  <div className="settings-row-description">Use the same background color as the side panels for the timeline area.</div>
+                  <div className="settings-row-label">{t("appearance.secondaryBg.label", "Use Secondary Color for Timeline Background")}</div>
+                  <div className="settings-row-description">{t("appearance.secondaryBg.description", "Use the same background color as the side panels for the timeline area.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1204,8 +1231,8 @@ export default function SettingsModal({
               {/* Wiki Integration */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Wiki Integration</div>
-                  <div className="settings-row-description">Enable attaching MediaWiki articles to timeline elements.</div>
+                  <div className="settings-row-label">{t("advanced.wiki.label", "Wiki Integration")}</div>
+                  <div className="settings-row-description">{t("advanced.wiki.description", "Enable attaching MediaWiki articles to timeline elements.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1222,8 +1249,8 @@ export default function SettingsModal({
               {/* Spreadsheet */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Spreadsheet View</div>
-                  <div className="settings-row-description">Enable a table view for bulk editing elements.</div>
+                  <div className="settings-row-label">{t("advanced.spreadsheet.label", "Spreadsheet View")}</div>
+                  <div className="settings-row-description">{t("advanced.spreadsheet.description", "Enable a table view for bulk editing elements.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1240,8 +1267,8 @@ export default function SettingsModal({
               {/* Maps */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Map View</div>
-                  <div className="settings-row-description">Enable adding coordinates to events, eras, and spans to view them on a map.</div>
+                  <div className="settings-row-label">{t("advanced.maps.label", "Map View")}</div>
+                  <div className="settings-row-description">{t("advanced.maps.description", "Enable adding coordinates to events, eras, and spans to view them on a map.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1261,8 +1288,8 @@ export default function SettingsModal({
               {/* Date Format */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Date Format</div>
-                  <div className="settings-row-description">How month and day dates are shown and typed across all panels.</div>
+                  <div className="settings-row-label">{t("advanced.dateFormat.label", "Date Format")}</div>
+                  <div className="settings-row-description">{t("advanced.dateFormat.description", "How month and day dates are shown and typed across all panels.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1280,8 +1307,8 @@ export default function SettingsModal({
               {/* Time Format */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Time Format</div>
-                  <div className="settings-row-description">How a time of day is shown and typed, when one is set on an event, span, or era.</div>
+                  <div className="settings-row-label">{t("advanced.timeFormat.label", "Time Format")}</div>
+                  <div className="settings-row-description">{t("advanced.timeFormat.description", "How a time of day is shown and typed, when one is set on an event, span, or era.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1298,15 +1325,15 @@ export default function SettingsModal({
               {/* — Timeline View — */}
               <div className="settings-row settings-row-section">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Timeline View</div>
+                  <div className="settings-row-label">{t("advanced.timelineView", "Timeline View")}</div>
                 </div>
               </div>
 
               {/* Branch Ordering */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Branch Ordering</div>
-                  <div className="settings-row-description">Choose whether later-starting branches stay closer to the parent.</div>
+                  <div className="settings-row-label">{t("advanced.branchOrdering.label", "Branch Ordering")}</div>
+                  <div className="settings-row-description">{t("advanced.branchOrdering.description", "Choose whether later-starting branches stay closer to the parent.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1314,8 +1341,8 @@ export default function SettingsModal({
                     value={branchOrdering}
                     onChange={(e) => setBranchOrdering(e.target.value)}
                   >
-                    <option value="later-first">Later starts closer</option>
-                    <option value="original">Follow branch list order</option>
+                    <option value="later-first">{t("advanced.branchOrdering.laterFirst", "Later starts closer")}</option>
+                    <option value="original">{t("advanced.branchOrdering.original", "Follow branch list order")}</option>
                   </select>
                 </div>
               </div>
@@ -1323,8 +1350,8 @@ export default function SettingsModal({
               {/* Hide Span Connectors */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Hide Span Connectors</div>
-                  <div className="settings-row-description">Hide branch and merge connectors between spans. Data is preserved — re-enabling this will restore them.</div>
+                  <div className="settings-row-label">{t("advanced.hideSpanConnectors.label", "Hide Span Connectors")}</div>
+                  <div className="settings-row-description">{t("advanced.hideSpanConnectors.description", "Hide branch and merge connectors between spans. Data is preserved — re-enabling this will restore them.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1341,8 +1368,8 @@ export default function SettingsModal({
               {/* Use Calendar */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Use Calendar</div>
-                  <div className="settings-row-description">Show month and day labels on ticks and element dates. Day-level ticks appear automatically on short timelines.</div>
+                  <div className="settings-row-label">{t("advanced.useCalendar.label", "Use Calendar")}</div>
+                  <div className="settings-row-description">{t("advanced.useCalendar.description", "Show month and day labels on ticks and element dates. Day-level ticks appear automatically on short timelines.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1359,8 +1386,8 @@ export default function SettingsModal({
               {/* Event Line Anchoring */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Connect Event Lines to Group</div>
-                  <div className="settings-row-description">Anchor unparented event lines to their group band instead of the main timeline.</div>
+                  <div className="settings-row-label">{t("advanced.eventLinesToGroup.label", "Connect Event Lines to Group")}</div>
+                  <div className="settings-row-description">{t("advanced.eventLinesToGroup.description", "Anchor unparented event lines to their group band instead of the main timeline.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1377,8 +1404,8 @@ export default function SettingsModal({
               {/* Hide Decimals */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Hide Decimals</div>
-                  <div className="settings-row-description">Round displayed years to whole numbers.</div>
+                  <div className="settings-row-label">{t("advanced.hideDecimals.label", "Hide Decimals")}</div>
+                  <div className="settings-row-description">{t("advanced.hideDecimals.description", "Round displayed years to whole numbers.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1395,8 +1422,8 @@ export default function SettingsModal({
               {/* Disable Groups */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Disable Groups</div>
-                  <div className="settings-row-description">Flatten all elements into a single group and hide group bands.</div>
+                  <div className="settings-row-label">{t("advanced.disableGroups.label", "Disable Groups")}</div>
+                  <div className="settings-row-description">{t("advanced.disableGroups.description", "Flatten all elements into a single group and hide group bands.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1413,8 +1440,8 @@ export default function SettingsModal({
               {/* Auto Hide Empty Groups */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Auto Hide Empty Groups</div>
-                  <div className="settings-row-description">Hide groups that contain no events or spans from the timeline, so they take up no space instead of showing an empty band.</div>
+                  <div className="settings-row-label">{t("advanced.autoHideEmptyGroups.label", "Auto Hide Empty Groups")}</div>
+                  <div className="settings-row-description">{t("advanced.autoHideEmptyGroups.description", "Hide groups that contain no events or spans from the timeline, so they take up no space instead of showing an empty band.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1431,8 +1458,8 @@ export default function SettingsModal({
               {/* Keep Selection */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Keep Selection</div>
-                  <div className="settings-row-description">Keep the last selected element selected when clicking the timeline background.</div>
+                  <div className="settings-row-label">{t("advanced.keepSelection.label", "Keep Selection")}</div>
+                  <div className="settings-row-description">{t("advanced.keepSelection.description", "Keep the last selected element selected when clicking the timeline background.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1449,15 +1476,15 @@ export default function SettingsModal({
               {/* — Left Panel — */}
               <div className="settings-row settings-row-section">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Left Panel</div>
+                  <div className="settings-row-label">{t("advanced.leftPanel", "Left Panel")}</div>
                 </div>
               </div>
 
               {/* Show Popular Tags */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Show Popular Tags</div>
-                  <div className="settings-row-description">Show a row of the most-used tags at the top of the left panel for quick filtering.</div>
+                  <div className="settings-row-label">{t("advanced.showPopularTags.label", "Show Popular Tags")}</div>
+                  <div className="settings-row-description">{t("advanced.showPopularTags.description", "Show a row of the most-used tags at the top of the left panel for quick filtering.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1479,7 +1506,7 @@ export default function SettingsModal({
             <>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Tile URL</div>
+                  <div className="settings-row-label">{t("maps.tileUrl", "Tile URL")}</div>
                   <div className="settings-row-description">
                     Custom map tile URL. Use {"{z}"}, {"{x}"}, {"{y}"} as placeholders. Leave blank to use OpenStreetMap.
                   </div>
@@ -1496,7 +1523,7 @@ export default function SettingsModal({
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Scrollbar Date Only</div>
+                  <div className="settings-row-label">{t("maps.scrollbarDateOnly", "Scrollbar Date Only")}</div>
                   <div className="settings-row-description">
                     Only show map markers active at the current date shown in the scrollbar.
                   </div>
@@ -1514,8 +1541,8 @@ export default function SettingsModal({
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Event Marker</div>
-                  <div className="settings-row-description">Choose the marker style used for events in map view.</div>
+                  <div className="settings-row-label">{t("maps.eventMarker.label", "Event Marker")}</div>
+                  <div className="settings-row-description">{t("maps.eventMarker.description", "Choose the marker style used for events in map view.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1524,15 +1551,15 @@ export default function SettingsModal({
                     onChange={(e) => setMapEventMarker(e.target.value)}
                   >
                     {MAP_MARKER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{markerLabels[option.value] || option.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Span Marker</div>
-                  <div className="settings-row-description">Choose the marker style used for spans in map view.</div>
+                  <div className="settings-row-label">{t("maps.spanMarker.label", "Span Marker")}</div>
+                  <div className="settings-row-description">{t("maps.spanMarker.description", "Choose the marker style used for spans in map view.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1541,15 +1568,15 @@ export default function SettingsModal({
                     onChange={(e) => setMapSpanMarker(e.target.value)}
                   >
                     {MAP_MARKER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{markerLabels[option.value] || option.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">Era Marker</div>
-                  <div className="settings-row-description">Choose the marker style used for eras in map view.</div>
+                  <div className="settings-row-label">{t("maps.eraMarker.label", "Era Marker")}</div>
+                  <div className="settings-row-description">{t("maps.eraMarker.description", "Choose the marker style used for eras in map view.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <select
@@ -1558,7 +1585,7 @@ export default function SettingsModal({
                     onChange={(e) => setMapEraMarker(e.target.value)}
                   >
                     {MAP_MARKER_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>{markerLabels[option.value] || option.label}</option>
                     ))}
                   </select>
                 </div>

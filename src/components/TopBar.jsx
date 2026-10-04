@@ -1,4 +1,5 @@
 import { Minus, Square, X, PanelLeft, PanelRight, Lock, LockOpen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TopBar({
   title = "Timelines",
@@ -10,6 +11,7 @@ export default function TopBar({
   rightLockState,
   onCycleRightLock,
 }) {
+  const { t } = useTranslation("app");
   const isElectron = window.electron !== undefined;
 
   const handleMinimize = () => {
@@ -58,7 +60,7 @@ export default function TopBar({
           <button
             className="title-bar-button title-bar-panel-toggle"
             onClick={onToggleLeft}
-            title={isLeftCollapsed ? "Show sidebar" : "Hide sidebar"}
+            title={isLeftCollapsed ? t("titleBar.showSidebar", "Show sidebar") : t("titleBar.hideSidebar", "Hide sidebar")}
           >
             <PanelLeft size={14} />
           </button>
@@ -67,7 +69,7 @@ export default function TopBar({
           <button
             className="title-bar-button title-bar-panel-toggle"
             onClick={onToggleRight}
-            title={isRightCollapsed ? "Show panel" : "Hide panel"}
+            title={isRightCollapsed ? t("titleBar.showPanel", "Show panel") : t("titleBar.hidePanel", "Hide panel")}
           >
             <PanelRight size={14} />
           </button>
@@ -76,19 +78,19 @@ export default function TopBar({
           <button
             className={`title-bar-button title-bar-panel-toggle${rightLockState ? " title-bar-button-locked" : ""}`}
             onClick={onCycleRightLock}
-            title={rightLockState ? "Unlock panel" : "Lock panel"}
+            title={rightLockState ? t("titleBar.unlockPanel", "Unlock panel") : t("titleBar.lockPanel", "Lock panel")}
           >
             {rightLockState ? <Lock size={13} /> : <LockOpen size={13} />}
           </button>
         )}
         <div className="title-bar-separator" />
-        <button className="title-bar-button" onClick={handleMinimize} title="Minimize">
+        <button className="title-bar-button" onClick={handleMinimize} title={t("titleBar.minimize", "Minimize")}>
           <Minus size={14} />
         </button>
-        <button className="title-bar-button" onClick={handleMaximize} title="Maximize">
+        <button className="title-bar-button" onClick={handleMaximize} title={t("titleBar.maximize", "Maximize")}>
           <Square size={12} />
         </button>
-        <button className="title-bar-button title-bar-close" onClick={handleClose} title="Close">
+        <button className="title-bar-button title-bar-close" onClick={handleClose} title={t("common:actions.close", "Close")}>
           <X size={14} />
         </button>
       </div>

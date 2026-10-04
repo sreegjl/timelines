@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect, useLayoutEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ChevronUp, ChevronDown, ChevronsUpDown,
   GanttChartSquare, ListFilter, Settings,
@@ -52,6 +53,7 @@ export default function SpreadsheetView({
   onTogglePinnedTag,
   readOnly = false,
 }) {
+  const { t } = useTranslation("timeline");
   const [editCell, setEditCell] = useState(null);
   const [editValue, setEditValue] = useState("");
   const [selectedCell, setSelectedCell] = useState(null); // { id, field } selection anchor
@@ -134,36 +136,36 @@ export default function SpreadsheetView({
 
   const COLS = useMemo(() => {
     const cols = [
-      { key: "type",       label: "Type"         },
-      { key: "title",      label: "Title"        },
-      { key: "description", label: "Description" },
-      { key: "date",       label: "Date / Start" },
-      { key: "end",        label: "End"          },
-      { key: "parent",     label: "Parent"       },
-      { key: "parentType", label: "Parent Type"  },
-      { key: "mergeInto",  label: "Merge Into"   },
-      { key: "group",      label: "Group"        },
-      { key: "tags",       label: "Tags"         },
-      { key: "icon",        label: "Icon"         },
-      { key: "hideYear",    label: "Hide Date"    },
-      { key: "approxStart", label: "Approx. Start" },
-      { key: "approxEnd",   label: "Approx. End"   },
-      { key: "hideDetails", label: "Hide Details" },
-      { key: "color",       label: "Color"        },
-      { key: "size",        label: "Size"         },
-      { key: "lineStyle",   label: "Line Style"   },
-      { key: "borderStyle",    label: "Border Style"    },
-      { key: "thumbnail",      label: "Thumbnail"       },
-      { key: "thumbnailStyle", label: "Thumbnail Style" },
+      { key: "type",       label: t("columns.type", "Type") },
+      { key: "title",      label: t("columns.title", "Title") },
+      { key: "description", label: t("columns.description", "Description") },
+      { key: "date",       label: t("columns.date", "Date / Start") },
+      { key: "end",        label: t("columns.end", "End") },
+      { key: "parent",     label: t("columns.parent", "Parent") },
+      { key: "parentType", label: t("columns.parentType", "Parent Type") },
+      { key: "mergeInto",  label: t("columns.mergeInto", "Merge Into") },
+      { key: "group",      label: t("columns.group", "Group") },
+      { key: "tags",       label: t("columns.tags", "Tags") },
+      { key: "icon",        label: t("columns.icon", "Icon") },
+      { key: "hideYear",    label: t("columns.hideYear", "Hide Date") },
+      { key: "approxStart", label: t("columns.approxStart", "Approx. Start") },
+      { key: "approxEnd",   label: t("columns.approxEnd", "Approx. End") },
+      { key: "hideDetails", label: t("columns.hideDetails", "Hide Details") },
+      { key: "color",       label: t("columns.color", "Color") },
+      { key: "size",        label: t("columns.size", "Size") },
+      { key: "lineStyle",   label: t("columns.lineStyle", "Line Style") },
+      { key: "borderStyle",    label: t("columns.borderStyle", "Border Style") },
+      { key: "thumbnail",      label: t("columns.thumbnail", "Thumbnail") },
+      { key: "thumbnailStyle", label: t("columns.thumbnailStyle", "Thumbnail Style") },
     ];
-    if (useMaps)      cols.push({ key: "coords", label: "Coordinates" });
-    if (useWiki) cols.push({ key: "wiki",   label: "Wiki"        });
+    if (useMaps)      cols.push({ key: "coords", label: t("columns.coords", "Coordinates") });
+    if (useWiki) cols.push({ key: "wiki",   label: t("columns.wiki", "Wiki") });
     cols.push(
-      { key: "note",    label: "Note"    },
-      { key: "sources", label: "Sources" },
+      { key: "note",    label: t("columns.note", "Note") },
+      { key: "sources", label: t("columns.sources", "Sources") },
     );
     return cols;
-  }, [useMaps, useWiki]);
+  }, [useMaps, useWiki, t]);
 
   const OPTIONAL_COLS = useMemo(() => COLS.filter((c) => c.key !== "type" && c.key !== "title"), [COLS]);
 
@@ -1179,7 +1181,7 @@ export default function SpreadsheetView({
                         <input
                           ref={newGroupInputRef}
                           className="sheet-source-new-input"
-                          placeholder="Group name"
+                          placeholder={t("spreadsheet.groupName", "Group name")}
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value)}
                           onKeyDown={(e) => {
@@ -1189,9 +1191,9 @@ export default function SpreadsheetView({
                         />
                         <div className="sheet-source-new-actions">
                           <button className="sheet-source-cancel-btn"
-                            onMouseDown={(e) => { e.preventDefault(); setNewGroupCellId(null); setNewGroupName(""); }}>Cancel</button>
+                            onMouseDown={(e) => { e.preventDefault(); setNewGroupCellId(null); setNewGroupName(""); }}>{t("common:actions.cancel", "Cancel")}</button>
                           <button className="sheet-source-add-btn"
-                            onMouseDown={(e) => { e.preventDefault(); commitNewGroup(el.id); }}>Add</button>
+                            onMouseDown={(e) => { e.preventDefault(); commitNewGroup(el.id); }}>{t("common:actions.add", "Add")}</button>
                         </div>
                       </div>
                   }
@@ -1360,10 +1362,10 @@ export default function SpreadsheetView({
               onBlur={() => setEditCell(null)}
               onKeyDown={(e) => { if (e.key === "Escape") setEditCell(null); }}
             >
-              <option value="solid">Solid</option>
-              <option value="dashed">Dashed</option>
-              <option value="dotted">Dotted</option>
-              <option value="none">None</option>
+              <option value="solid">{t("lineStyles.solid", "Solid")}</option>
+              <option value="dashed">{t("lineStyles.dashed", "Dashed")}</option>
+              <option value="dotted">{t("lineStyles.dotted", "Dotted")}</option>
+              <option value="none">{t("lineStyles.none", "None")}</option>
             </select>
           </td>
         );
@@ -1384,7 +1386,7 @@ export default function SpreadsheetView({
         return (
           <td key={field} className="sheet-cell sheet-cell-editing" style={{ width: cellW }}>
             <input autoFocus className="sheet-input" value={editValue}
-              placeholder="icon key"
+              placeholder={t("spreadsheet.iconKey", "icon key")}
               onChange={(e) => setEditValue(e.target.value)}
               onBlur={commitEdit} onKeyDown={handleKeyDown} />
           </td>
@@ -1466,7 +1468,7 @@ export default function SpreadsheetView({
               <input
                 autoFocus
                 className="sheet-source-new-input"
-                placeholder="Paste image URL or path"
+                placeholder={t("spreadsheet.imageUrl", "Paste image URL or path")}
                 value={thumbPanelUrl}
                 onChange={(e) => setThumbPanelUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") saveUrl(); if (e.key === "Escape") closePanel(); }}
@@ -1477,9 +1479,9 @@ export default function SpreadsheetView({
               </button>
               <div className="sheet-source-new-actions">
                 {el.thumbnail
-                  ? <button className="sheet-source-cancel-btn" style={{ color: "var(--danger, #e05)" }} onMouseDown={removeThumb}>Remove</button>
-                  : <button className="sheet-source-cancel-btn" onMouseDown={closePanel}>Cancel</button>}
-                <button className="sheet-source-add-btn" onMouseDown={saveUrl}>Save</button>
+                  ? <button className="sheet-source-cancel-btn" style={{ color: "var(--danger, #e05)" }} onMouseDown={removeThumb}>{t("common:actions.remove", "Remove")}</button>
+                  : <button className="sheet-source-cancel-btn" onMouseDown={closePanel}>{t("common:actions.cancel", "Cancel")}</button>}
+                <button className="sheet-source-add-btn" onMouseDown={saveUrl}>{t("common:actions.save", "Save")}</button>
               </div>
             </div>
           )}
@@ -1497,10 +1499,10 @@ export default function SpreadsheetView({
         );
       }
       const THUMB_STYLES = [
-        { value: "strip",       label: "Left strip"  },
-        { value: "banner",      label: "Top banner"  },
-        { value: "square-fill", label: "Square fill" },
-        { value: "circle-fill", label: "Circle fill" },
+        { value: "strip",       label: t("thumbnailStyles.strip", "Left strip") },
+        { value: "banner",      label: t("thumbnailStyles.banner", "Top banner") },
+        { value: "square-fill", label: t("thumbnailStyles.squareFill", "Square fill") },
+        { value: "circle-fill", label: t("thumbnailStyles.circleFill", "Circle fill") },
       ];
       const styleVal = el.thumbnailStyle ?? "strip";
       const styleLabel = THUMB_STYLES.find((s) => s.value === styleVal)?.label ?? styleVal;
@@ -1545,7 +1547,7 @@ export default function SpreadsheetView({
               onFocus={handleNoteChange}
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
-              placeholder="filename.md"
+              placeholder={t("spreadsheet.noteFilename", "filename.md")}
             />
           </td>
         );
@@ -1611,7 +1613,7 @@ export default function SpreadsheetView({
                       onFocus={handleSourceChange}
                       onBlur={commitEdit}
                       onKeyDown={handleKeyDown}
-                      placeholder="Search existing…"
+                      placeholder={t("spreadsheet.searchExisting", "Search existing…")}
                     />
                     <button
                       className="sheet-source-new-btn"
@@ -1631,7 +1633,7 @@ export default function SpreadsheetView({
                     <input
                       ref={newSourceTitleRef}
                       className="sheet-source-new-input"
-                      placeholder="Title"
+                      placeholder={t("sources.fields.title", "Title")}
                       value={newSourceTitle}
                       onChange={(e) => setNewSourceTitle(e.target.value)}
                       onKeyDown={(e) => {
@@ -1641,7 +1643,7 @@ export default function SpreadsheetView({
                     />
                     <input
                       className="sheet-source-new-input"
-                      placeholder="URL (optional)"
+                      placeholder={t("sources.fields.url", "URL (optional)")}
                       value={newSourceUrl}
                       onChange={(e) => setNewSourceUrl(e.target.value)}
                       onKeyDown={(e) => {
@@ -1651,7 +1653,7 @@ export default function SpreadsheetView({
                     />
                     <input
                       className="sheet-source-new-input"
-                      placeholder="Description (optional)"
+                      placeholder={t("sources.fields.description", "Description (optional)")}
                       value={newSourceDesc}
                       onChange={(e) => setNewSourceDesc(e.target.value)}
                       onKeyDown={(e) => {
@@ -1660,8 +1662,8 @@ export default function SpreadsheetView({
                       }}
                     />
                     <div className="sheet-source-new-actions">
-                      <button className="sheet-source-cancel-btn" onMouseDown={(e) => { e.preventDefault(); setNewSourceCellId(null); setNewSourceTitle(""); setNewSourceUrl(""); setNewSourceDesc(""); }}>Cancel</button>
-                      <button className="sheet-source-add-btn" onMouseDown={(e) => { e.preventDefault(); commitNewSource(el.id); }}>Add</button>
+                      <button className="sheet-source-cancel-btn" onMouseDown={(e) => { e.preventDefault(); setNewSourceCellId(null); setNewSourceTitle(""); setNewSourceUrl(""); setNewSourceDesc(""); }}>{t("common:actions.cancel", "Cancel")}</button>
+                      <button className="sheet-source-add-btn" onMouseDown={(e) => { e.preventDefault(); commitNewSource(el.id); }}>{t("common:actions.add", "Add")}</button>
                     </div>
                   </div>
                 )}
@@ -1750,14 +1752,14 @@ export default function SpreadsheetView({
             <div className="timeline-context-menu sheet-header-menu">
               {onBackToHome && (
                 <button className="context-menu-item" onClick={() => { setHeaderMenuOpen(false); onBackToHome(); }}>
-                  <ArrowLeft size={14} /><span>Back to Files</span>
+                  <ArrowLeft size={14} /><span>{t("toolbar.backToFiles", "Back to Files")}</span>
                 </button>
               )}
               {!readOnly && onOpenSettings && (
                 <>
                   <div className="context-menu-separator" />
                   <button className="context-menu-item" onClick={() => { setHeaderMenuOpen(false); onOpenSettings(); }}>
-                    <Settings size={14} /><span>Settings</span>
+                    <Settings size={14} /><span>{t("toolbar.settings", "Settings")}</span>
                   </button>
                 </>
               )}
@@ -1770,7 +1772,7 @@ export default function SpreadsheetView({
           <input
             className="sb-search-input"
             type="text"
-            placeholder="Search…"
+            placeholder={t("toolbar.searchPlaceholder", "Search…")}
             spellCheck={false}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -1780,14 +1782,14 @@ export default function SpreadsheetView({
         <div className="sheet-header-controls">
           {!readOnly && (
           <div className="sb-new-wrapper" ref={exportMenuRef}>
-            <button className="sb-new-btn" title="Export" onClick={() => setExportMenuOpen((v) => !v)}>
+            <button className="sb-new-btn" title={t("toolbar.export", "Export")} onClick={() => setExportMenuOpen((v) => !v)}>
               <Download size={13} strokeWidth={2.5} />
-              <span>Export</span>
+              <span>{t("toolbar.export", "Export")}</span>
               <ChevronDown size={11} strokeWidth={2.5} />
             </button>
             {exportMenuOpen && (
               <div className="sb-new-menu sheet-export-menu">
-                <div className="sb-new-menu-section-label">Export</div>
+                <div className="sb-new-menu-section-label">{t("toolbar.export", "Export")}</div>
                 <button className="sb-new-menu-item" onClick={() => { setExportMenuOpen(false); exportCsv(); }}>
                   Comma-separated
                   <span className="sb-new-menu-shortcut">.csv</span>
@@ -1804,7 +1806,7 @@ export default function SpreadsheetView({
             <div className="sb-new-wrapper" ref={newMenuRef}>
               <button className="sb-new-btn" onClick={() => setNewMenuOpen((v) => !v)}>
                 <Plus size={13} strokeWidth={2.5} />
-                <span>New</span>
+                <span>{t("toolbar.new", "New")}</span>
                 <ChevronDown size={11} strokeWidth={2.5} />
               </button>
               {newMenuOpen && (
@@ -1837,7 +1839,7 @@ export default function SpreadsheetView({
               type="button"
               className="timeline-canvas-button"
               onClick={() => onSetViewMode("timeline")}
-              data-tooltip="Timeline view"
+              data-tooltip={t("toolbar.timelineView", "Timeline view")}
             >
               <GanttChartSquare size={16} />
             </button>
@@ -1847,7 +1849,7 @@ export default function SpreadsheetView({
             ref={filterBtnRef}
             className={`timeline-canvas-button${hasActiveFilter ? " timeline-canvas-button-active" : ""}`}
             onClick={() => setFilterOpen((v) => !v)}
-            data-tooltip="Filter"
+            data-tooltip={t("toolbar.filter", "Filter")}
           >
             <ListFilter size={16} />
           </button>
@@ -1856,7 +1858,7 @@ export default function SpreadsheetView({
               type="button"
               className="timeline-canvas-button"
               onClick={onOpenSettings}
-              data-tooltip="Settings"
+              data-tooltip={t("toolbar.settings", "Settings")}
             >
               <Settings size={16} />
             </button>
@@ -1865,7 +1867,7 @@ export default function SpreadsheetView({
       </div>
 
       <div ref={colbarRef} className="sheet-colbar">
-        <span className="sheet-colbar-label">Fields</span>
+        <span className="sheet-colbar-label">{t("spreadsheet.fields", "Fields")}</span>
         <div className="sheet-colbar-divider" />
         {OPTIONAL_COLS.map((col) => (
           <button
@@ -2065,7 +2067,7 @@ export default function SpreadsheetView({
         >
           <div className="filter-menu-dropdown">
             {allTags.length === 0 && (
-              <div className="filter-menu-empty">No tags found</div>
+              <div className="filter-menu-empty">{t("sidebar.tags.none", "No tags found")}</div>
             )}
             {allTags.map((tag) => {
               const isShown = activeTags.includes(tag);

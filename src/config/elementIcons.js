@@ -26,6 +26,7 @@ import {
 
 export const ICON_CATEGORIES = [
   {
+    id: "people",
     label: "People & Emotions",
     icons: [
       { name: "User", component: User },
@@ -48,6 +49,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "places",
     label: "Places",
     icons: [
       { name: "MapPin", component: MapPin },
@@ -68,6 +70,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "time",
     label: "Time",
     icons: [
       { name: "Clock", component: Clock },
@@ -80,6 +83,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "events",
     label: "Events & Milestones",
     icons: [
       { name: "Star", component: Star },
@@ -97,6 +101,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "military",
     label: "Military & Politics",
     icons: [
       { name: "Swords", component: Swords },
@@ -120,6 +125,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "religion",
     label: "Religion & Culture",
     icons: [
       { name: "Church", component: Church },
@@ -129,6 +135,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "science",
     label: "Science, Tech & Education",
     icons: [
       { name: "Atom", component: Atom },
@@ -160,6 +167,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "arts",
     label: "Arts, Media & Gaming",
     icons: [
       { name: "Music", component: Music },
@@ -193,6 +201,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "transport",
     label: "Transport",
     icons: [
       { name: "Car", component: Car },
@@ -208,6 +217,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "nature",
     label: "Nature & Animals",
     icons: [
       { name: "Sun", component: Sun },
@@ -239,6 +249,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "food",
     label: "Food, Health & Commerce",
     icons: [
       { name: "Coffee", component: Coffee },
@@ -266,6 +277,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "tools",
     label: "Tools & Communication",
     icons: [
       { name: "Hammer", component: Hammer },
@@ -285,6 +297,7 @@ export const ICON_CATEGORIES = [
     ],
   },
   {
+    id: "symbols",
     label: "Symbols",
     icons: [
       { name: "Circle", component: Circle },

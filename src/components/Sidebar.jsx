@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
+import { useTranslation } from "react-i18next";
 import { parseFilterQuery, matchesFilter, buildFilterContext, tokenizeFilterQuery, normalizeTag } from "../utils/filterUtils";
 import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
@@ -237,6 +238,7 @@ export default function Sidebar({
   keybinds = {},
   readOnly = false,
 }) {
+  const { t } = useTranslation("timeline");
   const isMac = navigator.userAgent?.includes("Mac");
   const formatKeybind = (bind) => {
     if (!bind?.keys?.length) return "";
@@ -893,10 +895,10 @@ export default function Sidebar({
     matchesFilter(el, parsedFilter, null, filterContext) &&
     (!hasChipFilter || matchesFilter(el, chipFilter, null, filterContext));
   const searchPlaceholder = sidebarTab === "timeline"
-    ? "Search spans, events, eras..."
+    ? t("sidebar.search.elements", "Search spans, events, eras...")
     : sidebarTab === "tags"
-      ? "Search tags..."
-      : "Search groups...";
+      ? t("sidebar.search.tags", "Search tags...")
+      : t("sidebar.search.groups", "Search groups...");
 
   const applySidebarSort = (items, dateField) => {
     const sorted = [...items].sort((a, b) =>
@@ -1172,7 +1174,7 @@ export default function Sidebar({
             onClick={() => handleMenuAction(() => onBackToHome?.())}
           >
             <ArrowLeft size={16} />
-            <span>Back to Files</span>
+            <span>{t("toolbar.backToFiles", "Back to Files")}</span>
           </button>
 
           <div className="context-menu-separator" />
@@ -1182,7 +1184,7 @@ export default function Sidebar({
             onClick={() => handleMenuAction(() => onNewTimeline?.())}
           >
             <FilePlus size={16} />
-            <span>New Timeline</span>
+            <span>{t("sidebar.newTimeline", "New Timeline")}</span>
           </button>
 
           <button
@@ -1196,7 +1198,7 @@ export default function Sidebar({
             }}
           >
             <File size={16} />
-            <span>Open Timeline</span>
+            <span>{t("sidebar.openTimeline", "Open Timeline")}</span>
             <ChevronRight size={16} style={{ marginLeft: 'auto' }} />
           </button>
 
@@ -1205,7 +1207,7 @@ export default function Sidebar({
             onClick={() => handleMenuAction(() => onDuplicateTimeline?.())}
           >
             <Copy size={16} />
-            <span>Duplicate</span>
+            <span>{t("common:actions.duplicate", "Duplicate")}</span>
           </button>
 
           <div className="context-menu-separator" />
@@ -1213,32 +1215,32 @@ export default function Sidebar({
           <button
             className="context-menu-item"
             onClick={() => handleMenuAction(() => onDownloadJson?.())}
-            title="Timeline data only; images and notes stay on this computer"
+            title={t("sidebar.downloadJsonHint", "Timeline data only; images and notes stay on this computer")}
           >
             <FileJson size={16} />
-            <span>Download .json (data only)</span>
+            <span>{t("sidebar.downloadJson", "Download .json (data only)")}</span>
           </button>
           <button
             className="context-menu-item"
             onClick={() => handleMenuAction(() => onDownloadPackage?.())}
-            title="One shareable file bundling the timeline with its images and notes"
+            title={t("sidebar.exportPackageHint", "One shareable file bundling the timeline with its images and notes")}
           >
             <Package size={16} />
-            <span>Export .timeline (images & notes)</span>
+            <span>{t("sidebar.exportPackage", "Export .timeline (images & notes)")}</span>
           </button>
           <button
             className="context-menu-item"
             onClick={() => handleMenuAction(() => onDownloadPng?.())}
           >
             <Image size={16} />
-            <span>Download .png</span>
+            <span>{t("sidebar.downloadPng", "Download .png")}</span>
           </button>
           <button
             className="context-menu-item"
             onClick={() => handleMenuAction(() => onDownloadVideo?.())}
           >
             <Video size={16} />
-            <span>Export Video</span>
+            <span>{t("sidebar.exportVideo", "Export Video")}</span>
           </button>
 
           <div className="context-menu-separator" />
@@ -1248,7 +1250,7 @@ export default function Sidebar({
             onClick={() => handleMenuAction(() => onOpenSettings?.())}
           >
             <Settings size={16} />
-            <span>Settings</span>
+            <span>{t("toolbar.settings", "Settings")}</span>
           </button>
         </div>
       )}
@@ -1281,7 +1283,7 @@ export default function Sidebar({
           ))}
           {timelineFiles.length === 0 && (
             <div className="context-menu-item" style={{ opacity: 0.5, cursor: 'default' }}>
-              <span>No timelines found</span>
+              <span>{t("sidebar.noTimelines", "No timelines found")}</span>
             </div>
           )}
         </div>
@@ -1297,13 +1299,13 @@ export default function Sidebar({
         <>
         <div className="sidebar-controls">
           <div className="sidebar-tabs">
-            <button type="button" className={`sidebar-tab-button${sidebarTab === "timeline" ? " is-active" : ""}`} onClick={() => setSidebarTab("timeline")} aria-label="Timeline tab" title="Timeline">
+            <button type="button" className={`sidebar-tab-button${sidebarTab === "timeline" ? " is-active" : ""}`} onClick={() => setSidebarTab("timeline")} aria-label={t("sidebar.tabs.timelineAria", "Timeline tab")} title={t("sidebar.tabs.timeline", "Timeline")}>
               <List size={15} strokeWidth={2.2} />
             </button>
-            <button type="button" className={`sidebar-tab-button${sidebarTab === "tags" ? " is-active" : ""}`} onClick={() => setSidebarTab("tags")} aria-label="Tags tab" title="Tags">
+            <button type="button" className={`sidebar-tab-button${sidebarTab === "tags" ? " is-active" : ""}`} onClick={() => setSidebarTab("tags")} aria-label={t("sidebar.tabs.tagsAria", "Tags tab")} title={t("sidebar.tabs.tags", "Tags")}>
               <Tag size={15} strokeWidth={2.2} />
             </button>
-            <button type="button" className={`sidebar-tab-button${sidebarTab === "groups" ? " is-active" : ""}`} onClick={() => setSidebarTab("groups")} aria-label="Groups tab" title="Groups">
+            <button type="button" className={`sidebar-tab-button${sidebarTab === "groups" ? " is-active" : ""}`} onClick={() => setSidebarTab("groups")} aria-label={t("sidebar.tabs.groupsAria", "Groups tab")} title={t("sidebar.tabs.groups", "Groups")}>
               <Layers3 size={15} strokeWidth={2.2} />
             </button>
           </div>
@@ -1311,7 +1313,7 @@ export default function Sidebar({
           <div className="sb-new-wrapper" ref={newMenuRef}>
             <button className="sb-new-btn" onClick={() => setNewMenuOpen((v) => !v)}>
               <Plus size={13} strokeWidth={2.5} />
-              <span>New</span>
+              <span>{t("toolbar.new", "New")}</span>
               <ChevronDown size={11} strokeWidth={2.5} />
             </button>
             {newMenuOpen && (
@@ -1354,56 +1356,56 @@ export default function Sidebar({
               <button
                 className={`sb-sort-btn${sortMenuOpen ? " is-active" : ""}`}
                 onClick={() => setSortMenuOpen((v) => !v)}
-                title="Sort"
-                aria-label="Sort"
+                title={t("sidebar.sort.label", "Sort")}
+                aria-label={t("sidebar.sort.label", "Sort")}
               >
                 <ArrowUpDown size={14} strokeWidth={2} />
               </button>
               {sortMenuOpen && sidebarTab === "tags" && (
                 <div className="sb-sort-menu timeline-context-menu">
-                  <div className="sb-sort-menu-header">Sort by</div>
+                  <div className="sb-sort-menu-header">{t("sidebar.sort.sortBy", "Sort by")}</div>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortField: "name" }); setSortMenuOpen(false); }}>
-                    <span>Name</span>
+                    <span>{t("sidebar.sort.name", "Name")}</span>
                     {tagSortField === "name" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortField: "elements" }); setSortMenuOpen(false); }}>
-                    <span>Elements</span>
+                    <span>{t("sidebar.sort.elements", "Elements")}</span>
                     {tagSortField === "elements" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <div className="sb-sort-divider" />
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortOrder: "asc" }); setSortMenuOpen(false); }}>
-                    <span>Ascending</span>
+                    <span>{t("sidebar.sort.ascending", "Ascending")}</span>
                     {tagSortOrder === "asc" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelTagSortOrder: "desc" }); setSortMenuOpen(false); }}>
-                    <span>Descending</span>
+                    <span>{t("sidebar.sort.descending", "Descending")}</span>
                     {tagSortOrder === "desc" && <Check size={12} className="sb-sort-check" />}
                   </button>
                 </div>
               )}
               {sortMenuOpen && sidebarTab === "timeline" && (
                 <div className="sb-sort-menu timeline-context-menu">
-                  <div className="sb-sort-menu-header">Sort by</div>
+                  <div className="sb-sort-menu-header">{t("sidebar.sort.sortBy", "Sort by")}</div>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "year" }); setSortMenuOpen(false); }}>
-                    <span>Date</span>
+                    <span>{t("sidebar.sort.date", "Date")}</span>
                     {sortField === "year" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortField: "name" }); setSortMenuOpen(false); }}>
-                    <span>Name</span>
+                    <span>{t("sidebar.sort.name", "Name")}</span>
                     {sortField === "name" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <div className="sb-sort-divider" />
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortOrder: "asc" }); setSortMenuOpen(false); }}>
-                    <span>Ascending</span>
+                    <span>{t("sidebar.sort.ascending", "Ascending")}</span>
                     {sortOrder === "asc" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortOrder: "desc" }); setSortMenuOpen(false); }}>
-                    <span>Descending</span>
+                    <span>{t("sidebar.sort.descending", "Descending")}</span>
                     {sortOrder === "desc" && <Check size={12} className="sb-sort-check" />}
                   </button>
                   <div className="sb-sort-divider" />
-                  <div className="sb-sort-menu-header">Group by</div>
-                  {[["default", "Default"], ["eras", "Eras"], ["spans", "Spans"]].map(([value, label]) => (
+                  <div className="sb-sort-menu-header">{t("sidebar.sort.groupBy", "Group by")}</div>
+                  {[["default", t("sidebar.sort.groupDefault", "Default")], ["eras", t("sidebar.sort.groupEras", "Eras")], ["spans", t("sidebar.sort.groupSpans", "Spans")]].map(([value, label]) => (
                     <button
                       key={value}
                       className="context-menu-item"
@@ -1420,7 +1422,7 @@ export default function Sidebar({
                         className="context-menu-item"
                         onClick={() => { onPatchFile?.({ panelGroupMode: "eras", nestEraSubGroups: !file?.nestEraSubGroups }); }}
                       >
-                        <span>Nest Sub-Eras</span>
+                        <span>{t("sidebar.sort.nestSubEras", "Nest Sub-Eras")}</span>
                         {file?.nestEraSubGroups && <Check size={12} className="sb-sort-check" />}
                       </button>
                     </>
@@ -1437,10 +1439,10 @@ export default function Sidebar({
               type="button"
               className={`sb-tag-strip-pill sb-tag-strip-all${activeTags.length === 0 ? " is-active" : ""}`}
               onClick={() => onClearTags?.()}
-              title="Show all"
+              title={t("sidebar.tags.showAll", "Show all")}
             >
               <span className="sb-tag-strip-dot" style={{ background: "currentColor" }} />
-              All
+              {t("sidebar.tags.all", "All")}
             </button>
             {stripTags.map((tag) => {
               const isActive = activeTags.includes(tag);
@@ -1529,7 +1531,7 @@ export default function Sidebar({
                       <button className="sb-era-toggle" onClick={() => setOpenSpanGroups((prev) => ({ ...prev, "__other__": !isOtherOpen }))}>
                         <ChevronDown className={`sb-caret ${isOtherOpen ? "open" : ""}`} size={11} strokeWidth={2.5} />
                       </button>
-                      <span className="sb-sub-era-name">OTHER</span>
+                      <span className="sb-sub-era-name">{t("sidebar.other", "OTHER")}</span>
                     </div>
                     {isOtherOpen && (
                       <div className="sb-sub-era-items">
@@ -1557,7 +1559,7 @@ export default function Sidebar({
               <div className="sb-section-head">
                 <button className="sb-section-toggle" onClick={() => setOpenEras((v) => !v)}>
                   <ChevronDown className={`sb-caret ${openEras ? "open" : ""}`} size={16} strokeWidth={2} />
-                  <span className="sb-section-label">Eras</span>
+                  <span className="sb-section-label">{t("sidebar.sections.eras", "Eras")}</span>
                   <span className="sb-section-count">{visibleEras.length}</span>
                 </button>
               </div>
@@ -1573,7 +1575,7 @@ export default function Sidebar({
               <div className="sb-section-head">
                 <button className="sb-section-toggle" onClick={() => setOpenSpans((v) => !v)}>
                   <ChevronDown className={`sb-caret ${openSpans ? "open" : ""}`} size={16} strokeWidth={2} />
-                  <span className="sb-section-label">Spans</span>
+                  <span className="sb-section-label">{t("sidebar.sections.spans", "Spans")}</span>
                   <span className="sb-section-count">{visibleSpans.length}</span>
                 </button>
               </div>
@@ -1589,7 +1591,7 @@ export default function Sidebar({
               <div className="sb-section-head">
                 <button className="sb-section-toggle" onClick={() => setOpenEvents((v) => !v)}>
                   <ChevronDown className={`sb-caret ${openEvents ? "open" : ""}`} size={16} strokeWidth={2} />
-                  <span className="sb-section-label">Events</span>
+                  <span className="sb-section-label">{t("sidebar.sections.events", "Events")}</span>
                   <span className="sb-section-count">{visibleEvents.length}</span>
                 </button>
               </div>
@@ -1704,7 +1706,7 @@ export default function Sidebar({
                       <button className="sb-era-toggle" onClick={() => setOpenEraGroups((prev) => ({ ...prev, "__other__": !isOtherOpen }))}>
                         <ChevronDown className={`sb-caret ${isOtherOpen ? "open" : ""}`} size={11} strokeWidth={2.5} />
                       </button>
-                      <span className="sb-era-name">OTHER</span>
+                      <span className="sb-era-name">{t("sidebar.other", "OTHER")}</span>
                       <span className="sb-era-count">{sortedVisibleUngrouped.length}</span>
                     </div>
                     {isOtherOpen && (
@@ -1732,12 +1734,12 @@ export default function Sidebar({
           <div className="sidebar-tags-panel">
             <div className="sidebar-tags-dropdown">
               <div className="sb-tag-list-header">
-                <span className="sb-tag-list-title">All Tags</span>
+                <span className="sb-tag-list-title">{t("sidebar.tags.allTags", "All Tags")}</span>
                 <span className="sb-tag-list-separator">·</span>
                 <span className="sb-tag-list-count">{visibleTags.length}</span>
               </div>
               {visibleTags.length === 0 && (
-                <div className="filter-menu-empty">{searchActive ? "No matching tags" : "No tags found"}</div>
+                <div className="filter-menu-empty">{searchActive ? t("sidebar.tags.noMatches", "No matching tags") : t("sidebar.tags.none", "No tags found")}</div>
               )}
               {visibleTags.map((tag) => {
                 const isShown = activeTags.includes(tag);
@@ -1765,7 +1767,7 @@ export default function Sidebar({
                         style={{ background: tagColor || "var(--accent-color)" }}
                         value={tagColor || "#808080"}
                         onChange={(hex) => onUpdateTagColor?.(tag, hex)}
-                        title="Set tag color"
+                        title={t("sidebar.tags.setColor", "Set tag color")}
                         ariaLabel={`Set color for tag ${tag}`}
                       />
                     )}
@@ -1807,7 +1809,7 @@ export default function Sidebar({
             <div className="sidebar-groups-list">
               <div className="sb-group-list-header">
                 <div className="sb-group-list-meta">
-                  <span className="sb-group-list-title">All Groups</span>
+                  <span className="sb-group-list-title">{t("sidebar.groups.all", "All Groups")}</span>
                   <span className="sb-group-list-separator">·</span>
                   <span className="sb-group-list-count">{visibleDisplayGroups.length}</span>
                 </div>
@@ -1818,12 +1820,12 @@ export default function Sidebar({
                     onClick={handleAddGroupAndEdit}
                   >
                     <Plus size={10} strokeWidth={2.5} />
-                    <span>Add Group</span>
+                    <span>{t("sidebar.groups.add", "Add Group")}</span>
                   </button>
                 )}
               </div>
               {visibleDisplayGroups.length === 0 && (
-                <div className="filter-menu-empty">{searchActive ? "No matching groups" : "No groups found"}</div>
+                <div className="filter-menu-empty">{searchActive ? t("sidebar.groups.noMatches", "No matching groups") : t("sidebar.groups.none", "No groups found")}</div>
               )}
               {visibleDisplayGroups.map((group, idx) => {
                 const count = group.visibleCount;
@@ -1867,7 +1869,7 @@ export default function Sidebar({
                     }}
                   >
                     <div className="sb-timeline-line-divider-line" />
-                    <span className="sb-timeline-line-divider-label">Timeline</span>
+                    <span className="sb-timeline-line-divider-label">{t("sidebar.timelineDivider", "Timeline")}</span>
                     <div className="sb-timeline-line-divider-line" />
                   </div>
                 );
@@ -1949,7 +1951,7 @@ export default function Sidebar({
                           style={{ background: groupTint }}
                           value={normalizeColorForInput(group.bgColor) || themeGroupColor}
                           onChange={(hex) => updateGroupPatch(group.id, { bgColor: hex })}
-                          title="Group color"
+                          title={t("sidebar.groups.color", "Group color")}
                           ariaLabel={`Set color for group ${group.title || group.id}`}
                         />
                       )}
@@ -1995,7 +1997,7 @@ export default function Sidebar({
                           <button
                             type="button"
                             className="filter-menu-icon-btn"
-                            title="More options"
+                            title={t("common:actions.moreOptions", "More options")}
                             onClick={(e) => { e.stopPropagation(); setGroupMenuOpenId(groupMenuOpenId === group.id ? null : group.id); }}
                           >
                             <MoreVertical size={15} />
@@ -2007,7 +2009,7 @@ export default function Sidebar({
                                 onClick={(e) => { e.stopPropagation(); setGroupMenuOpenId(null); startGroupTitleEdit(group); }}
                               >
                                 <Edit2 size={13} />
-                                <span>Rename</span>
+                                <span>{t("common:actions.rename", "Rename")}</span>
                               </button>
                               <button
                                 className="sb-group-kebab-item sb-group-kebab-item-danger"
@@ -2015,7 +2017,7 @@ export default function Sidebar({
                                 onClick={(e) => { e.stopPropagation(); setGroupMenuOpenId(null); onDeleteGroup?.(group.id); }}
                               >
                                 <Trash2 size={13} />
-                                <span>Delete</span>
+                                <span>{t("common:actions.delete", "Delete")}</span>
                               </button>
                             </div>
                           )}
@@ -2085,7 +2087,7 @@ export default function Sidebar({
                   }}
                 >
                   <div className="sb-timeline-line-divider-line" />
-                  <span className="sb-timeline-line-divider-label">Timeline</span>
+                  <span className="sb-timeline-line-divider-label">{t("sidebar.timelineDivider", "Timeline")}</span>
                   <div className="sb-timeline-line-divider-line" />
                   <div className="sb-below-line-drop-zone" />
                 </div>

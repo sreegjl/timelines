@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Upload, X, Download, Check, Trash2, FolderOpen, Search, Moon, Sun, ChevronDown, MoreVertical, RefreshCw } from "lucide-react";
 import { saveUserTheme, deleteUserTheme } from "../utils/electronApi";
 import { formatCollectionName } from "../utils/themeLoader";
@@ -20,6 +21,13 @@ export default function MarketplaceModal({
 }) {
   const [marketplaceThemes, setMarketplaceThemes] = useState([]);
   const [marketplaceError, setMarketplaceError] = useState("");
+  const { t } = useTranslation("app");
+  // Error codes keep t out of the loader closures, so effect deps stay stable.
+  const errorMessages = {
+    load: t("marketplace.errors.load", "Failed to load marketplace themes."),
+    download: t("marketplace.errors.download", "Failed to download theme."),
+    delete: t("marketplace.errors.delete", "Failed to delete theme."),
+  };
   const [marketplaceLoading, setMarketplaceLoading] = useState(false);
   const [marketplaceBusyId, setMarketplaceBusyId] = useState("");
   const [installedThemeIds, setInstalledThemeIds] = useState(new Set());
@@ -59,7 +67,7 @@ export default function MarketplaceModal({
       setMarketplaceThemes(Array.isArray(data?.themes) ? data.themes : []);
     } catch (error) {
       console.error("Failed to load marketplace:", error);
-      setMarketplaceError("Failed to load marketplace themes.");
+      setMarketplaceError("load");
       setMarketplaceThemes([]);
     } finally {
       setMarketplaceLoading(false);
@@ -143,7 +151,7 @@ export default function MarketplaceModal({
       await loadInstalledThemes();
     } catch (error) {
       console.error("Failed to download theme:", error);
-      setMarketplaceError("Failed to download theme.");
+      setMarketplaceError("download");
     } finally {
       setMarketplaceBusyId("");
     }
@@ -188,7 +196,7 @@ export default function MarketplaceModal({
       await loadInstalledThemes();
     } catch (error) {
       console.error("Failed to delete theme:", error);
-      setMarketplaceError("Failed to delete theme.");
+      setMarketplaceError("delete");
     } finally {
       setMarketplaceBusyId("");
     }
@@ -207,8 +215,8 @@ export default function MarketplaceModal({
   if (!isOpen) return null;
 
   const collectionCounts = {};
-  marketplaceThemes.forEach((t) => {
-    const c = t.collection || "other";
+  marketplaceThemes.forEach((th) => {
+    const c = th.collection || "other";
     collectionCounts[c] = (collectionCounts[c] || 0) + 1;
   });
   const allCollections = Object.entries(collectionCounts)
@@ -219,7 +227,7 @@ export default function MarketplaceModal({
     })
     .map(([collection, count]) => ({ collection, count }));
 
-  const mktIds = new Set(marketplaceThemes.map(t => String(t.id || "").toLowerCase()));
+  const mktIds = new Set(marketplaceThemes.map(th => String(th.id || "").toLowerCase()));
 
   const allInstalledThemes = [
     ...appThemes.map(([key, theme]) => ({
@@ -235,7 +243,7 @@ export default function MarketplaceModal({
     ...userThemes.map(([key, theme]) => {
       const tid = key.toLowerCase();
       const isMkt = marketplaceThemes.length > 0 && mktIds.has(tid);
-      const mktData = isMkt ? marketplaceThemes.find(t => String(t.id || "").toLowerCase() === tid) : null;
+      const mktData = isMkt ? marketplaceThemes.find(th => String(th.id || "").toLowerCase() === tid) : null;
       return {
         id: key,
         name: theme.name || mktData?.name || key,
@@ -269,22 +277,22 @@ export default function MarketplaceModal({
   };
   const typeFilter = (theme) => marketplaceDarkLight === "all" || theme.type === marketplaceDarkLight;
 
-  const filteredMarketplace = marketplaceThemes.filter((t) => {
+  const filteredMarketplace = marketplaceThemes.filter((th) => {
     const q = marketplaceSearch.trim().toLowerCase();
     if (q) {
-      const h = [t?.name, t?.id, t?.author, t?.description].filter(Boolean).join(" ").toLowerCase();
+      const h = [th?.name, th?.id, th?.author, th?.description].filter(Boolean).join(" ").toLowerCase();
       if (!h.includes(q)) return false;
     }
-    if (marketplaceCollection !== null && t.collection !== marketplaceCollection) return false;
-    if (marketplaceDarkLight !== "all" && t.type !== marketplaceDarkLight) return false;
+    if (marketplaceCollection !== null && th.collection !== marketplaceCollection) return false;
+    if (marketplaceDarkLight !== "all" && th.type !== marketplaceDarkLight) return false;
     return true;
   }).sort((a, b) => (a.id || "").localeCompare(b.id || ""));
 
-  const filteredInstalled = allInstalledThemes.filter(t =>
-    searchFilter(t) && typeFilter(t) &&
-    (installedOriginFilter === "all" || t.origin === installedOriginFilter)
+  const filteredInstalled = allInstalledThemes.filter(th =>
+    searchFilter(th) && typeFilter(th) &&
+    (installedOriginFilter === "all" || th.origin === installedOriginFilter)
   ).sort((a, b) => (a.id || "").localeCompare(b.id || ""));
-  const filteredLocal = allLocalThemes.filter(t => searchFilter(t) && typeFilter(t))
+  const filteredLocal = allLocalThemes.filter(th => searchFilter(th) && typeFilter(th))
     .sort((a, b) => (a.id || "").localeCompare(b.id || ""));
   const downloadableMarketplaceThemes = filteredMarketplace.filter((theme) => {
     const themeId = String(theme.id || "").toLowerCase();
@@ -298,9 +306,9 @@ export default function MarketplaceModal({
 
   const originCounts = {
     all: allInstalledThemes.length,
-    marketplace: allInstalledThemes.filter(t => t.origin === "marketplace").length,
-    local: allInstalledThemes.filter(t => t.origin === "local").length,
-    "built-in": allInstalledThemes.filter(t => t.origin === "built-in").length,
+    marketplace: allInstalledThemes.filter(th => th.origin === "marketplace").length,
+    local: allInstalledThemes.filter(th => th.origin === "local").length,
+    "built-in": allInstalledThemes.filter(th => th.origin === "built-in").length,
   };
 
   const renderBulkMenu = () => {
@@ -321,8 +329,8 @@ export default function MarketplaceModal({
         <button
           className="marketplace-icon-button marketplace-bulk-trigger"
           type="button"
-          aria-label="Bulk theme actions"
-          title="Bulk theme actions"
+          aria-label={t("marketplace.bulkActions", "Bulk theme actions")}
+          title={t("marketplace.bulkActions", "Bulk theme actions")}
           onClick={() => setBulkMenuOpen((open) => !open)}
         >
           <MoreVertical size={15} />
@@ -338,7 +346,7 @@ export default function MarketplaceModal({
                 await handleDownloadAllThemes();
               }}
             >
-              <span>Download All</span>
+              <span>{t("marketplace.downloadAll", "Download All")}</span>
               <Download size={13} />
             </button>
             <button
@@ -350,7 +358,7 @@ export default function MarketplaceModal({
                 await handleRemoveAllThemes();
               }}
             >
-              <span>Remove All</span>
+              <span>{t("marketplace.removeAll", "Remove All")}</span>
               <Trash2 size={13} />
             </button>
           </div>
@@ -454,18 +462,18 @@ export default function MarketplaceModal({
           >
             {isActive ? (
               <>
-                <span className="marketplace-btn-default"><Check size={13} strokeWidth={2.5} /> Enabled</span>
-                <span className="marketplace-btn-hover"><X size={13} strokeWidth={2.5} /> Disable</span>
+                <span className="marketplace-btn-default"><Check size={13} strokeWidth={2.5} /> {t("marketplace.enabled", "Enabled")}</span>
+                <span className="marketplace-btn-hover"><X size={13} strokeWidth={2.5} /> {t("marketplace.disable", "Disable")}</span>
               </>
-            ) : "Enable"}
+            ) : t("marketplace.enable", "Enable")}
           </button>
           {showEdit && !isBuiltIn && (
             <button
               className="marketplace-icon-button marketplace-button-danger"
               type="button"
               onClick={() => window.electron?.openThemesFolder?.()}
-              aria-label="Open themes folder"
-              title="Open themes folder"
+              aria-label={t("marketplace.openFolder", "Open themes folder")}
+              title={t("marketplace.openFolder", "Open themes folder")}
             >
               <FolderOpen size={16} />
             </button>
@@ -476,8 +484,8 @@ export default function MarketplaceModal({
               type="button"
               disabled={isBusy}
               onClick={() => handleDeleteTheme({ id: theme.id })}
-              aria-label="Delete theme"
-              title="Delete theme"
+              aria-label={t("marketplace.deleteTheme", "Delete theme")}
+              title={t("marketplace.deleteTheme", "Delete theme")}
             >
               <Trash2 size={16} />
             </button>
@@ -491,11 +499,11 @@ export default function MarketplaceModal({
     <div className="settings-backdrop" onClick={onClose}>
       <div className="marketplace-modal" onClick={(e) => e.stopPropagation()}>
         <div className="marketplace-header">
-          <button className="settings-back-button" onClick={onClose} aria-label="Close marketplace">
+          <button className="settings-back-button" onClick={onClose} aria-label={t("marketplace.close", "Close marketplace")}>
             <ArrowLeft size={18} strokeWidth={2} />
           </button>
           <div className="marketplace-header-title">
-            <h2 className="marketplace-title">Marketplace</h2>
+            <h2 className="marketplace-title">{t("marketplace.title", "Marketplace")}</h2>
           </div>
         </div>
 
@@ -504,10 +512,10 @@ export default function MarketplaceModal({
           <input
             className="marketplace-search"
             type="text"
-            placeholder="Search themes..."
+            placeholder={t("marketplace.searchPlaceholder", "Search themes...")}
             value={marketplaceSearch}
             onChange={(e) => setMarketplaceSearch(e.target.value)}
-            aria-label="Search marketplace themes"
+            aria-label={t("marketplace.searchAria", "Search marketplace themes")}
           />
         </div>
 
@@ -517,25 +525,25 @@ export default function MarketplaceModal({
               className={`marketplace-type-btn${marketplaceTab === "marketplace" ? " marketplace-type-btn-active" : ""}`}
               onClick={() => setMarketplaceTab("marketplace")}
             >
-              Marketplace {marketplaceThemes.length > 0 && <span className="marketplace-tab-count">{marketplaceThemes.length}</span>}
+              {t("marketplace.tabs.marketplace", "Marketplace")} {marketplaceThemes.length > 0 && <span className="marketplace-tab-count">{marketplaceThemes.length}</span>}
             </button>
             <button
               className={`marketplace-type-btn${marketplaceTab === "installed" ? " marketplace-type-btn-active" : ""}`}
               onClick={() => setMarketplaceTab("installed")}
             >
-              Installed <span className="marketplace-tab-count">{allInstalledThemes.length}</span>
+              {t("marketplace.tabs.installed", "Installed")} <span className="marketplace-tab-count">{allInstalledThemes.length}</span>
             </button>
             <button
               className={`marketplace-type-btn${marketplaceTab === "local" ? " marketplace-type-btn-active" : ""}`}
               onClick={() => setMarketplaceTab("local")}
             >
-              Local <span className="marketplace-tab-count">{allLocalThemes.length}</span>
+              {t("marketplace.tabs.local", "Local")} <span className="marketplace-tab-count">{allLocalThemes.length}</span>
             </button>
           </div>
           <div className="marketplace-type-toggle">
-            <button className={`marketplace-type-btn${marketplaceDarkLight === "all" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("all")}>All</button>
-            <button className={`marketplace-type-btn${marketplaceDarkLight === "dark" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("dark")}><Moon size={11} /> Dark</button>
-            <button className={`marketplace-type-btn${marketplaceDarkLight === "light" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("light")}><Sun size={11} /> Light</button>
+            <button className={`marketplace-type-btn${marketplaceDarkLight === "all" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("all")}>{t("marketplace.types.all", "All")}</button>
+            <button className={`marketplace-type-btn${marketplaceDarkLight === "dark" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("dark")}><Moon size={11} /> {t("marketplace.types.dark", "Dark")}</button>
+            <button className={`marketplace-type-btn${marketplaceDarkLight === "light" ? " marketplace-type-btn-active" : ""}`} onClick={() => setMarketplaceDarkLight("light")}><Sun size={11} /> {t("marketplace.types.light", "Light")}</button>
           </div>
         </div>
 
@@ -605,10 +613,10 @@ export default function MarketplaceModal({
           <div className="marketplace-controls">
             <div className="marketplace-collection-pills">
               {[
-                { key: "all", label: "All", count: originCounts.all },
-                { key: "marketplace", label: "Marketplace", count: originCounts.marketplace },
-                { key: "local", label: "Local", count: originCounts.local },
-                { key: "built-in", label: "Built-in", count: originCounts["built-in"] },
+                { key: "all", label: t("marketplace.origins.all", "All"), count: originCounts.all },
+                { key: "marketplace", label: t("marketplace.origins.marketplace", "Marketplace"), count: originCounts.marketplace },
+                { key: "local", label: t("marketplace.origins.local", "Local"), count: originCounts.local },
+                { key: "built-in", label: t("marketplace.origins.builtIn", "Built-in"), count: originCounts["built-in"] },
               ].map(({ key, label, count }) => (
                 <button
                   key={key}
@@ -623,13 +631,13 @@ export default function MarketplaceModal({
           </div>
         )}
 
-        {marketplaceError && <div className="marketplace-error">{marketplaceError}</div>}
+        {marketplaceError && <div className="marketplace-error">{errorMessages[marketplaceError] || marketplaceError}</div>}
 
         {marketplaceTab === "marketplace" && (
           marketplaceLoading ? (
-            <div className="marketplace-loading">Loading themes...</div>
+            <div className="marketplace-loading">{t("marketplace.loading", "Loading themes...")}</div>
           ) : filteredMarketplace.length === 0 ? (
-            <div className="marketplace-empty">No themes match</div>
+            <div className="marketplace-empty">{t("marketplace.noMatches", "No themes match")}</div>
           ) : (
             <div className="marketplace-grid">
               {filteredMarketplace.map((theme) => {
@@ -672,15 +680,15 @@ export default function MarketplaceModal({
                                 <span className="marketplace-btn-default"><Check size={13} strokeWidth={2.5} /> Enabled</span>
                                 <span className="marketplace-btn-hover"><X size={13} strokeWidth={2.5} /> Disable</span>
                               </>
-                            ) : "Enable"}
+                            ) : t("marketplace.enable", "Enable")}
                           </button>
                           <button
                             className="marketplace-icon-button marketplace-button-danger"
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleDeleteTheme(theme)}
-                            aria-label="Delete theme"
-                            title="Delete theme"
+                            aria-label={t("marketplace.deleteTheme", "Delete theme")}
+                            title={t("marketplace.deleteTheme", "Delete theme")}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -692,7 +700,7 @@ export default function MarketplaceModal({
                           disabled={isBusy}
                           onClick={() => handleDownloadTheme(theme)}
                         >
-                          {isBusy ? "Downloading..." : <><Download size={13} strokeWidth={2.5} /> Download</>}
+                          {isBusy ? t("marketplace.downloading", "Downloading...") : <><Download size={13} strokeWidth={2.5} /> {t("marketplace.download", "Download")}</>}
                         </button>
                       )}
                     </div>
@@ -705,10 +713,10 @@ export default function MarketplaceModal({
 
         {marketplaceTab === "installed" && (
           filteredInstalled.length === 0 ? (
-            <div className="marketplace-empty">No themes match</div>
+            <div className="marketplace-empty">{t("marketplace.noMatches", "No themes match")}</div>
           ) : (
             <div className="marketplace-grid">
-              {filteredInstalled.map((t) => renderCard(t, t.origin === "local"))}
+              {filteredInstalled.map((th) => renderCard(th, th.origin === "local"))}
             </div>
           )
         )}
@@ -746,11 +754,11 @@ export default function MarketplaceModal({
                   <Upload size={28} strokeWidth={1.5} className="marketplace-new-icon" />
                 </div>
                 <div className="marketplace-card-body">
-                  <div className="marketplace-card-title">Import Theme</div>
-                  <div className="marketplace-card-author">Drop or click to add .json</div>
+                  <div className="marketplace-card-title">{t("marketplace.import.title", "Import Theme")}</div>
+                  <div className="marketplace-card-author">{t("marketplace.import.subtitle", "Drop or click to add .json")}</div>
                 </div>
               </div>
-              {filteredLocal.map((t) => renderCard(t, true))}
+              {filteredLocal.map((th) => renderCard(th, true))}
             </div>
           </>
         )}

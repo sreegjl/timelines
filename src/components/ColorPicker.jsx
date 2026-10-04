@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { hexToHsv, hsvToHex, normalizeColor } from "../utils/colorUtils";
 
 const POPOVER_WIDTH = 216;
@@ -9,6 +10,7 @@ const ANCHOR_GAP = 6;
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 
 function ColorPopover({ anchorRef, value, onChange, onClose }) {
+  const { t } = useTranslation("timeline");
   const popRef = useRef(null);
   const areaRef = useRef(null);
   const hueRef = useRef(null);
@@ -146,7 +148,7 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
         style={{ background: `linear-gradient(to top, #000, rgba(0,0,0,0)), linear-gradient(to right, #fff, ${hueHex})` }}
         tabIndex={0}
         role="application"
-        aria-label="Saturation and brightness"
+        aria-label={t("colorPicker.saturationBrightness", "Saturation and brightness")}
         onKeyDown={onAreaKey}
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); pickArea(e); }}
         onPointerMove={(e) => { if (e.buttons & 1) pickArea(e); }}
@@ -162,7 +164,7 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
         className="cp-hue"
         tabIndex={0}
         role="slider"
-        aria-label="Hue"
+        aria-label={t("colorPicker.hue", "Hue")}
         aria-valuemin={0}
         aria-valuemax={360}
         aria-valuenow={Math.round(hsv.h)}
@@ -181,7 +183,7 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
           value={hexDraft}
           maxLength={7}
           spellCheck={false}
-          aria-label="Hex color"
+          aria-label={t("colorPicker.hex", "Hex color")}
           onChange={(e) => setHexDraft(e.target.value)}
           onBlur={(e) => commitHex(e.target.value)}
           onKeyDown={(e) => {

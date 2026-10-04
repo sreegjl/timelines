@@ -3,21 +3,26 @@ import { File, FilePlus, Copy, Trash2, Settings, ArrowLeft, Folder, Plus, Store,
 import { createFolder, listFolders, moveTimeline, renameFolder, updateTimelineTitle, deleteFolder, moveFolder } from "../utils/electronApi.js";
 import { generateIdFromTitle, generateStorageUid } from "../utils/idUtils.js";
 import { getAppSettings, saveAppSettings } from "../utils/appSettings.js";
+import { useTranslation, Trans } from "react-i18next";
+import { changeLocale } from "../i18n";
+import { SUPPORTED_LOCALES } from "../i18n/config";
 
 function MovePicker({ folders, currentFolder, onConfirm, onCancel }) {
+  const { t } = useTranslation(["app", "common"]);
   const [dest, setDest] = useState(null);
   return (
     <div className="folder-modal folder-modal-pick" onClick={(e) => e.stopPropagation()}>
       <FolderTree folders={folders} currentFolder={currentFolder} selected={dest} onSelect={setDest} />
       <div className="folder-modal-actions">
-        <button className="folder-modal-btn" onClick={onCancel}>Cancel</button>
-        <button className="folder-modal-btn folder-modal-btn-primary" disabled={dest === null} onClick={() => onConfirm(dest)}>OK</button>
+        <button className="folder-modal-btn" onClick={onCancel}>{t("common:actions.cancel", "Cancel")}</button>
+        <button className="folder-modal-btn folder-modal-btn-primary" disabled={dest === null} onClick={() => onConfirm(dest)}>{t("common:actions.ok", "OK")}</button>
       </div>
     </div>
   );
 }
 
 function FolderTree({ folders, currentFolder, selected, onSelect }) {
+  const { t } = useTranslation("app");
   const [collapsed, setCollapsed] = useState({});
 
   const toggle = (path) => setCollapsed(prev => ({ ...prev, [path]: !prev[path] }));
@@ -44,7 +49,7 @@ function FolderTree({ folders, currentFolder, selected, onSelect }) {
               className="folder-tree-toggle"
               onClick={() => children && toggle(f)}
               style={{ visibility: children ? 'visible' : 'hidden' }}
-              aria-label={isOpen ? 'Collapse' : 'Expand'}
+              aria-label={isOpen ? t("folderTree.collapse", "Collapse") : t("folderTree.expand", "Expand")}
             >
               <ChevronRight size={11} style={{ transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
             </button>
@@ -65,7 +70,7 @@ function FolderTree({ folders, currentFolder, selected, onSelect }) {
         <span className="folder-tree-toggle" style={{ visibility: 'hidden' }} />
         <button type="button" className="folder-tree-label" onClick={() => onSelect('')}>
           <Folder size={13} />
-          <span>Home</span>
+          <span>{t("folderTree.home", "Home")}</span>
         </button>
       </div>
       {renderLevel('', 0)}
@@ -73,14 +78,23 @@ function FolderTree({ folders, currentFolder, selected, onSelect }) {
   );
 }
 
-function relativeTime(ms) {
+function relativeTime(ms, t) {
   if (!ms) return null;
   const days = Math.floor((Date.now() - ms) / 86400000);
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 14) return "1 week ago";
-  return `${Math.floor(days / 7)} weeks ago`;
+  if (days === 0) return t("app:time.today", "today");
+  if (days === 1) return t("app:time.yesterday", "yesterday");
+  if (days < 7) {
+    return t("app:time.daysAgo", {
+      count: days,
+      defaultValue_one: "{{count}} day ago",
+      defaultValue_other: "{{count}} days ago",
+    });
+  }
+  return t("app:time.weeksAgo", {
+    count: Math.floor(days / 7),
+    defaultValue_one: "{{count}} week ago",
+    defaultValue_other: "{{count}} weeks ago",
+  });
 }
 
 const isConflictCopyId = (value) => /-conflict-\d{8}-[\w.-]+(?:-\d+)?$/i.test(String(value || ""));
@@ -88,7 +102,14 @@ const isConflictCopyId = (value) => /-conflict-\d{8}-[\w.-]+(?:-\d+)?$/i.test(St
 const SORT_FIELDS = new Set(["modified", "name", "folder", "events", "spans", "eras"]);
 const DEFAULT_SORT_DIR = { name: "asc", folder: "asc", modified: "desc", events: "desc", spans: "desc", eras: "desc" };
 const LEGACY_SORT_MODES = { date: ["modified", "desc"], name: ["name", "asc"], "name-desc": ["name", "desc"] };
-const SORT_HEADER_LABELS = { name: "Name", folder: "Location", events: "Events", spans: "Spans", eras: "Eras", modified: "Modified" };
+const sortHeaderLabels = (t) => ({
+  name: t("app:sortHeaders.name", "Name"),
+  folder: t("app:sortHeaders.folder", "Location"),
+  events: t("app:sortHeaders.events", "Events"),
+  spans: t("app:sortHeaders.spans", "Spans"),
+  eras: t("app:sortHeaders.eras", "Eras"),
+  modified: t("app:sortHeaders.modified", "Modified"),
+});
 
 function parseSortMode(value) {
   if (LEGACY_SORT_MODES[value]) return LEGACY_SORT_MODES[value];
@@ -97,7 +118,12 @@ function parseSortMode(value) {
   return ["modified", "desc"];
 }
 
-const countLabel = (n, plural) => `${n} ${n === 1 ? plural.slice(0, -1) : plural}`;
+// Each kind spelled out so i18next-parser sees the keys and plural forms follow the locale.
+const countLabel = (n, kind, t) => {
+  if (kind === "events") return t("app:counts.events", { count: n, defaultValue_one: "{{count}} event", defaultValue_other: "{{count}} events" });
+  if (kind === "spans") return t("app:counts.spans", { count: n, defaultValue_one: "{{count}} span", defaultValue_other: "{{count}} spans" });
+  return t("app:counts.eras", { count: n, defaultValue_one: "{{count}} era", defaultValue_other: "{{count}} eras" });
+};
 
 // null when the payload predates the count fields
 function elementCounts(file) {
@@ -109,18 +135,18 @@ function elementCounts(file) {
   return fields.every(([n]) => Number.isFinite(n)) ? fields : null;
 }
 
-function formatElementCounts(file) {
+function formatElementCounts(file, t) {
   const fields = elementCounts(file);
   if (!fields) return null;
-  if (fields.every(([n]) => n === 0)) return "Empty";
-  return fields.map(([n, label]) => countLabel(n, label)).join(" · ");
+  if (fields.every(([n]) => n === 0)) return t("app:counts.empty", "Empty");
+  return fields.map(([n, label]) => countLabel(n, label, t)).join(" · ");
 }
 
-function formatSyncTime(value) {
-  if (!value) return "Not synced yet";
+function formatSyncTime(value, t) {
+  if (!value) return t("app:sync.notSyncedYet", "Not synced yet");
   const ms = Date.parse(value);
-  if (!Number.isFinite(ms)) return "Not synced yet";
-  return `Synced ${relativeTime(ms)}`;
+  if (!Number.isFinite(ms)) return t("app:sync.notSyncedYet", "Not synced yet");
+  return t("app:sync.syncedAgo", "Synced {{when}}", { when: relativeTime(ms, t) });
 }
 
 function formatDateTime(value) {
@@ -161,8 +187,8 @@ function formatMirrorBytes(n) {
   return `${n} B`;
 }
 
-function buildSyncTree(files) {
-  const root = { type: "folder", id: "", label: "Library", children: [], sortKey: "" };
+function buildSyncTree(files, t) {
+  const root = { type: "folder", id: "", label: t("app:library", "Library"), children: [], sortKey: "" };
   const folderMap = new Map([["", root]]);
   const sorted = [...files]
     .filter((file) => !file.isPackage)
@@ -218,6 +244,7 @@ import { DEFAULT_KEYBINDS, cloneDefaultKeybinds, saveKeybinds } from "../utils/k
 import MarketplaceModal from "./MarketplaceModal";
 import useEscapeKey from "../hooks/useEscapeKey";
 
+const APP_VERSION = "0.7.0-alpha.2";
 const RECENT_TIMELINES_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 // Sidebar resize bounds mirror the timeline-view left panel (App.jsx)
 const HOME_SIDEBAR_MIN = 220;
@@ -285,6 +312,7 @@ export default function HomePage({
   onKeybindsChange,
   thumbnailRefreshSignal = 0,
 }) {
+  const { t } = useTranslation(["settings", "app", "common"]);
   const [timelineFiles, setTimelineFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isNewTimelineModalOpen, setIsNewTimelineModalOpen] = useState(false);
@@ -315,6 +343,23 @@ export default function HomePage({
   const [deleteDialogWithNotes, setDeleteDialogWithNotes] = useState(false);
   const [deleteDialogWithAssets, setDeleteDialogWithAssets] = useState(false);
   const [settingsSection, setSettingsSection] = useState("general");
+  // Keybind labels are never persisted (only keys are), so translating at render is safe.
+  const keybindLabels = useMemo(() => ({
+    search: t("hotkeys.search", "Search"),
+    play: t("hotkeys.play", "Play / Pause"),
+    undo: t("hotkeys.undo", "Undo"),
+    redo: t("hotkeys.redo", "Redo"),
+    delete: t("hotkeys.delete", "Delete"),
+    selectPrevious: t("hotkeys.selectPrevious", "Select Previous"),
+    selectNext: t("hotkeys.selectNext", "Select Next"),
+    selectTypeDown: t("hotkeys.selectTypeDown", "Select Type Down"),
+    selectTypeUp: t("hotkeys.selectTypeUp", "Select Type Up"),
+    newEvent: t("hotkeys.newEvent", "New Event"),
+    newSpan: t("hotkeys.newSpan", "New Span"),
+    newEra: t("hotkeys.newEra", "New Era"),
+  }), [t]);
+  // Empty string means "follow the system", which is the stored absence of a language key.
+  const [language, setLanguage] = useState("");
   const [updateStatus, setUpdateStatus] = useState(null); // null | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error' | 'dev'
   const [themeMigrationStatus, setThemeMigrationStatus] = useState(null); // null | 'migrating' | { count }
   const [gitSyncStatus, setGitSyncStatus] = useState(null);
@@ -355,6 +400,7 @@ export default function HomePage({
       if (settings?.homeViewMode === "list" || settings?.homeViewMode === "grid") {
         setViewMode(settings.homeViewMode);
       }
+      if (typeof settings?.language === "string") setLanguage(settings.language);
       const w = Number(settings?.homeSidebarWidth);
       const shellWidth = getHomeShellWidth(homeShellRef.current);
       if (Number.isFinite(w)) {
@@ -368,6 +414,12 @@ export default function HomePage({
   const handleViewModeChange = (nextMode) => {
     setViewMode(nextMode);
     saveAppSettings({ homeViewMode: nextMode });
+  };
+
+  const handleLanguageChange = async (nextLanguage) => {
+    setLanguage(nextLanguage);
+    await saveAppSettings({ language: nextLanguage });
+    await changeLocale(nextLanguage || navigator.language);
   };
 
   const applySort = (field, dir) => {
@@ -463,7 +515,7 @@ export default function HomePage({
 
   const fontOptions = useMemo(() => {
     const options = [
-      { value: "default", label: "Default (Theme)" },
+      { value: "default", label: t("general.appFont.default", "Default (Theme)") },
       { value: "Inter", label: "Inter" },
     ];
     availableFonts.forEach((name) => {
@@ -473,11 +525,11 @@ export default function HomePage({
     if (appFontFamily && !values.has(appFontFamily)) {
       options.unshift({
         value: appFontFamily,
-        label: `${appFontFamily} (Missing)`,
+        label: t("general.appFont.missing", "{{font}} (Missing)", { font: appFontFamily }),
       });
     }
     return options;
-  }, [availableFonts, appFontFamily]);
+  }, [availableFonts, appFontFamily, t]);
 
   const getPathIssue = (value) => {
     if (!value) return null;
@@ -956,7 +1008,7 @@ export default function HomePage({
 
   const handleGitSyncRebuild = async () => {
     if (!window.electron?.gitSyncRebuild) return;
-    if (!window.confirm("Rebuild the local mirror? This deletes the mirror clone and re-exports your library. Your timelines are not affected.")) return;
+    if (!window.confirm(t("sync.confirmRebuildMirror", "Rebuild the local mirror? This deletes the mirror clone and re-exports your library. Your timelines are not affected."))) return;
     setGitSyncBusy("rebuild");
     setGitSyncError("");
     const result = await window.electron.gitSyncRebuild();
@@ -971,8 +1023,8 @@ export default function HomePage({
   };
 
   const handleGitSyncDisconnect = async () => {
-    if (!window.confirm("Disconnect git sync from this device?")) return;
-    const deleteMirror = window.confirm("Delete the local mirror clone too? Press OK to delete it, or Cancel to keep it.");
+    if (!window.confirm(t("sync.confirmDisconnect", "Disconnect git sync from this device?"))) return;
+    const deleteMirror = window.confirm(t("sync.confirmDeleteMirror", "Delete the local mirror clone too? Press OK to delete it, or Cancel to keep it."));
     setGitSyncBusy("disconnect");
     const result = await window.electron?.gitSyncDisconnect?.({ deleteMirror });
     setGitSyncBusy("");
@@ -1075,7 +1127,7 @@ export default function HomePage({
   const handleRestoreGitSyncVersion = async (oid) => {
     const file = gitSyncHistoryDialog?.file;
     if (!file || !oid) return;
-    if (!window.confirm("Restore this version as a copy in your library?")) return;
+    if (!window.confirm(t("sync.confirmRestoreVersion", "Restore this version as a copy in your library?"))) return;
     setGitSyncHistoryDialog((current) => current ? { ...current, restoringOid: oid, error: "" } : current);
     const result = await window.electron?.gitSyncRestoreVersion?.({ uid: file.uid, commitOid: oid });
     if (!result?.success) {
@@ -1290,7 +1342,7 @@ export default function HomePage({
     const rel = String(id || "");
     return gitSyncExcluded.some((e) => e.endsWith("/") && rel.startsWith(e));
   };
-  const gitSyncTree = useMemo(() => buildSyncTree(timelineFiles), [timelineFiles]);
+  const gitSyncTree = useMemo(() => buildSyncTree(timelineFiles, t), [timelineFiles, t]);
   const gitSyncChip = useMemo(() => {
     const state = gitSyncStatus?.state || "disconnected";
     if (state === "syncing" || gitSyncBusy === "sync-now") {
@@ -1328,26 +1380,26 @@ export default function HomePage({
     if (gitSyncStatus?.error) return gitSyncStatus.error;
     const state = gitSyncStatus?.state || "disconnected";
     if (state === "syncing" || gitSyncBusy === "sync-now") {
-      return "A sync is currently running. Local and remote changes will reconcile automatically.";
+      return t("sync.detail.syncing", "A sync is currently running. Local and remote changes will reconcile automatically.");
     }
-    if (state === "idle") return formatSyncTime(gitSyncStatus?.lastSyncedAt);
+    if (state === "idle") return formatSyncTime(gitSyncStatus?.lastSyncedAt, t);
     if (state === "dirty") {
-      return "Local changes are queued for the next sync pass.";
+      return t("sync.detail.dirty", "Local changes are queued for the next sync pass.");
     }
     if (state === "offline") {
-      return "The remote is unreachable right now. Changes stay local until the connection returns.";
+      return t("sync.detail.offline", "The remote is unreachable right now. Changes stay local until the connection returns.");
     }
     if (state === "auth-expired") {
-      return "The saved token no longer works. Paste a replacement token below to resume syncing.";
+      return t("sync.detail.authExpired", "The saved token no longer works. Paste a replacement token below to resume syncing.");
     }
     if (state === "error") {
-      return "The last sync attempt failed. Review the error below and try again.";
+      return t("sync.detail.error", "The last sync attempt failed. Review the error below and try again.");
     }
     if (!gitSyncConnected) {
-      return "Connect a Git repository to keep this library synced across devices.";
+      return t("sync.detail.disconnected", "Connect a Git repository to keep this library synced across devices.");
     }
-    return formatSyncTime(gitSyncStatus?.lastSyncedAt);
-  }, [gitSyncBusy, gitSyncConnected, gitSyncStatus?.error, gitSyncStatus?.lastSyncedAt, gitSyncStatus?.state]);
+    return formatSyncTime(gitSyncStatus?.lastSyncedAt, t);
+  }, [gitSyncBusy, gitSyncConnected, gitSyncStatus?.error, gitSyncStatus?.lastSyncedAt, gitSyncStatus?.state, t]);
 
   const handleGitSyncExcludeChange = async (targetKey, nextChecked) => {
     const targetId = targetKey.endsWith("/") ? targetKey.slice(0, -1) : targetKey;
@@ -1369,7 +1421,7 @@ export default function HomePage({
     return (
       <div className="homepage">
         <div className="homepage-container">
-          <p>Loading timelines...</p>
+          <p>{t("app:loadingTimelines", "Loading timelines...")}</p>
         </div>
       </div>
     );
@@ -1384,7 +1436,7 @@ export default function HomePage({
   };
 
   const renderSortHeader = (field, cellClass) => {
-    const label = SORT_HEADER_LABELS[field];
+    const label = sortHeaderLabels(t)[field];
     const active = sortField === field;
     const caretDir = active ? sortDir : (DEFAULT_SORT_DIR[field] || "asc");
     return (
@@ -1428,8 +1480,8 @@ export default function HomePage({
           />
           <span className="git-sync-tree-label">
             {node.label}
-            {node.conflict && <span className="git-sync-tree-badge">Conflict</span>}
-            {node.neverSync && <span className="git-sync-tree-badge">Never sync</span>}
+            {node.conflict && <span className="git-sync-tree-badge">{t("sync.badges.conflict", "Conflict")}</span>}
+            {node.neverSync && <span className="git-sync-tree-badge">{t("sync.badges.neverSync", "Never sync")}</span>}
           </span>
         </label>
       );
@@ -1473,7 +1525,7 @@ export default function HomePage({
     <div className={`homepage${settingsOnly ? " homepage-settings-only" : ""}`}>
       {!settingsOnly && isDragOver && (
         <div className="homepage-drop-overlay">
-          <div className="homepage-drop-card">Drop a .timeline file to import it</div>
+          <div className="homepage-drop-card">{t("app:dropToImport", "Drop a .timeline file to import it")}</div>
         </div>
       )}
       {!settingsOnly && (
@@ -1494,7 +1546,7 @@ export default function HomePage({
             />
             <aside className="home-sidebar">
               <div className="home-sidebar-top">
-                <div className="home-brand" aria-label="Timelines">
+                <div className="home-brand" aria-label={t("app:brand", "Timelines")}>
                   <span className="home-brand-wordmark">timelines</span>
                   <svg
                     className="home-brand-logo"
@@ -1514,17 +1566,17 @@ export default function HomePage({
 
                 <button className="home-primary-btn" type="button" onClick={handleNewTimeline}>
                   <FilePlus size={14} strokeWidth={2.5} />
-                  <span>New timeline</span>
+                  <span>{t("app:newTimelineButton", "New timeline")}</span>
                 </button>
 
                 <button
                   className="home-secondary-btn"
                   type="button"
                   onClick={() => onImportTimeline?.()}
-                  title="Import a .timeline or .json file into your library"
+                  title={t("app:importHint", "Import a .timeline or .json file into your library")}
                 >
                   <Import size={14} strokeWidth={2.5} />
-                  <span>Import</span>
+                  <span>{t("app:import", "Import")}</span>
                 </button>
 
                 <div className="home-sidebar-section">
@@ -1535,7 +1587,7 @@ export default function HomePage({
                   >
                     <span className="home-nav-item-main">
                       <List size={14} />
-                      <span>Home</span>
+                      <span>{t("app:nav.home", "Home")}</span>
                     </span>
                     <span className="home-nav-count">{rootTimelines.length}</span>
                   </button>
@@ -1546,7 +1598,7 @@ export default function HomePage({
                   >
                     <span className="home-nav-item-main">
                       <History size={14} />
-                      <span>Recent</span>
+                      <span>{t("app:nav.recent", "Recent")}</span>
                     </span>
                     <span className="home-nav-count">{recentTimelines.length}</span>
                   </button>
@@ -1554,7 +1606,7 @@ export default function HomePage({
 
                 <div className="home-sidebar-section home-sidebar-section-folders">
                   <div className="home-sidebar-heading">
-                    <span>Folders</span>
+                    <span>{t("app:nav.folders", "Folders")}</span>
                     <button
                       className="home-sidebar-icon-btn"
                       type="button"
@@ -1562,7 +1614,7 @@ export default function HomePage({
                         setNewFolderName("");
                         setNewFolderDialogOpen(true);
                       }}
-                      aria-label="Create folder"
+                      aria-label={t("app:nav.createFolder", "Create folder")}
                     >
                       <Plus size={14} />
                     </button>
@@ -1570,7 +1622,7 @@ export default function HomePage({
 
                   <div className="home-sidebar-folder-list">
                     {visibleFolders.length === 0 ? (
-                      <div className="home-sidebar-empty">No folders yet</div>
+                      <div className="home-sidebar-empty">{t("app:nav.noFolders", "No folders yet")}</div>
                     ) : (
                       visibleFolders.map((folderPath) => {
                         const folderName = folderPath.split("/").pop();
@@ -1614,7 +1666,7 @@ export default function HomePage({
                     type="button"
                     onClick={handleGitSyncNow}
                     onContextMenu={(e) => { e.preventDefault(); handleOpenSyncSettings(); }}
-                    title={gitSyncStatus?.error || formatSyncTime(gitSyncStatus?.lastSyncedAt)}
+                    title={gitSyncStatus?.error || formatSyncTime(gitSyncStatus?.lastSyncedAt, t)}
                   >
                     <gitSyncChip.icon size={14} className={gitSyncChip.className === "is-syncing" ? "git-sync-chip-spin" : ""} />
                     <span>{gitSyncChip.className === "is-ok" ? (showSyncedConfirm ? "Synced" : "Sync") : gitSyncChip.label}</span>
@@ -1622,16 +1674,16 @@ export default function HomePage({
                 ) : (
                   <button className="home-footer-link" type="button" onClick={handleOpenSyncSettings}>
                     <Cloud size={14} />
-                    <span>Backup</span>
+                    <span>{t("app:nav.backup", "Backup")}</span>
                   </button>
                 )}
                 <button className="home-footer-link" type="button" onClick={handleOpenMarketplace}>
                   <Store size={14} />
-                  <span>Marketplace</span>
+                  <span>{t("app:nav.marketplace", "Marketplace")}</span>
                 </button>
                 <button className="home-footer-link" type="button" onClick={handleOpenGeneralSettings}>
                   <Settings size={14} />
-                  <span>Settings</span>
+                  <span>{t("app:nav.settings", "Settings")}</span>
                 </button>
               </div>
             </aside>
@@ -1643,17 +1695,17 @@ export default function HomePage({
                   <input
                     className="home-search-input"
                     type="text"
-                    placeholder="Search timelines..."
+                    placeholder={t("app:searchPlaceholder", "Search timelines...")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label="Search timelines"
+                    aria-label={t("app:searchAria", "Search timelines")}
                   />
                   {searchQuery && (
                     <button
                       className="home-search-clear"
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      aria-label="Clear search"
+                      aria-label={t("app:clearSearch", "Clear search")}
                     >
                       <X size={14} />
                     </button>
@@ -1668,14 +1720,14 @@ export default function HomePage({
                       onClick={() => setSortMenuOpen((open) => !open)}
                       aria-haspopup="menu"
                       aria-expanded={sortMenuOpen}
-                      aria-label={`Sort: ${SORT_HEADER_LABELS[sortField]}, ${sortDir === "asc" ? "ascending" : "descending"}`}
-                      title={`Sort: ${SORT_HEADER_LABELS[sortField]}, ${sortDir === "asc" ? "ascending" : "descending"}`}
+                      aria-label={t("app:sortSummary", "Sort: {{field}}, {{direction}}", { field: sortHeaderLabels(t)[sortField], direction: sortDir === "asc" ? t("app:sortAscending", "ascending") : t("app:sortDescending", "descending") })}
+                      title={t("app:sortSummary", "Sort: {{field}}, {{direction}}", { field: sortHeaderLabels(t)[sortField], direction: sortDir === "asc" ? t("app:sortAscending", "ascending") : t("app:sortDescending", "descending") })}
                     >
                       <SortDirIcon size={15} />
                     </button>
                     {sortMenuOpen && (
                       <div className="home-sort-menu timeline-context-menu" role="menu">
-                        <div className="home-sort-menu-header">Sort by</div>
+                        <div className="home-sort-menu-header">{t("app:sortBy", "Sort by")}</div>
                         {[
                           ["name", "Name"],
                           ...(showFolderMeta ? [["folder", "Location"]] : []),
@@ -1722,16 +1774,16 @@ export default function HomePage({
                     <button
                       className={`view-mode-pill-btn${viewMode === "list" ? " is-active" : ""}`}
                       onClick={() => handleViewModeChange("list")}
-                      aria-label="List view"
-                      title="List"
+                      aria-label={t("app:view.listAria", "List view")}
+                      title={t("app:view.list", "List")}
                     >
                       <List size={15} />
                     </button>
                     <button
                       className={`view-mode-pill-btn${viewMode === "grid" ? " is-active" : ""}`}
                       onClick={() => handleViewModeChange("grid")}
-                      aria-label="Grid view"
-                      title="Grid"
+                      aria-label={t("app:view.gridAria", "Grid view")}
+                      title={t("app:view.grid", "Grid")}
                     >
                       <LayoutGrid size={15} />
                     </button>
@@ -1746,7 +1798,7 @@ export default function HomePage({
                   </div>
                   <div className="home-content-meta">
                     {filteredTimelines.length} total
-                    {Number.isFinite(lastSyncedMs) && ` · last synced ${relativeTime(lastSyncedMs)}`}
+                    {Number.isFinite(lastSyncedMs) && ` · ${t("app:sync.lastSynced", "last synced {{when}}", { when: relativeTime(lastSyncedMs, t) })}`}
                   </div>
                 </div>
 
@@ -1806,17 +1858,17 @@ export default function HomePage({
                             {/* Rendered even when unknown so the columns stay aligned */}
                             {(counts || [[null, "events"], [null, "spans"], [null, "eras"]]).map(([n, label]) => (
                               <span key={label} className={`home-row-count home-row-count-${label}`}>
-                                {n === null ? "" : countLabel(n, label)}
+                                {n === null ? "" : countLabel(n, label, t)}
                               </span>
                             ))}
-                            <span className="home-row-time">{file.modifiedAt ? relativeTime(file.modifiedAt) : "no edits yet"}</span>
+                            <span className="home-row-time">{file.modifiedAt ? relativeTime(file.modifiedAt, t) : t("app:noEditsYetLower", "no edits yet")}</span>
                             <button
                               className="timeline-item-dots"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleContextMenu(e, file);
                               }}
-                              aria-label="More options"
+                              aria-label={t("common:actions.moreOptions", "More options")}
                             >
                               <MoreVertical size={14} />
                             </button>
@@ -1837,7 +1889,7 @@ export default function HomePage({
                     }}
                   >
                     {filteredTimelines.map((file) => {
-                      const countsLabel = formatElementCounts(file);
+                      const countsLabel = formatElementCounts(file, t);
                       return (
                         <div
                           key={file.id}
@@ -1878,13 +1930,13 @@ export default function HomePage({
                                   e.stopPropagation();
                                   handleContextMenu(e, file);
                                 }}
-                                aria-label="More options"
+                                aria-label={t("common:actions.moreOptions", "More options")}
                               >
                                 <MoreVertical size={14} />
                               </button>
                             </div>
                             {showFolderMeta && <span className="home-row-folder">{file.folder || "Home"}</span>}
-                            <span className="timeline-item-meta">{file.modifiedAt ? `Edited ${relativeTime(file.modifiedAt)}` : "No edits yet"}</span>
+                            <span className="timeline-item-meta">{file.modifiedAt ? t("app:editedAgo", "Edited {{when}}", { when: relativeTime(file.modifiedAt, t) }) : t("app:noEditsYet", "No edits yet")}</span>
                             {countsLabel && <span className="timeline-item-stats">{countsLabel}</span>}
                           </div>
                         </div>
@@ -1920,11 +1972,11 @@ export default function HomePage({
               <button
                 className="settings-back-button"
                 onClick={closeSettings}
-                aria-label="Close settings"
+                aria-label={t("close", "Close settings")}
               >
                 <ArrowLeft size={18} strokeWidth={2} />
               </button>
-              <h2 className="settings-title settings-title-right">APP SETTINGS</h2>
+              <h2 className="settings-title settings-title-right">{t("appSettingsTitle", "APP SETTINGS")}</h2>
             </div>
 
             <div className="settings-layout">
@@ -1934,28 +1986,28 @@ export default function HomePage({
                   className={`settings-sidebar-item${settingsSection === "general" ? " is-active" : ""}`}
                   onClick={() => setSettingsSection("general")}
                 >
-                  General
+                  {t("sections.general", "General")}
                 </button>
                 <button
                   type="button"
                   className={`settings-sidebar-item${settingsSection === "files" ? " is-active" : ""}`}
                   onClick={() => setSettingsSection("files")}
                 >
-                  Files
+                  {t("sections.files", "Files")}
                 </button>
                 <button
                   type="button"
                   className={`settings-sidebar-item${settingsSection === "hotkeys" ? " is-active" : ""}`}
                   onClick={() => setSettingsSection("hotkeys")}
                 >
-                  Hotkeys
+                  {t("sections.hotkeys", "Hotkeys")}
                 </button>
                 <button
                   type="button"
                   className={`settings-sidebar-item${settingsSection === "sync" ? " is-active" : ""}`}
                   onClick={() => setSettingsSection("sync")}
                 >
-                  Sync (Experimental)
+                  {t("sections.sync", "Sync (Experimental)")}
                 </button>
               </div>
               <div className="settings-content">
@@ -1963,17 +2015,17 @@ export default function HomePage({
                   <>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Version 0.7.0-alpha.2</div>
+                        <div className="settings-row-label">{t("general.version.label", "Version {{version}}", { version: APP_VERSION })}</div>
                         <div className="settings-row-description">
                           {updateStatus === 'available'
-                            ? 'A new update is available. Would you like to download it?'
+                            ? t("general.version.available", "A new update is available. Would you like to download it?")
                             : updateStatus === 'downloaded'
-                            ? 'Ready to install'
+                            ? t("general.version.readyToInstall", "Ready to install")
                             : updateStatus === 'error'
-                            ? 'Update check failed'
+                            ? t("general.version.checkFailed", "Update check failed")
                             : updateStatus === 'not-available'
-                            ? 'You have the latest version installed.'
-                            : <>See what's new in <a href="https://github.com/sreegjl/timelines/releases/tag/v0.7.0-alpha.2" target="_blank" rel="noopener noreferrer">v0.7.0-alpha.2</a>.</>}
+                            ? t("general.version.upToDate", "You have the latest version installed.")
+                            : <Trans i18nKey="general.version.whatsNew" ns="settings" values={{ version: APP_VERSION }}>See what&apos;s new in <a href={`https://github.com/sreegjl/timelines/releases/tag/v${APP_VERSION}`} target="_blank" rel="noopener noreferrer">v{"{{version}}"}</a>.</Trans>}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -1987,14 +2039,14 @@ export default function HomePage({
                                     type="button"
                                     onClick={() => window.electron?.openExternal?.({ url: 'https://github.com/sreegjl/timelines/releases/latest' })}
                                   >
-                                    Download Latest Release
+                                    {t("general.version.downloadLatest", "Download Latest Release")}
                                   </button>
                                   <button
                                     className="settings-folder-button"
                                     type="button"
                                     onClick={() => setUpdateStatus(null)}
                                   >
-                                    Not Now
+                                    {t("general.version.notNow", "Not Now")}
                                   </button>
                                 </>
                               ) : (
@@ -2022,14 +2074,14 @@ export default function HomePage({
                                   type="button"
                                   onClick={() => window.electron?.downloadUpdate?.()}
                                 >
-                                  Download Update
+                                  {t("general.version.downloadUpdate", "Download Update")}
                                 </button>
                                 <button
                                   className="settings-folder-button"
                                   type="button"
                                   onClick={() => setUpdateStatus(null)}
                                 >
-                                  Not Now
+                                  {t("general.version.notNow", "Not Now")}
                                 </button>
                               </>
                             ) : (
@@ -2048,9 +2100,9 @@ export default function HomePage({
                     </div>
                     <div className="settings-row settings-row-docs">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Documentation</div>
+                        <div className="settings-row-label">{t("general.documentation.label", "Documentation")}</div>
                         <div className="settings-row-description">
-                          Guides, tips, and feature references.
+                          {t("general.documentation.description", "Guides, tips, and feature references.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2065,7 +2117,7 @@ export default function HomePage({
                                 })
                               }
                             >
-                              Open Docs
+                              {t("general.documentation.open", "Open Docs")}
                             </button>
                           </div>
                         </div>
@@ -2073,9 +2125,9 @@ export default function HomePage({
                     </div>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">App Theme</div>
+                        <div className="settings-row-label">{t("general.appTheme.label", "App Theme")}</div>
                         <div className="settings-row-description">
-                          Used as the default theme for timelines.
+                          {t("general.appTheme.description", "Used as the default theme for timelines.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2085,7 +2137,7 @@ export default function HomePage({
                               className="settings-select-icon-button"
                               type="button"
                               onClick={() => window.electron?.openThemesFolder?.()}
-                              aria-label="Open theme folder"
+                              aria-label={t("general.appTheme.openFolder", "Open theme folder")}
                             >
                               <Folder className="settings-select-icon" size={18} />
                             </button>
@@ -2134,9 +2186,9 @@ export default function HomePage({
                     </div>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">App Font</div>
+                        <div className="settings-row-label">{t("general.appFont.label", "App Font")}</div>
                         <div className="settings-row-description">
-                          Sets the UI font. Add custom fonts in the font folder.
+                          {t("general.appFont.description", "Sets the UI font. Add custom fonts in the font folder.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2146,7 +2198,7 @@ export default function HomePage({
                               className="settings-select-icon-button"
                               type="button"
                               onClick={() => onOpenFontsFolder?.()}
-                              aria-label="Open font folder"
+                              aria-label={t("general.appFont.openFolder", "Open font folder")}
                             >
                               <Folder className="settings-select-icon" size={18} />
                             </button>
@@ -2167,9 +2219,9 @@ export default function HomePage({
                     </div>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">App Font Size</div>
+                        <div className="settings-row-label">{t("general.appFontSize.label", "App Font Size")}</div>
                         <div className="settings-row-description">
-                          Controls the base UI font size.
+                          {t("general.appFontSize.description", "Controls the base UI font size.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2182,7 +2234,7 @@ export default function HomePage({
                             step={1}
                             value={appFontSize || 14}
                             onChange={(e) => onAppFontSizeChange?.(e.target.value)}
-                            aria-label="App font size"
+                            aria-label={t("general.appFontSize.aria", "App font size")}
                           />
                           <div
                             className="settings-slider-tooltip"
@@ -2196,11 +2248,37 @@ export default function HomePage({
                       </div>
                     </div>
 
+                    {/* Hidden until a second language ships. */}
+                    {SUPPORTED_LOCALES.length > 1 && (
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Start App Maximized</div>
+                        <div className="settings-row-label">{t("general.language.label", "Language")}</div>
                         <div className="settings-row-description">
-                          Launch the app in a maximized window.
+                          {t("general.language.description", "Language used for the app interface. Date and time formats are set per timeline and are not affected by this.")}
+                        </div>
+                      </div>
+                      <div className="settings-row-right">
+                        <select
+                          className="settings-select"
+                          value={language}
+                          onChange={(e) => handleLanguageChange(e.target.value)}
+                        >
+                          <option value="">{t("general.language.systemDefault", "System default")}</option>
+                          {SUPPORTED_LOCALES.map((locale) => (
+                            <option key={locale.code} value={locale.code}>
+                              {locale.nativeName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    )}
+
+                    <div className="settings-row">
+                      <div className="settings-row-left">
+                        <div className="settings-row-label">{t("general.startMaximized.label", "Start App Maximized")}</div>
+                        <div className="settings-row-description">
+                          {t("general.startMaximized.description", "Launch the app in a maximized window.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2217,9 +2295,9 @@ export default function HomePage({
 
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Disable Thumbnails</div>
+                        <div className="settings-row-label">{t("general.disableThumbnails.label", "Disable Thumbnails")}</div>
                         <div className="settings-row-description">
-                          Hide timeline previews on cards and skip capturing them when leaving a timeline.
+                          {t("general.disableThumbnails.description", "Hide timeline previews on cards and skip capturing them when leaving a timeline.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2236,9 +2314,9 @@ export default function HomePage({
 
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Hardware Acceleration</div>
+                        <div className="settings-row-label">{t("general.hardwareAcceleration.label", "Hardware Acceleration")}</div>
                         <div className="settings-row-description">
-                          Disable if you experience visual glitches. Requires restart.
+                          {t("general.hardwareAcceleration.description", "Disable if you experience visual glitches. Requires restart.")}
                         </div>
                       </div>
                       <div className="settings-row-right">
@@ -2260,7 +2338,7 @@ export default function HomePage({
                     {Object.entries(keybinds).map(([id, { label, keys }]) => (
                       <div className="settings-row" key={id}>
                         <div className="settings-row-left">
-                          <div className="settings-row-label">{label}</div>
+                          <div className="settings-row-label">{keybindLabels[id] || label}</div>
                         </div>
                         <div className="settings-row-right">
                           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -2268,7 +2346,7 @@ export default function HomePage({
                               <span
                                 className="hotkey-badge hotkey-badge-recording"
                               >
-                                Press a key…
+                                {t("hotkeys.pressKey", "Press a key…")}
                               </span>
                             ) : (
                               <span className="hotkey-badge">
@@ -2286,7 +2364,7 @@ export default function HomePage({
                             <button
                               className="hotkey-icon-button"
                               type="button"
-                              title="Reset to default"
+                              title={t("common:actions.resetToDefault", "Reset to default")}
                               onClick={() => {
                                 const updated = {
                                   ...keybinds,
@@ -2310,9 +2388,9 @@ export default function HomePage({
                     {!window.electron?.gitSyncStatus ? (
                       <div className="settings-row">
                         <div className="settings-row-left">
-                          <div className="settings-row-label">Git Sync</div>
+                          <div className="settings-row-label">{t("sync.label", "Git Sync")}</div>
                           <div className="settings-row-description">
-                            Git sync is only available in the desktop app.
+                            {t("sync.desktopOnly", "Git sync is only available in the desktop app.")}
                           </div>
                         </div>
                       </div>
@@ -2322,7 +2400,7 @@ export default function HomePage({
                           <>
                             <div className="git-sync-intro">
                               <div className="git-sync-intro-text">
-                                <div className="git-sync-intro-title">Git Sync</div>
+                                <div className="git-sync-intro-title">{t("sync.label", "Git Sync")}</div>
                                 <div className="git-sync-intro-desc">
                                   Sync this library across devices using your own Git repository. Follow the steps below to connect one.
                                 </div>
@@ -2332,9 +2410,9 @@ export default function HomePage({
                             <div className="git-sync-step-row">
                               <div className="git-sync-step-badge">1</div>
                               <div className="git-sync-step-main">
-                                <div className="git-sync-step-title">Create a repository</div>
+                                <div className="git-sync-step-title">{t("sync.steps.create.title", "Create a repository")}</div>
                                 <div className="git-sync-step-text">
-                                  Create an empty repository on GitHub. This is where your synced library will live.
+                                  {t("sync.steps.create.text", "Create an empty repository on GitHub. This is where your synced library will live.")}
                                 </div>
                               </div>
                             </div>
@@ -2342,9 +2420,9 @@ export default function HomePage({
                             <div className="git-sync-step-row">
                               <div className="git-sync-step-badge">2</div>
                               <div className="git-sync-step-main">
-                                <div className="git-sync-step-title">Generate an access token</div>
+                                <div className="git-sync-step-title">{t("sync.steps.token.title", "Generate an access token")}</div>
                                 <div className="git-sync-step-text">
-                                  Create a personal access token that can read and write that repo. Fine-grained tokens scoped to the single repo are recommended; it is stored locally with OS encryption when available.
+                                  {t("sync.steps.token.text", "Create a personal access token that can read and write that repo. Fine-grained tokens scoped to the single repo are recommended; it is stored locally with OS encryption when available.")}
                                 </div>
                               </div>
                             </div>
@@ -2352,13 +2430,13 @@ export default function HomePage({
                             <div className="git-sync-step-row">
                               <div className="git-sync-step-badge">3</div>
                               <div className="git-sync-step-main">
-                                <div className="git-sync-step-title">Connect the remote</div>
+                                <div className="git-sync-step-title">{t("sync.steps.connect.title", "Connect the remote")}</div>
                                 <div className="git-sync-step-text">
-                                  Enter the repository's HTTPS clone URL, branch, and token. Connect every device to the same remote to keep libraries aligned.
+                                  {t("sync.steps.connect.text", "Enter the repository's HTTPS clone URL, branch, and token. Connect every device to the same remote to keep libraries aligned.")}
                                 </div>
                                 <div className="git-sync-step-form">
                                   <label className="git-sync-step-field">
-                                    <span className="git-sync-step-field-label">Repository URL</span>
+                                    <span className="git-sync-step-field-label">{t("sync.repositoryUrl", "Repository URL")}</span>
                                     <input
                                       className="homepage-search git-sync-input git-sync-input-wide"
                                       value={gitSyncRemoteUrl}
@@ -2367,16 +2445,16 @@ export default function HomePage({
                                     />
                                   </label>
                                   <label className="git-sync-step-field">
-                                    <span className="git-sync-step-field-label">Branch</span>
+                                    <span className="git-sync-step-field-label">{t("sync.branch", "Branch")}</span>
                                     <input
                                       className="homepage-search git-sync-input"
                                       value={gitSyncBranch}
                                       onChange={(e) => setGitSyncBranch(e.target.value)}
-                                      placeholder="main"
+                                      placeholder={t("sync.branchPlaceholder", "main")}
                                     />
                                   </label>
                                   <label className="git-sync-step-field">
-                                    <span className="git-sync-step-field-label">Personal Access Token</span>
+                                    <span className="git-sync-step-field-label">{t("sync.token", "Personal Access Token")}</span>
                                     <input
                                       className="homepage-search git-sync-input git-sync-input-wide"
                                       type="password"
@@ -2405,7 +2483,7 @@ export default function HomePage({
                           <>
                             <div className="git-sync-intro">
                               <div className="git-sync-intro-text">
-                                <div className="git-sync-intro-title">Git Sync</div>
+                                <div className="git-sync-intro-title">{t("sync.label", "Git Sync")}</div>
                                 <div className="git-sync-intro-desc">
                                   {gitSyncStatus.repo.owner && gitSyncStatus.repo.repo
                                     ? `Connected to ${gitSyncStatus.repo.owner}/${gitSyncStatus.repo.repo}.`
@@ -2416,7 +2494,7 @@ export default function HomePage({
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Status</div>
+                                <div className="settings-row-label">{t("sync.status", "Status")}</div>
                                 <div className="settings-row-description">{gitSyncStatusDetail}</div>
                               </div>
                               <div className="settings-row-right">
@@ -2437,7 +2515,7 @@ export default function HomePage({
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Repository</div>
+                                <div className="settings-row-label">{t("sync.repository", "Repository")}</div>
                                 <div className="settings-row-description">{gitSyncStatus.repo.url} · {gitSyncStatus.repo.branch}</div>
                               </div>
                               <div className="settings-row-right">
@@ -2449,14 +2527,14 @@ export default function HomePage({
                                       disabled={!gitSyncRemoteOpenUrl}
                                       onClick={() => window.electron?.openExternal?.({ url: gitSyncRemoteOpenUrl })}
                                     >
-                                      Open Remote
+                                      {t("sync.openRemote", "Open Remote")}
                                     </button>
                                     <button
                                       className="settings-folder-button"
                                       type="button"
                                       onClick={handleGitSyncDisconnect}
                                     >
-                                      Disconnect
+                                      {t("sync.disconnect", "Disconnect")}
                                     </button>
                                   </div>
                                 </div>
@@ -2465,7 +2543,7 @@ export default function HomePage({
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Personal Access Token</div>
+                                <div className="settings-row-label">{t("sync.token", "Personal Access Token")}</div>
                                 <div className="settings-row-description">
                                   {gitSyncStatus?.state === "auth-expired"
                                     ? "The saved token no longer works. Paste a replacement to resume sync."
@@ -2497,14 +2575,14 @@ export default function HomePage({
 
                             <div className="settings-row settings-row-section">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Sync Behavior</div>
+                                <div className="settings-row-label">{t("sync.behavior", "Sync Behavior")}</div>
                               </div>
                             </div>
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Machine Label</div>
-                                <div className="settings-row-description">Identifies this device in commit messages and conflict copies.</div>
+                                <div className="settings-row-label">{t("sync.machineLabel.label", "Machine Label")}</div>
+                                <div className="settings-row-description">{t("sync.machineLabel.description", "Identifies this device in commit messages and conflict copies.")}</div>
                               </div>
                               <div className="settings-row-right">
                                 <input
@@ -2512,15 +2590,15 @@ export default function HomePage({
                                   value={gitSyncMachineLabel}
                                   onChange={(e) => setGitSyncMachineLabel(e.target.value)}
                                   onBlur={() => saveGitSyncSettings({ machineLabel: gitSyncMachineLabel })}
-                                  placeholder="machine label"
+                                  placeholder={t("sync.machineLabel.placeholder", "machine label")}
                                 />
                               </div>
                             </div>
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Auto Sync</div>
-                                <div className="settings-row-description">Sync changes automatically after the selected idle interval.</div>
+                                <div className="settings-row-label">{t("sync.autoSync.label", "Auto Sync")}</div>
+                                <div className="settings-row-description">{t("sync.autoSync.description", "Sync changes automatically after the selected idle interval.")}</div>
                               </div>
                               <div className="settings-row-right">
                                 <div className="git-sync-row-controls">
@@ -2551,7 +2629,7 @@ export default function HomePage({
 
                             <div className="settings-row git-sync-row-stacked">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Synced Timelines</div>
+                                <div className="settings-row-label">{t("sync.syncedTimelines", "Synced Timelines")}</div>
                                 <div className="settings-row-description">
                                   Unchecking a timeline or folder adds it to the shared exclusion list stored in this repo. Other devices stop syncing it after they pull the change.
                                 </div>
@@ -2559,7 +2637,7 @@ export default function HomePage({
                               <div className="settings-row-right">
                                 <div className="settings-folder settings-folder-column git-sync-tree-wrap git-sync-tree-panel">
                                   {gitSyncTree.children.length > 0 ? gitSyncTree.children.map((node) => renderGitSyncTreeNode(node)) : (
-                                    <div className="settings-row-description">No local timelines found.</div>
+                                    <div className="settings-row-description">{t("sync.noLocalTimelines", "No local timelines found.")}</div>
                                   )}
                                 </div>
                               </div>
@@ -2567,14 +2645,14 @@ export default function HomePage({
 
                             <div className="settings-row settings-row-section">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Repository Options</div>
+                                <div className="settings-row-label">{t("sync.repositoryOptions", "Repository Options")}</div>
                               </div>
                             </div>
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Generate README</div>
-                                <div className="settings-row-description">Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only. A README you wrote yourself is never touched.</div>
+                                <div className="settings-row-label">{t("sync.generateReadme.label", "Generate README")}</div>
+                                <div className="settings-row-description">{t("sync.generateReadme.description", "Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only. A README you wrote yourself is never touched.")}</div>
                               </div>
                               <div className="settings-row-right">
                                 <label className="settings-toggle">
@@ -2590,7 +2668,7 @@ export default function HomePage({
 
                             <div className="settings-row">
                               <div className="settings-row-left">
-                                <div className="settings-row-label">Mirror</div>
+                                <div className="settings-row-label">{t("sync.mirror", "Mirror")}</div>
                                 <div className="settings-row-description">
                                   Timelines keeps a local clone of the repo{gitSyncMirrorBytes == null ? "" : ` (${formatMirrorBytes(gitSyncMirrorBytes)})`}. Rebuild it if history grows large or the mirror looks out of sync; your library is never touched.
                                 </div>
@@ -2635,7 +2713,7 @@ export default function HomePage({
                   <>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Timeline Folder</div>
+                        <div className="settings-row-label">{t("files.timelineFolder", "Timeline Folder")}</div>
                         <div
                           className="settings-path-pill settings-path-pill-clickable"
                           title={timelineStorageDir || "Default app storage"}
@@ -2658,14 +2736,14 @@ export default function HomePage({
                               type="button"
                               onClick={() => onPickTimelinesDir?.()}
                             >
-                              Choose...
+                              {t("files.choose", "Choose...")}
                             </button>
                             <button
                               className="settings-folder-button"
                               type="button"
                               onClick={() => onTimelineStorageDirChange?.("")}
                             >
-                              Use Default
+                              {t("files.useDefault", "Use Default")}
                             </button>
                           </div>
                         </div>
@@ -2673,7 +2751,7 @@ export default function HomePage({
                     </div>
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Notes Folder</div>
+                        <div className="settings-row-label">{t("files.notesFolder", "Notes Folder")}</div>
                         <div
                           className="settings-path-pill settings-path-pill-clickable"
                           title={notesStorageDir || "Default app storage"}
@@ -2696,14 +2774,14 @@ export default function HomePage({
                               type="button"
                               onClick={() => onPickNotesDir?.()}
                             >
-                              Choose...
+                              {t("files.choose", "Choose...")}
                             </button>
                             <button
                               className="settings-folder-button"
                               type="button"
                               onClick={() => onNotesStorageDirChange?.("")}
                             >
-                              Use Default
+                              {t("files.useDefault", "Use Default")}
                             </button>
                           </div>
                         </div>
@@ -2712,7 +2790,7 @@ export default function HomePage({
 
                     <div className="settings-row">
                       <div className="settings-row-left">
-                        <div className="settings-row-label">Assets Folder</div>
+                        <div className="settings-row-label">{t("files.assetsFolder", "Assets Folder")}</div>
                         <div
                           className="settings-path-pill settings-path-pill-clickable"
                           title={assetsStorageDir || "Default app storage"}
@@ -2732,14 +2810,14 @@ export default function HomePage({
                               type="button"
                               onClick={() => onPickAssetsDir?.()}
                             >
-                              Choose...
+                              {t("files.choose", "Choose...")}
                             </button>
                             <button
                               className="settings-folder-button"
                               type="button"
                               onClick={() => onAssetsStorageDirChange?.("")}
                             >
-                              Use Default
+                              {t("files.useDefault", "Use Default")}
                             </button>
                           </div>
                         </div>
@@ -2764,11 +2842,11 @@ export default function HomePage({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="settings-header">
-              <h2 className="settings-title">DELETE TIMELINE</h2>
+              <h2 className="settings-title">{t("app:deleteDialog.title", "DELETE TIMELINE")}</h2>
               <button
                 className="settings-back-button"
                 onClick={() => setDeleteDialogFile(null)}
-                aria-label="Close delete dialog"
+                aria-label={t("app:deleteDialog.closeAria", "Close delete dialog")}
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -2785,7 +2863,7 @@ export default function HomePage({
                   checked={deleteDialogWithNotes}
                   onChange={(e) => setDeleteDialogWithNotes(e.target.checked)}
                 />
-                Also delete notes for this timeline
+                {t("app:deleteDialog.alsoDeleteNotes", "Also delete notes for this timeline")}
               </label>
               <label className="confirm-checkbox">
                 <input
@@ -2793,7 +2871,7 @@ export default function HomePage({
                   checked={deleteDialogWithAssets}
                   onChange={(e) => setDeleteDialogWithAssets(e.target.checked)}
                 />
-                Also delete images for this timeline
+                {t("app:deleteDialog.alsoDeleteImages", "Also delete images for this timeline")}
               </label>
             </div>
 
@@ -2802,13 +2880,13 @@ export default function HomePage({
                 className="settings-folder-button"
                 onClick={() => setDeleteDialogFile(null)}
               >
-                Cancel
+                {t("common:actions.cancel", "Cancel")}
               </button>
               <button
                 className="settings-folder-button confirm-delete-button"
                 onClick={handleConfirmDelete}
               >
-                Delete
+                {t("common:actions.delete", "Delete")}
               </button>
             </div>
           </div>
@@ -2841,7 +2919,7 @@ export default function HomePage({
               onClick={() => handleMenuAction(() => handleOpenGitSyncShare(contextMenu.file))}
             >
               <Share2 size={16} />
-              <span>Share Viewer Link</span>
+              <span>{t("app:menu.shareViewerLink", "Share Viewer Link")}</span>
             </button>
           )}
 
@@ -2851,7 +2929,7 @@ export default function HomePage({
               onClick={() => handleMenuAction(() => handleOpenGitSyncHistory(contextMenu.file))}
             >
               <History size={16} />
-              <span>Version History</span>
+              <span>{t("app:menu.versionHistory", "Version History")}</span>
             </button>
           )}
 
@@ -2865,7 +2943,7 @@ export default function HomePage({
               onClick={() => handleMenuAction(() => handleDuplicate(contextMenu.file))}
             >
               <Copy size={16} />
-              <span>Duplicate</span>
+              <span>{t("common:actions.duplicate", "Duplicate")}</span>
             </button>
           )}
 
@@ -2875,7 +2953,7 @@ export default function HomePage({
               onClick={() => handleMenuAction(() => { setRenameTarget({ type: 'timeline', id: contextMenu.file.id, currentName: contextMenu.file.name }); setRenameName(contextMenu.file.name); })}
             >
               <Pencil size={16} />
-              <span>Rename</span>
+              <span>{t("common:actions.rename", "Rename")}</span>
             </button>
           )}
           <button
@@ -2883,7 +2961,7 @@ export default function HomePage({
             onClick={() => handleMenuAction(() => handleOpenMoveDialog(contextMenu.file))}
           >
             <Folder size={16} />
-            <span>Move to Folder</span>
+            <span>{t("app:menu.moveToFolder", "Move to Folder")}</span>
           </button>
 
           <div className="context-menu-separator" />
@@ -2893,7 +2971,7 @@ export default function HomePage({
             onClick={() => handleMenuAction(() => handleDelete(contextMenu.file))}
           >
             <Trash2 size={16} />
-            <span>Delete</span>
+            <span>{t("common:actions.delete", "Delete")}</span>
           </button>
         </div>
       )}
@@ -2913,10 +2991,10 @@ export default function HomePage({
                 {!gitSyncShareDialog.info.canShareViewer ? (
                   <>
                     <p className="folder-modal-text">
-                      Viewer links currently work for GitHub remotes and require the repo to be public.
+                      {t("sync.share.githubOnly", "Viewer links currently work for GitHub remotes and require the repo to be public.")}
                     </p>
                     <p className="folder-modal-text">
-                      This remote does not map to a GitHub viewer link yet.
+                      {t("sync.share.noViewerLink", "This remote does not map to a GitHub viewer link yet.")}
                     </p>
                   </>
                 ) : gitSyncShareDialog.info.isPublic === false ? (
@@ -2927,7 +3005,7 @@ export default function HomePage({
                     <div className="folder-modal-actions">
                       <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: `${gitSyncShareDialog.info.github.htmlUrl}/settings` })}>
                         <ExternalLink size={14} />
-                        <span>Open Repo Settings</span>
+                        <span>{t("app:menu.openRepoSettings", "Open Repo Settings")}</span>
                       </button>
                     </div>
                     {gitSyncShareDialog.info.githubBlobUrl && (
@@ -2940,7 +3018,7 @@ export default function HomePage({
                           </button>
                           <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.githubBlobUrl })}>
                             <ExternalLink size={14} />
-                            <span>Open</span>
+                            <span>{t("common:actions.open", "Open")}</span>
                           </button>
                         </div>
                       </div>
@@ -2955,33 +3033,33 @@ export default function HomePage({
                     </p>
                     {gitSyncShareDialog.info.pending && (
                       <p className="folder-modal-text">
-                        This timeline has local changes or unpushed commits. Sync before sharing if you want the latest version online.
+                        {t("sync.share.pending", "This timeline has local changes or unpushed commits. Sync before sharing if you want the latest version online.")}
                       </p>
                     )}
 
                     <div className="git-sync-link-block">
-                      <div className="git-sync-link-label">Latest Branch Link</div>
+                      <div className="git-sync-link-label">{t("sync.share.latestLink", "Latest Branch Link")}</div>
                       <code className="git-sync-link-code">{gitSyncShareDialog.info.viewerUrl}</code>
                       <div className="folder-modal-actions">
                         {gitSyncShareDialog.info.pending ? (
                           <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleSyncAndCopyGitSyncLink("viewerUrl")}>
-                            Sync & Copy
+                            {t("sync.share.syncAndCopy", "Sync & Copy")}
                           </button>
                         ) : (
                           <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleCopyGitSyncLink("viewerUrl")}>
-                            {gitSyncShareDialog.copied === "viewerUrl" ? "Copied" : "Copy Link"}
+                            {gitSyncShareDialog.copied === "viewerUrl" ? t("sync.share.copied", "Copied") : t("sync.share.copyLink", "Copy Link")}
                           </button>
                         )}
                         <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.viewerUrl })}>
                           <ExternalLink size={14} />
-                          <span>Open</span>
+                          <span>{t("common:actions.open", "Open")}</span>
                         </button>
                       </div>
                     </div>
 
                     {gitSyncShareDialog.info.exactViewerUrl && (
                       <div className="git-sync-link-block">
-                        <div className="git-sync-link-label">Last Synced Exact-Version Link</div>
+                        <div className="git-sync-link-label">{t("sync.share.exactLink", "Last Synced Exact-Version Link")}</div>
                         <code className="git-sync-link-code">{gitSyncShareDialog.info.exactViewerUrl}</code>
                         <div className="folder-modal-actions">
                           <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleCopyGitSyncLink("exactViewerUrl")}>
@@ -2989,7 +3067,7 @@ export default function HomePage({
                           </button>
                           <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: gitSyncShareDialog.info.exactViewerUrl })}>
                             <ExternalLink size={14} />
-                            <span>Open</span>
+                            <span>{t("common:actions.open", "Open")}</span>
                           </button>
                         </div>
                       </div>
@@ -2999,7 +3077,7 @@ export default function HomePage({
               </>
             )}
             <div className="folder-modal-actions">
-              <button className="folder-modal-btn" onClick={() => setGitSyncShareDialog(null)}>Close</button>
+              <button className="folder-modal-btn" onClick={() => setGitSyncShareDialog(null)}>{t("common:actions.close", "Close")}</button>
             </div>
           </div>
         </div>
@@ -3010,7 +3088,7 @@ export default function HomePage({
           <div className="folder-modal git-sync-modal git-sync-history-modal" onClick={(e) => e.stopPropagation()}>
             <div className="git-sync-modal-title git-sync-history-title">
               <History size={16} />
-              <span>Version History</span>
+              <span>{t("app:menu.versionHistory", "Version History")}</span>
             </div>
             <div className="git-sync-history-subtitle">{gitSyncHistoryDialog.file?.name}</div>
             {gitSyncHistoryDialog.loading && (
@@ -3022,7 +3100,7 @@ export default function HomePage({
             {!gitSyncHistoryDialog.loading && gitSyncHistoryDialog.history && (
               <>
                 {gitSyncHistoryDialog.history.entries.length === 0 ? (
-                  <p className="folder-modal-text">No synced history found for this timeline yet.</p>
+                  <p className="folder-modal-text">{t("sync.noHistory", "No synced history found for this timeline yet.")}</p>
                 ) : (
                   <div className="git-sync-history-list">
                     {gitSyncHistoryDialog.history.entries.map((entry) => (
@@ -3044,7 +3122,7 @@ export default function HomePage({
                           {entry.viewerUrl && (
                             <button className="folder-modal-btn" onClick={() => window.electron?.openExternal?.({ url: entry.viewerUrl })}>
                               <ExternalLink size={14} />
-                              <span>Open</span>
+                              <span>{t("common:actions.open", "Open")}</span>
                             </button>
                           )}
                           <button
@@ -3062,7 +3140,7 @@ export default function HomePage({
               </>
             )}
             <div className="folder-modal-actions">
-              <button className="folder-modal-btn" onClick={() => setGitSyncHistoryDialog(null)}>Close</button>
+              <button className="folder-modal-btn" onClick={() => setGitSyncHistoryDialog(null)}>{t("common:actions.close", "Close")}</button>
             </div>
           </div>
         </div>
@@ -3097,14 +3175,14 @@ export default function HomePage({
             onClick={() => { setRenameTarget({ type: 'folder', id: folderContextMenu.folderPath, currentName: folderContextMenu.folderName }); setRenameName(folderContextMenu.folderName); setFolderContextMenu(null); }}
           >
             <Pencil size={16} />
-            <span>Rename</span>
+            <span>{t("common:actions.rename", "Rename")}</span>
           </button>
           <button
             className="context-menu-item"
             onClick={async () => { const fc = folderContextMenu; setFolderContextMenu(null); const folders = await listFolders(); setAvailableFolders(folders.filter(f => f !== fc.folderPath && !f.startsWith(fc.folderPath + '/') && !f.split('/').some(part => part.startsWith('.') || part.endsWith('.assets')))); setMoveFolderTarget(fc); }}
           >
             <Folder size={16} />
-            <span>Move to Folder</span>
+            <span>{t("app:menu.moveToFolder", "Move to Folder")}</span>
           </button>
           <div className="context-menu-separator" />
           <button
@@ -3112,7 +3190,7 @@ export default function HomePage({
             onClick={() => { const fc = folderContextMenu; setFolderContextMenu(null); const fileCount = timelineFiles.filter(f => (f.folder ?? '').startsWith(fc.folderPath)).length; setDeleteFolderTarget({ ...fc, fileCount }); }}
           >
             <Trash2 size={16} />
-            <span>Delete</span>
+            <span>{t("common:actions.delete", "Delete")}</span>
           </button>
         </div>
       )}
@@ -3139,8 +3217,8 @@ export default function HomePage({
             />
             {renameError && <p className="folder-modal-text folder-modal-error">{renameError}</p>}
             <div className="folder-modal-actions">
-              <button className="folder-modal-btn" onClick={closeRenameDialog}>Cancel</button>
-              <button className="folder-modal-btn folder-modal-btn-primary" onClick={handleRename} disabled={!renameName.trim()}>Rename</button>
+              <button className="folder-modal-btn" onClick={closeRenameDialog}>{t("common:actions.cancel", "Cancel")}</button>
+              <button className="folder-modal-btn folder-modal-btn-primary" onClick={handleRename} disabled={!renameName.trim()}>{t("common:actions.rename", "Rename")}</button>
             </div>
           </div>
         </div>
@@ -3152,12 +3230,16 @@ export default function HomePage({
             <p className="folder-modal-text">
               <strong>{deleteFolderTarget.folderName}</strong>
               {deleteFolderTarget.fileCount > 0
-                ? ` contains ${deleteFolderTarget.fileCount} timeline${deleteFolderTarget.fileCount !== 1 ? 's' : ''}. This cannot be undone.`
-                : ' will be permanently deleted.'}
+                ? t("app:deleteFolder.withTimelines", {
+                    count: deleteFolderTarget.fileCount,
+                    defaultValue_one: " contains {{count}} timeline. This cannot be undone.",
+                    defaultValue_other: " contains {{count}} timelines. This cannot be undone.",
+                  })
+                : t("app:deleteFolder.empty", " will be permanently deleted.")}
             </p>
             <div className="folder-modal-actions">
-              <button className="folder-modal-btn" onClick={() => setDeleteFolderTarget(null)}>Cancel</button>
-              <button className="folder-modal-btn folder-modal-btn-danger" onClick={handleDeleteFolder}>Delete</button>
+              <button className="folder-modal-btn" onClick={() => setDeleteFolderTarget(null)}>{t("common:actions.cancel", "Cancel")}</button>
+              <button className="folder-modal-btn folder-modal-btn-danger" onClick={handleDeleteFolder}>{t("common:actions.delete", "Delete")}</button>
             </div>
           </div>
         </div>
@@ -3175,15 +3257,15 @@ export default function HomePage({
             <input
               className="folder-modal-input"
               type="text"
-              placeholder="Folder name"
+              placeholder={t("app:folderNamePlaceholder", "Folder name")}
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
               autoFocus
             />
             <div className="folder-modal-actions">
-              <button className="folder-modal-btn" onClick={() => setNewFolderDialogOpen(false)}>Cancel</button>
-              <button className="folder-modal-btn folder-modal-btn-primary" onClick={handleCreateFolder} disabled={!newFolderName.trim()}>Create</button>
+              <button className="folder-modal-btn" onClick={() => setNewFolderDialogOpen(false)}>{t("common:actions.cancel", "Cancel")}</button>
+              <button className="folder-modal-btn folder-modal-btn-primary" onClick={handleCreateFolder} disabled={!newFolderName.trim()}>{t("common:actions.create", "Create")}</button>
             </div>
           </div>
         </div>

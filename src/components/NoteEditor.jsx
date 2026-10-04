@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useTranslation } from "react-i18next";
 import { Heading1, Heading2, Heading3, Bold, Italic, Strikethrough, Underline, Highlighter, Link2, Trash2, Unlink, ImagePlay, Paperclip } from "lucide-react";
 
 const NoteEditor = forwardRef(function NoteEditor(
   { initialContent, isNoteLoading, noteExists, onSave, onUnlink, onDelete, onPickLocalImage },
   ref
 ) {
+  const { t } = useTranslation("timeline");
   const [noteContent, setNoteContent] = useState(initialContent ?? "");
   const noteContentRef = useRef(noteContent);
   const textareaRef = useRef(null);
@@ -154,27 +156,27 @@ const NoteEditor = forwardRef(function NoteEditor(
     <div className="note-editor">
       <div className="note-toolbar">
         <div className="note-toolbar-format">
-          <button type="button" onClick={() => insertHeading(1)} title="Heading 1"><Heading1 size={14} /></button>
-          <button type="button" onClick={() => insertHeading(2)} title="Heading 2"><Heading2 size={14} /></button>
-          <button type="button" onClick={() => insertHeading(3)} title="Heading 3"><Heading3 size={14} /></button>
+          <button type="button" onClick={() => insertHeading(1)} title={t("noteEditor.heading1", "Heading 1")}><Heading1 size={14} /></button>
+          <button type="button" onClick={() => insertHeading(2)} title={t("noteEditor.heading2", "Heading 2")}><Heading2 size={14} /></button>
+          <button type="button" onClick={() => insertHeading(3)} title={t("noteEditor.heading3", "Heading 3")}><Heading3 size={14} /></button>
           <div className="note-toolbar-divider" />
-          <button type="button" onClick={() => wrapSelection('**')} title="Bold"><Bold size={14} /></button>
-          <button type="button" onClick={() => wrapSelection('*')} title="Italic"><Italic size={14} /></button>
-          <button type="button" onClick={() => wrapSelection('~~')} title="Strikethrough"><Strikethrough size={14} /></button>
-          <button type="button" onClick={() => wrapSelection('__')} title="Underline"><Underline size={14} /></button>
-          <button type="button" onClick={() => wrapSelection('==')} title="Highlight"><Highlighter size={14} /></button>
+          <button type="button" onClick={() => wrapSelection('**')} title={t("noteEditor.bold", "Bold")}><Bold size={14} /></button>
+          <button type="button" onClick={() => wrapSelection('*')} title={t("noteEditor.italic", "Italic")}><Italic size={14} /></button>
+          <button type="button" onClick={() => wrapSelection('~~')} title={t("noteEditor.strikethrough", "Strikethrough")}><Strikethrough size={14} /></button>
+          <button type="button" onClick={() => wrapSelection('__')} title={t("noteEditor.underline", "Underline")}><Underline size={14} /></button>
+          <button type="button" onClick={() => wrapSelection('==')} title={t("noteEditor.highlight", "Highlight")}><Highlighter size={14} /></button>
           <div className="note-toolbar-divider" />
-          <button type="button" onClick={insertLink} title="Link"><Link2 size={14} /></button>
-          <button type="button" onClick={insertImage} title="Embed image or video"><ImagePlay size={14} /></button>
+          <button type="button" onClick={insertLink} title={t("noteEditor.link", "Link")}><Link2 size={14} /></button>
+          <button type="button" onClick={insertImage} title={t("noteEditor.embed", "Embed image or video")}><ImagePlay size={14} /></button>
           {onPickLocalImage && (
-            <button type="button" onClick={insertLocalImage} title="Insert local image"><Paperclip size={14} /></button>
+            <button type="button" onClick={insertLocalImage} title={t("noteEditor.insertLocalImage", "Insert local image")}><Paperclip size={14} /></button>
           )}
         </div>
         {noteExists && (
           <div className="note-toolbar-actions">
             <div className="note-toolbar-divider" />
-            <button type="button" onClick={onUnlink} title="Unlink Note"><Unlink size={14} /></button>
-            <button type="button" onClick={onDelete} title="Delete Note"><Trash2 size={14} /></button>
+            <button type="button" onClick={onUnlink} title={t("noteEditor.unlink", "Unlink Note")}><Unlink size={14} /></button>
+            <button type="button" onClick={onDelete} title={t("noteEditor.delete", "Delete Note")}><Trash2 size={14} /></button>
           </div>
         )}
       </div>
@@ -184,7 +186,7 @@ const NoteEditor = forwardRef(function NoteEditor(
         value={noteContent}
         onChange={(e) => setNoteContent(e.target.value)}
         onBlur={flushSave}
-        placeholder={isNoteLoading ? "Loading note..." : "Write your note..."}
+        placeholder={isNoteLoading ? t("noteEditor.loading", "Loading note...") : t("noteEditor.placeholder", "Write your note...")}
         rows={8}
       />
     </div>

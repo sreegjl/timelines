@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import { formatYear } from "../utils/timelineUtils";
 import useEscapeKey from "../hooks/useEscapeKey";
@@ -29,6 +30,27 @@ const VIDEO_ZOOM_MAX = 1;
 
 
 export default function ExportVideoModal({ isOpen, onClose, timelineData, timelineViewRef, onExportComplete }) {
+  const { t } = useTranslation("app");
+  // Listed statically so i18next-parser sees every option key.
+  const optionLabels = useMemo(() => ({
+    resolution: {
+      hd: t("exportVideo.resolutions.hd", "1080p (1920 × 1080)"),
+      "4k": t("exportVideo.resolutions.4k", "4K (3840 × 2160)"),
+      custom: t("exportVideo.resolutions.custom", "Custom"),
+    },
+    duration: {
+      5: t("exportVideo.durations.5", "5 seconds"),
+      10: t("exportVideo.durations.10", "10 seconds"),
+      15: t("exportVideo.durations.15", "15 seconds"),
+      30: t("exportVideo.durations.30", "30 seconds"),
+      custom: t("exportVideo.durations.custom", "Custom"),
+    },
+    fps: {
+      24: t("exportVideo.fps.24", "24 fps"),
+      30: t("exportVideo.fps.30", "30 fps"),
+      60: t("exportVideo.fps.60", "60 fps"),
+    },
+  }), [t]);
   const [filename, setFilename] = useState("");
   const [previewData, setPreviewData] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
@@ -459,17 +481,17 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
           <button
             className="settings-back-button"
             onClick={handleCancel}
-            aria-label="Close"
+            aria-label={t("common:actions.close", "Close")}
           >
             <ArrowLeft size={20} strokeWidth={2} />
           </button>
-          <h2 className="settings-title">EXPORT VIDEO</h2>
+          <h2 className="settings-title">{t("exportVideo.title", "EXPORT VIDEO")}</h2>
         </div>
 
         <div className="settings-content">
           <div className="export-preview-container">
             {isGeneratingPreview ? (
-              <div className="export-preview-loading">Generating preview...</div>
+              <div className="export-preview-loading">{t("exportVideo.generatingPreview", "Generating preview...")}</div>
             ) : previewData?.imageUrl ? (
               <div
                 className="export-preview-wrapper export-video-preview-wrapper"
@@ -482,7 +504,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
               >
                 <img
                   src={previewData.imageUrl}
-                  alt="Export preview"
+                  alt={t("exportVideo.previewAlt", "Export preview")}
                   className="export-preview-image export-video-pan-image"
                   draggable={false}
                   style={{
@@ -526,14 +548,14 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                 }} />
               </div>
             ) : (
-              <div className="export-preview-placeholder">Preview will appear here</div>
+              <div className="export-preview-placeholder">{t("exportVideo.previewPlaceholder", "Preview will appear here")}</div>
             )}
           </div>
 
           {isExporting && (
             <div className="settings-row">
               <div className="settings-row-left" style={{ flex: 1 }}>
-                <div className="settings-row-label">Exporting...</div>
+                <div className="settings-row-label">{t("exportVideo.exporting", "Exporting...")}</div>
                 <div className="export-progress-bar">
                   <div
                     className="export-progress-fill"
@@ -546,9 +568,9 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Resolution</div>
+              <div className="settings-row-label">{t("exportVideo.resolution.label", "Resolution")}</div>
               <div className="settings-row-description">
-                {outputDims ? `${outputDims.width} × ${outputDims.height} px` : 'Output video dimensions.'}
+                {outputDims ? `${outputDims.width} × ${outputDims.height} px` : t("exportVideo.resolution.description", "Output video dimensions.")}
               </div>
             </div>
             <div className="settings-row-right">
@@ -559,7 +581,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                 disabled={isExporting}
               >
                 {RESOLUTION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{optionLabels.resolution[opt.value] || opt.label}</option>
                 ))}
               </select>
               {resolution === 'custom' && (
@@ -569,7 +591,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                     className="settings-input export-custom-resolution-input"
                     value={customWidth}
                     onChange={(e) => setCustomWidth(e.target.value)}
-                    placeholder="Width"
+                    placeholder={t("exportVideo.width", "Width")}
                     min={1}
                     max={7680}
                     disabled={isExporting}
@@ -580,7 +602,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                     className="settings-input export-custom-resolution-input"
                     value={customHeight}
                     onChange={(e) => setCustomHeight(e.target.value)}
-                    placeholder="Height"
+                    placeholder={t("exportVideo.height", "Height")}
                     min={1}
                     max={4320}
                     disabled={isExporting}
@@ -592,9 +614,9 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Zoom</div>
+              <div className="settings-row-label">{t("exportVideo.zoom.label", "Zoom")}</div>
               <div className="settings-row-description">
-                {zoom < 1 ? `${zoom.toFixed(1)}x — zoomed out, more context visible.` : 'Fit full timeline height.'}
+                {zoom < 1 ? t("exportVideo.zoom.zoomedOut", "{{zoom}}x — zoomed out, more context visible.", { zoom: zoom.toFixed(1) }) : t("exportVideo.zoom.fit", "Fit full timeline height.")}
               </div>
             </div>
             <div className="settings-row-right">
@@ -626,8 +648,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Duration</div>
-              <div className="settings-row-description">How long the pan animation takes.</div>
+              <div className="settings-row-label">{t("exportVideo.duration.label", "Duration")}</div>
+              <div className="settings-row-description">{t("exportVideo.duration.description", "How long the pan animation takes.")}</div>
             </div>
             <div className="settings-row-right">
               <select
@@ -640,7 +662,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                 disabled={isExporting}
               >
                 {DURATION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{optionLabels.duration[opt.value] || opt.label}</option>
                 ))}
               </select>
               {duration === 'custom' && (
@@ -650,7 +672,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                     className="settings-input export-custom-resolution-input"
                     value={customDuration}
                     onChange={(e) => setCustomDuration(e.target.value)}
-                    placeholder="Seconds"
+                    placeholder={t("exportVideo.duration.placeholder", "Seconds")}
                     min={1}
                     max={300}
                     disabled={isExporting}
@@ -663,8 +685,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Frame Rate</div>
-              <div className="settings-row-description">Higher values produce smoother video.</div>
+              <div className="settings-row-label">{t("exportVideo.frameRate.label", "Frame Rate")}</div>
+              <div className="settings-row-description">{t("exportVideo.frameRate.description", "Higher values produce smoother video.")}</div>
             </div>
             <div className="settings-row-right">
               <select
@@ -674,7 +696,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                 disabled={isExporting}
               >
                 {FPS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{optionLabels.fps[opt.value] || opt.label}</option>
                 ))}
               </select>
             </div>
@@ -682,9 +704,9 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Range</div>
+              <div className="settings-row-label">{t("exportVideo.range.label", "Timeline Range")}</div>
               <div className="settings-row-description">
-                {`${displayYear(selectedStartYear)} to ${displayYear(selectedEndYear)} (of ${displayYear(rangeMinYear)} to ${displayYear(rangeMaxYear)})`}
+                {t("exportVideo.range.description", "{{start}} to {{end}} (of {{min}} to {{max}})", { start: displayYear(selectedStartYear), end: displayYear(selectedEndYear), min: displayYear(rangeMinYear), max: displayYear(rangeMaxYear) })}
               </div>
             </div>
             <div className="settings-row-right">
@@ -706,7 +728,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                     value={exportRange.startPercent}
                     onChange={handleStartRangeChange}
                     className="export-range-slider export-range-slider-start"
-                    aria-label="Export start year"
+                    aria-label={t("exportVideo.range.startAria", "Export start year")}
                     disabled={!previewData || isExporting}
                   />
                   <input
@@ -717,7 +739,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                     value={exportRange.endPercent}
                     onChange={handleEndRangeChange}
                     className="export-range-slider export-range-slider-end"
-                    aria-label="Export end year"
+                    aria-label={t("exportVideo.range.endAria", "Export end year")}
                     disabled={!previewData || isExporting}
                   />
                 </div>
@@ -731,8 +753,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Background</div>
-              <div className="settings-row-description">Choose the background color for the export.</div>
+              <div className="settings-row-label">{t("exportVideo.background.label", "Background")}</div>
+              <div className="settings-row-description">{t("exportVideo.background.description", "Choose the background color for the export.")}</div>
             </div>
             <div className="settings-row-right">
               <select
@@ -741,17 +763,17 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                 onChange={(e) => setBgOption(e.target.value)}
                 disabled={isExporting}
               >
-                <option value="default">Default</option>
-                <option value="secondary">Secondary</option>
-                <option value="tertiary">Tertiary</option>
+                <option value="default">{t("exportVideo.background.default", "Default")}</option>
+                <option value="secondary">{t("exportVideo.background.secondary", "Secondary")}</option>
+                <option value="tertiary">{t("exportVideo.background.tertiary", "Tertiary")}</option>
               </select>
             </div>
           </div>
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Title Watermark</div>
-              <div className="settings-row-description">Overlay the timeline title on the video.</div>
+              <div className="settings-row-label">{t("exportVideo.watermark.label", "Title Watermark")}</div>
+              <div className="settings-row-description">{t("exportVideo.watermark.description", "Overlay the timeline title on the video.")}</div>
             </div>
             <div className="settings-row-right">
               <label className="settings-toggle">
@@ -769,8 +791,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
           {showTitle && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Text</div>
-                <div className="settings-row-description">Custom text used only for this export.</div>
+                <div className="settings-row-label">{t("exportVideo.titleText.label", "Title Text")}</div>
+                <div className="settings-row-description">{t("exportVideo.titleText.description", "Custom text used only for this export.")}</div>
               </div>
               <div className="settings-row-right">
                 <input
@@ -778,7 +800,7 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                   className="settings-input"
                   value={titleText}
                   onChange={(e) => setTitleText(e.target.value)}
-                  placeholder="Enter export title"
+                  placeholder={t("exportVideo.titleText.placeholder", "Enter export title")}
                   maxLength={120}
                   disabled={isExporting || titleStyle === "logo-only"}
                 />
@@ -789,8 +811,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
           {showTitle && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Style</div>
-                <div className="settings-row-description">Choose what appears in the watermark.</div>
+                <div className="settings-row-label">{t("exportVideo.titleStyle.label", "Title Style")}</div>
+                <div className="settings-row-description">{t("exportVideo.titleStyle.description", "Choose what appears in the watermark.")}</div>
               </div>
               <div className="settings-row-right">
                 <select
@@ -799,9 +821,9 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                   onChange={(e) => setTitleStyle(e.target.value)}
                   disabled={isExporting}
                 >
-                  <option value="title-logo">Title and Logo</option>
-                  <option value="title-only">Title Only</option>
-                  <option value="logo-only">Logo Only</option>
+                  <option value="title-logo">{t("exportVideo.titleStyle.titleLogo", "Title and Logo")}</option>
+                  <option value="title-only">{t("exportVideo.titleStyle.titleOnly", "Title Only")}</option>
+                  <option value="logo-only">{t("exportVideo.titleStyle.logoOnly", "Logo Only")}</option>
                 </select>
               </div>
             </div>
@@ -810,8 +832,8 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
           {showTitle && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Position</div>
-                <div className="settings-row-description">Where to place the title on the export.</div>
+                <div className="settings-row-label">{t("exportVideo.titlePosition.label", "Title Position")}</div>
+                <div className="settings-row-description">{t("exportVideo.titlePosition.description", "Where to place the title on the export.")}</div>
               </div>
               <div className="settings-row-right">
                 <select
@@ -820,12 +842,12 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
                   onChange={(e) => setTitlePosition(e.target.value)}
                   disabled={isExporting}
                 >
-                  <option value="top-left">Top Left</option>
-                  <option value="top-center">Top Center</option>
-                  <option value="top-right">Top Right</option>
-                  <option value="bottom-left">Bottom Left</option>
-                  <option value="bottom-center">Bottom Center</option>
-                  <option value="bottom-right">Bottom Right</option>
+                  <option value="top-left">{t("exportVideo.titlePosition.topLeft", "Top Left")}</option>
+                  <option value="top-center">{t("exportVideo.titlePosition.topCenter", "Top Center")}</option>
+                  <option value="top-right">{t("exportVideo.titlePosition.topRight", "Top Right")}</option>
+                  <option value="bottom-left">{t("exportVideo.titlePosition.bottomLeft", "Bottom Left")}</option>
+                  <option value="bottom-center">{t("exportVideo.titlePosition.bottomCenter", "Bottom Center")}</option>
+                  <option value="bottom-right">{t("exportVideo.titlePosition.bottomRight", "Bottom Right")}</option>
                 </select>
               </div>
             </div>
@@ -839,14 +861,14 @@ export default function ExportVideoModal({ isOpen, onClose, timelineData, timeli
             className="settings-footer-button settings-cancel-button"
             onClick={handleCancel}
           >
-            {isExporting ? 'Cancel' : 'Close'}
+            {isExporting ? t("common:actions.cancel", "Cancel") : t("common:actions.close", "Close")}
           </button>
           <button
             className="settings-footer-button settings-create-button"
             onClick={handleExport}
             disabled={isExporting || !previewData || !outputDims}
           >
-            {isExporting ? `Exporting ${exportProgress}%` : 'Export'}
+            {isExporting ? t("exportVideo.exportingPercent", "Exporting {{percent}}%", { percent: exportProgress }) : t("exportVideo.export", "Export")}
           </button>
         </div>
       </div>

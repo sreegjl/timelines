@@ -1,0 +1,377 @@
+{
+  "advanced": {
+    "autoHideEmptyGroups": {
+      "description": "Hide groups that contain no events or spans from the timeline, so they take up no space instead of showing an empty band.",
+      "label": "Auto Hide Empty Groups"
+    },
+    "branchOrdering": {
+      "description": "Choose whether later-starting branches stay closer to the parent.",
+      "label": "Branch Ordering",
+      "laterFirst": "Later starts closer",
+      "original": "Follow branch list order"
+    },
+    "dateFormat": {
+      "description": "How month and day dates are shown and typed across all panels.",
+      "label": "Date Format"
+    },
+    "disableGroups": {
+      "description": "Flatten all elements into a single group and hide group bands.",
+      "label": "Disable Groups"
+    },
+    "eventLinesToGroup": {
+      "description": "Anchor unparented event lines to their group band instead of the main timeline.",
+      "label": "Connect Event Lines to Group"
+    },
+    "hideDecimals": {
+      "description": "Round displayed years to whole numbers.",
+      "label": "Hide Decimals"
+    },
+    "hideSpanConnectors": {
+      "description": "Hide branch and merge connectors between spans. Data is preserved — re-enabling this will restore them.",
+      "label": "Hide Span Connectors"
+    },
+    "keepSelection": {
+      "description": "Keep the last selected element selected when clicking the timeline background.",
+      "label": "Keep Selection"
+    },
+    "leftPanel": "Left Panel",
+    "maps": {
+      "description": "Enable adding coordinates to events, eras, and spans to view them on a map.",
+      "label": "Map View"
+    },
+    "showPopularTags": {
+      "description": "Show a row of the most-used tags at the top of the left panel for quick filtering.",
+      "label": "Show Popular Tags"
+    },
+    "spreadsheet": {
+      "description": "Enable a table view for bulk editing elements.",
+      "label": "Spreadsheet View"
+    },
+    "timeFormat": {
+      "description": "How a time of day is shown and typed, when one is set on an event, span, or era.",
+      "label": "Time Format"
+    },
+    "timelineView": "Timeline View",
+    "useCalendar": {
+      "description": "Show month and day labels on ticks and element dates. Day-level ticks appear automatically on short timelines.",
+      "label": "Use Calendar"
+    },
+    "wiki": {
+      "description": "Enable attaching MediaWiki articles to timeline elements.",
+      "label": "Wiki Integration"
+    }
+  },
+  "appearance": {
+    "eventFontSize": {
+      "description": "Control the text size inside event boxes ({{size}}px{{suffix}}).",
+      "label": "Event Font Size"
+    },
+    "eventSize": {
+      "description": "Control the size of event boxes ({{size}}px{{suffix}}).",
+      "label": "Event Size"
+    },
+    "fixedEventHeight": {
+      "description": "Lock all events to a single-line height, truncating long titles with ellipsis.",
+      "label": "Fixed Event Height"
+    },
+    "font": {
+      "default": "Default (App Font)",
+      "description": "Choose a font for this timeline.",
+      "label": "Font"
+    },
+    "secondaryBg": {
+      "description": "Use the same background color as the side panels for the timeline area.",
+      "label": "Use Secondary Color for Timeline Background"
+    },
+    "showDurations": {
+      "description": "Display how long each span and era lasts beside its date range.",
+      "label": "Show Durations"
+    },
+    "showGrid": {
+      "description": "Display subtle vertical grid lines aligned with tick marks.",
+      "label": "Show Grid"
+    },
+    "spanColorEvents": {
+      "description": "Tint event backgrounds to match their parent span's color.",
+      "label": "Color Events by Parent Span"
+    },
+    "theme": {
+      "default": "Default (App Theme)",
+      "description": "Choose a color theme for the timeline.",
+      "label": "Theme"
+    },
+    "themeMigration": {
+      "pending_one": "{{count}} theme is using an older format. Update all?",
+      "pending_other": "{{count}} themes are using an older format. Update all?",
+      "updateAll": "Update All",
+      "updated_one": "{{count}} theme updated.",
+      "updated_other": "{{count}} themes updated.",
+      "updating": "Updating..."
+    },
+    "thinConnectors": {
+      "description": "Use thin-style span connectors with rounded endpoints.",
+      "label": "Thin Connectors"
+    },
+    "todayMarker": {
+      "description": "Display a vertical line at the current date.",
+      "label": "Today Marker"
+    }
+  },
+  "appSettings": {
+    "description": "Open global settings for themes and files.",
+    "label": "App Settings",
+    "open": "Open App Settings"
+  },
+  "appSettingsTitle": "APP SETTINGS",
+  "close": "Close settings",
+  "errors": {
+    "endInvalid": "End point must be a number or MM/DD/YYYY.",
+    "nameAlphanumeric": "Timeline name must include at least one letter or number.",
+    "nameRequired": "Timeline name is required.",
+    "startAfterEnd": "Start point must be less than end point.",
+    "startInvalid": "Start point must be a number or MM/DD/YYYY."
+  },
+  "files": {
+    "assetsFolder": "Assets Folder",
+    "choose": "Choose...",
+    "notesFolder": "Notes Folder",
+    "timelineFolder": "Timeline Folder",
+    "useDefault": "Use Default"
+  },
+  "folderTree": {
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "home": "Home"
+  },
+  "general": {
+    "appFont": {
+      "default": "Default (Theme)",
+      "description": "Sets the UI font. Add custom fonts in the font folder.",
+      "label": "App Font",
+      "missing": "{{font}} (Missing)",
+      "openFolder": "Open font folder"
+    },
+    "appFontSize": {
+      "aria": "App font size",
+      "description": "Controls the base UI font size.",
+      "label": "App Font Size"
+    },
+    "approxDate": {
+      "description": "Prefix for elements marked approximate (e.g., c., ca., circa).",
+      "label": "Approximate Date"
+    },
+    "appTheme": {
+      "description": "Used as the default theme for timelines.",
+      "label": "App Theme",
+      "openFolder": "Open theme folder"
+    },
+    "disableThumbnails": {
+      "description": "Hide timeline previews on cards and skip capturing them when leaving a timeline.",
+      "label": "Disable Thumbnails"
+    },
+    "documentation": {
+      "description": "Guides, tips, and feature references.",
+      "label": "Documentation",
+      "open": "Open Docs"
+    },
+    "durationUnit": {
+      "description": "What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.",
+      "label": "Duration Unit",
+      "placeholder": "yrs"
+    },
+    "end": {
+      "description": "The last year/date shown on the timeline.",
+      "label": "End Point"
+    },
+    "hardwareAcceleration": {
+      "description": "Disable if you experience visual glitches. Requires restart.",
+      "label": "Hardware Acceleration"
+    },
+    "language": {
+      "description": "Language used for the app interface. Date and time formats are set per timeline and are not affected by this.",
+      "label": "Language",
+      "systemDefault": "System default"
+    },
+    "length": {
+      "description": "Higher values can fit more events with less overlap.",
+      "label": "Timeline Length"
+    },
+    "logScale": {
+      "description": "Controls the strength of the logarithmic curve. Higher values compress recent time more.",
+      "label": "Log Scale Factor"
+    },
+    "name": {
+      "description": "Your file will be saved as: {{filename}}.timeline",
+      "label": "Timeline Name",
+      "placeholder": "Enter timeline name"
+    },
+    "negativeEra": {
+      "description": "Optional label for negative years (e.g., BCE).",
+      "label": "Negative Era",
+      "placeholder": "e.g., BCE"
+    },
+    "positiveEra": {
+      "description": "Optional label for positive years (e.g., CE).",
+      "label": "Positive Era",
+      "placeholder": "e.g., CE"
+    },
+    "scaleSections": {
+      "add": "Add Section",
+      "end": "End",
+      "label": "Scale Sections",
+      "remove": "Remove scale section",
+      "scale": "Scale",
+      "showBreak": "Show axis break marker",
+      "start": "Start",
+      "toggleBreak": "Toggle axis break marker"
+    },
+    "scaleType": {
+      "default": "Default",
+      "description": "How time is distributed along the timeline axis.",
+      "label": "Scale Type",
+      "logarithmic": "Logarithmic Scaling"
+    },
+    "start": {
+      "description": "The first year/date shown on the timeline.",
+      "label": "Start Point"
+    },
+    "startMaximized": {
+      "description": "Launch the app in a maximized window.",
+      "label": "Start App Maximized"
+    },
+    "tickDensity": {
+      "description": "Control how many tick marks appear on the timeline axis.",
+      "label": "Tick Density"
+    },
+    "version": {
+      "available": "A new update is available. Would you like to download it?",
+      "checkFailed": "Update check failed",
+      "downloadLatest": "Download Latest Release",
+      "downloadUpdate": "Download Update",
+      "label": "Version {{version}}",
+      "notNow": "Not Now",
+      "readyToInstall": "Ready to install",
+      "upToDate": "You have the latest version installed.",
+      "whatsNew": "See what's new in <1>v{{version}}</1>."
+    }
+  },
+  "hotkeys": {
+    "delete": "Delete",
+    "newEra": "New Era",
+    "newEvent": "New Event",
+    "newSpan": "New Span",
+    "play": "Play / Pause",
+    "pressKey": "Press a key…",
+    "redo": "Redo",
+    "search": "Search",
+    "selectNext": "Select Next",
+    "selectPrevious": "Select Previous",
+    "selectTypeDown": "Select Type Down",
+    "selectTypeUp": "Select Type Up",
+    "undo": "Undo"
+  },
+  "maps": {
+    "eraMarker": {
+      "description": "Choose the marker style used for eras in map view.",
+      "label": "Era Marker"
+    },
+    "eventMarker": {
+      "description": "Choose the marker style used for events in map view.",
+      "label": "Event Marker"
+    },
+    "markers": {
+      "circle": "Circle",
+      "diamond": "Diamond",
+      "pin": "Pin",
+      "square": "Square",
+      "triangle": "Triangle"
+    },
+    "scrollbarDateOnly": "Scrollbar Date Only",
+    "spanMarker": {
+      "description": "Choose the marker style used for spans in map view.",
+      "label": "Span Marker"
+    },
+    "tileUrl": "Tile URL"
+  },
+  "sections": {
+    "advanced": "Advanced",
+    "appearance": "Appearance",
+    "files": "Files",
+    "general": "General",
+    "hotkeys": "Hotkeys",
+    "maps": "Maps",
+    "sync": "Sync (Experimental)"
+  },
+  "sync": {
+    "autoSync": {
+      "description": "Sync changes automatically after the selected idle interval.",
+      "label": "Auto Sync"
+    },
+    "badges": {
+      "conflict": "Conflict",
+      "neverSync": "Never sync"
+    },
+    "behavior": "Sync Behavior",
+    "branch": "Branch",
+    "branchPlaceholder": "main",
+    "confirmDeleteMirror": "Delete the local mirror clone too? Press OK to delete it, or Cancel to keep it.",
+    "confirmDisconnect": "Disconnect git sync from this device?",
+    "confirmRebuildMirror": "Rebuild the local mirror? This deletes the mirror clone and re-exports your library. Your timelines are not affected.",
+    "confirmRestoreVersion": "Restore this version as a copy in your library?",
+    "desktopOnly": "Git sync is only available in the desktop app.",
+    "detail": {
+      "authExpired": "The saved token no longer works. Paste a replacement token below to resume syncing.",
+      "dirty": "Local changes are queued for the next sync pass.",
+      "disconnected": "Connect a Git repository to keep this library synced across devices.",
+      "error": "The last sync attempt failed. Review the error below and try again.",
+      "offline": "The remote is unreachable right now. Changes stay local until the connection returns.",
+      "syncing": "A sync is currently running. Local and remote changes will reconcile automatically."
+    },
+    "disconnect": "Disconnect",
+    "generateReadme": {
+      "description": "Write a README listing your timelines and viewer links into the repo. Turn off to keep the repo file-only. A README you wrote yourself is never touched.",
+      "label": "Generate README"
+    },
+    "label": "Git Sync",
+    "machineLabel": {
+      "description": "Identifies this device in commit messages and conflict copies.",
+      "label": "Machine Label",
+      "placeholder": "machine label"
+    },
+    "mirror": "Mirror",
+    "noHistory": "No synced history found for this timeline yet.",
+    "noLocalTimelines": "No local timelines found.",
+    "openRemote": "Open Remote",
+    "repository": "Repository",
+    "repositoryOptions": "Repository Options",
+    "repositoryUrl": "Repository URL",
+    "share": {
+      "copied": "Copied",
+      "copyLink": "Copy Link",
+      "exactLink": "Last Synced Exact-Version Link",
+      "githubOnly": "Viewer links currently work for GitHub remotes and require the repo to be public.",
+      "latestLink": "Latest Branch Link",
+      "noViewerLink": "This remote does not map to a GitHub viewer link yet.",
+      "pending": "This timeline has local changes or unpushed commits. Sync before sharing if you want the latest version online.",
+      "syncAndCopy": "Sync & Copy"
+    },
+    "status": "Status",
+    "steps": {
+      "connect": {
+        "text": "Enter the repository's HTTPS clone URL, branch, and token. Connect every device to the same remote to keep libraries aligned.",
+        "title": "Connect the remote"
+      },
+      "create": {
+        "text": "Create an empty repository on GitHub. This is where your synced library will live.",
+        "title": "Create a repository"
+      },
+      "token": {
+        "text": "Create a personal access token that can read and write that repo. Fine-grained tokens scoped to the single repo are recommended; it is stored locally with OS encryption when available.",
+        "title": "Generate an access token"
+      }
+    },
+    "syncedTimelines": "Synced Timelines",
+    "token": "Personal Access Token"
+  },
+  "title": "SETTINGS"
+}

@@ -1,0 +1,366 @@
+{
+  "alreadyInLibrary": {
+    "importCopy": "Import as Copy",
+    "message": "This file looks like \"{{title}}\", a timeline that is already in your library. You can open your existing timeline, or import this file as a separate copy alongside it.",
+    "openExisting": "Open Existing",
+    "title": "ALREADY IN LIBRARY"
+  },
+  "brand": "Timelines",
+  "clearSearch": "Clear search",
+  "confirmRestart": "Restart required to apply hardware acceleration change. Restart now?",
+  "counts": {
+    "empty": "Empty",
+    "eras_one": "{{count}} era",
+    "eras_other": "{{count}} eras",
+    "events_one": "{{count}} event",
+    "events_other": "{{count}} events",
+    "spans_one": "{{count}} span",
+    "spans_other": "{{count}} spans"
+  },
+  "deleteDialog": {
+    "alsoDeleteImages": "Also delete images for this timeline",
+    "alsoDeleteNotes": "Also delete notes for this timeline",
+    "closeAria": "Close delete dialog",
+    "title": "DELETE TIMELINE"
+  },
+  "deleteElement": {
+    "alsoDeleteImages_one": "Also delete image file",
+    "alsoDeleteImages_other": "Also delete image files",
+    "alsoDeleteNotes_one": "Also delete linked note file",
+    "alsoDeleteNotes_other": "Also delete linked note files",
+    "closeAria": "Close delete dialog",
+    "confirmPlural_one": "Are you sure you want to delete these {{count}} elements? This cannot be undone.",
+    "confirmPlural_other": "Are you sure you want to delete these {{count}} elements? This cannot be undone.",
+    "confirmSingular": "Are you sure you want to delete \"{{title}}\"? This cannot be undone.",
+    "titlePlural_one": "DELETE {{count}} ELEMENTS",
+    "titlePlural_other": "DELETE {{count}} ELEMENTS",
+    "titleSingular": "DELETE {{type}}"
+  },
+  "deleteFolder": {
+    "empty": " will be permanently deleted.",
+    "withTimelines_one": " contains {{count}} timeline. This cannot be undone.",
+    "withTimelines_other": " contains {{count}} timelines. This cannot be undone."
+  },
+  "diskReload": {
+    "message": "Timeline changed on disk."
+  },
+  "dropToImport": "Drop a .timeline file to import it",
+  "editedAgo": "Edited {{when}}",
+  "exportPng": {
+    "background": {
+      "default": "Default",
+      "description": "Choose the background color for the export.",
+      "label": "Background",
+      "secondary": "Secondary",
+      "tertiary": "Tertiary",
+      "transparent": "Transparent"
+    },
+    "export": "Export",
+    "exporting": "Exporting...",
+    "exportingPercent": "Exporting {{percent}}%",
+    "generatingPreview": "Generating preview...",
+    "height": "Height",
+    "preparing": "Preparing export...",
+    "previewAlt": "Export preview",
+    "previewPlaceholder": "Preview will appear here",
+    "range": {
+      "description": "{{start}} to {{end}} (of {{min}} to {{max}})",
+      "endAria": "Export end year",
+      "label": "Timeline Range",
+      "startAria": "Export start year"
+    },
+    "resolution": {
+      "description": "Higher resolutions are better for printing.",
+      "label": "Resolution"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "a4": "A4 300 DPI (3508 × 2480)",
+      "current": "Timeline",
+      "custom": "Custom",
+      "hd": "1080p (1920 × 1080)",
+      "letter": "Letter 300 DPI (3300 × 2550)",
+      "poster": "Poster 36×24\" (10800 × 7200)"
+    },
+    "title": "EXPORT PNG",
+    "titlePosition": {
+      "bottomCenter": "Bottom Center",
+      "bottomLeft": "Bottom Left",
+      "bottomRight": "Bottom Right",
+      "description": "Where to place the title on the export.",
+      "label": "Title Position",
+      "topCenter": "Top Center",
+      "topLeft": "Top Left",
+      "topRight": "Top Right"
+    },
+    "titleStyle": {
+      "description": "Choose what appears in the watermark.",
+      "label": "Title Style",
+      "logoOnly": "Logo Only",
+      "titleLogo": "Title and Logo",
+      "titleOnly": "Title Only"
+    },
+    "titleText": {
+      "description": "Custom text used only for this export.",
+      "label": "Title Text",
+      "placeholder": "Enter export title"
+    },
+    "watermark": {
+      "description": "Overlay the timeline title on the export.",
+      "label": "Title Watermark",
+      "unavailable": "Available for fixed export resolutions."
+    },
+    "width": "Width"
+  },
+  "exportVideo": {
+    "background": {
+      "default": "Default",
+      "description": "Choose the background color for the export.",
+      "label": "Background",
+      "secondary": "Secondary",
+      "tertiary": "Tertiary"
+    },
+    "duration": {
+      "description": "How long the pan animation takes.",
+      "label": "Duration",
+      "placeholder": "Seconds"
+    },
+    "durations": {
+      "5": "5 seconds",
+      "10": "10 seconds",
+      "15": "15 seconds",
+      "30": "30 seconds",
+      "custom": "Custom"
+    },
+    "export": "Export",
+    "exporting": "Exporting...",
+    "exportingPercent": "Exporting {{percent}}%",
+    "fps": {
+      "24": "24 fps",
+      "30": "30 fps",
+      "60": "60 fps"
+    },
+    "frameRate": {
+      "description": "Higher values produce smoother video.",
+      "label": "Frame Rate"
+    },
+    "generatingPreview": "Generating preview...",
+    "height": "Height",
+    "previewAlt": "Export preview",
+    "previewPlaceholder": "Preview will appear here",
+    "range": {
+      "description": "{{start}} to {{end}} (of {{min}} to {{max}})",
+      "endAria": "Export end year",
+      "label": "Timeline Range",
+      "startAria": "Export start year"
+    },
+    "resolution": {
+      "description": "Output video dimensions.",
+      "label": "Resolution"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "custom": "Custom",
+      "hd": "1080p (1920 × 1080)"
+    },
+    "title": "EXPORT VIDEO",
+    "titlePosition": {
+      "bottomCenter": "Bottom Center",
+      "bottomLeft": "Bottom Left",
+      "bottomRight": "Bottom Right",
+      "description": "Where to place the title on the export.",
+      "label": "Title Position",
+      "topCenter": "Top Center",
+      "topLeft": "Top Left",
+      "topRight": "Top Right"
+    },
+    "titleStyle": {
+      "description": "Choose what appears in the watermark.",
+      "label": "Title Style",
+      "logoOnly": "Logo Only",
+      "titleLogo": "Title and Logo",
+      "titleOnly": "Title Only"
+    },
+    "titleText": {
+      "description": "Custom text used only for this export.",
+      "label": "Title Text",
+      "placeholder": "Enter export title"
+    },
+    "watermark": {
+      "description": "Overlay the timeline title on the video.",
+      "label": "Title Watermark"
+    },
+    "width": "Width",
+    "zoom": {
+      "fit": "Fit full timeline height.",
+      "label": "Zoom",
+      "zoomedOut": "{{zoom}}x — zoomed out, more context visible."
+    }
+  },
+  "folderNamePlaceholder": "Folder name",
+  "import": "Import",
+  "importHint": "Import a .timeline or .json file into your library",
+  "library": "Library",
+  "loadingTimelines": "Loading timelines...",
+  "marketplace": {
+    "bulkActions": "Bulk theme actions",
+    "close": "Close marketplace",
+    "deleteTheme": "Delete theme",
+    "disable": "Disable",
+    "download": "Download",
+    "downloadAll": "Download All",
+    "downloading": "Downloading...",
+    "enable": "Enable",
+    "enabled": "Enabled",
+    "errors": {
+      "delete": "Failed to delete theme.",
+      "download": "Failed to download theme.",
+      "load": "Failed to load marketplace themes."
+    },
+    "import": {
+      "subtitle": "Drop or click to add .json",
+      "title": "Import Theme"
+    },
+    "loading": "Loading themes...",
+    "noMatches": "No themes match",
+    "openFolder": "Open themes folder",
+    "origins": {
+      "all": "All",
+      "builtIn": "Built-in",
+      "local": "Local",
+      "marketplace": "Marketplace"
+    },
+    "removeAll": "Remove All",
+    "searchAria": "Search marketplace themes",
+    "searchPlaceholder": "Search themes...",
+    "tabs": {
+      "installed": "Installed",
+      "local": "Local",
+      "marketplace": "Marketplace"
+    },
+    "title": "Marketplace",
+    "types": {
+      "all": "All",
+      "dark": "Dark",
+      "light": "Light"
+    }
+  },
+  "menu": {
+    "moveToFolder": "Move to Folder",
+    "openRepoSettings": "Open Repo Settings",
+    "shareViewerLink": "Share Viewer Link",
+    "versionHistory": "Version History"
+  },
+  "nav": {
+    "backup": "Backup",
+    "createFolder": "Create folder",
+    "folders": "Folders",
+    "home": "Home",
+    "marketplace": "Marketplace",
+    "noFolders": "No folders yet",
+    "recent": "Recent",
+    "settings": "Settings"
+  },
+  "newTimeline": {
+    "end": {
+      "description": "The last year/date shown on the timeline.",
+      "label": "End Point"
+    },
+    "errors": {
+      "endInvalid": "End point must be a number or MM/DD/YYYY.",
+      "nameAlphanumeric": "Timeline name must contain at least one letter or number.",
+      "nameRequired": "Please enter a timeline name.",
+      "startAfterEnd": "Start point must be less than end point.",
+      "startInvalid": "Start point must be a number or MM/DD/YYYY."
+    },
+    "length": {
+      "description": "Higher values let you add more events between years.",
+      "label": "Timeline Length"
+    },
+    "maps": {
+      "description": "Enable adding coordinates to events, eras, and spans to view them on a map.",
+      "label": "Map View"
+    },
+    "name": {
+      "description": "Your file will be saved as: {{filename}}.timeline",
+      "label": "Timeline Name",
+      "placeholder": "Enter timeline name"
+    },
+    "note": "These options can be changed later in timeline settings.",
+    "spreadsheet": {
+      "description": "Enable a table view for bulk editing elements.",
+      "label": "Spreadsheet View"
+    },
+    "start": {
+      "description": "The first year/date shown on the timeline.",
+      "label": "Start Point"
+    },
+    "title": "NEW TIMELINE",
+    "wiki": {
+      "description": "Enable attaching MediaWiki articles to timeline elements.",
+      "label": "Wiki Integration"
+    }
+  },
+  "newTimelineButton": "New timeline",
+  "noEditsYet": "No edits yet",
+  "noEditsYetLower": "no edits yet",
+  "searchAria": "Search timelines",
+  "searchPlaceholder": "Search timelines...",
+  "skipped": {
+    "exportMessage_one": "Package exported, but {{count}} referenced file could not be found and was skipped:",
+    "exportMessage_other": "Package exported, but {{count}} referenced files could not be found and were skipped:",
+    "exportTitle": "EXPORT FINISHED",
+    "importMessage_one": "Imported, but {{count}} bundled file could not be written:",
+    "importMessage_other": "Imported, but {{count}} bundled files could not be written:",
+    "importTitle": "IMPORT FINISHED"
+  },
+  "sortBy": "Sort by",
+  "sortHeaders": {
+    "eras": "Eras",
+    "events": "Events",
+    "folder": "Location",
+    "modified": "Modified",
+    "name": "Name",
+    "spans": "Spans"
+  },
+  "sortSummary": "Sort: {{field}}, {{direction}}",
+  "sync": {
+    "lastSynced": "last synced {{when}}",
+    "notSyncedYet": "Not synced yet",
+    "syncedAgo": "Synced {{when}}"
+  },
+  "time": {
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "today": "today",
+    "weeksAgo_one": "{{count}} week ago",
+    "weeksAgo_other": "{{count}} weeks ago",
+    "yesterday": "yesterday"
+  },
+  "titleBar": {
+    "hidePanel": "Hide panel",
+    "hideSidebar": "Hide sidebar",
+    "lockPanel": "Lock panel",
+    "maximize": "Maximize",
+    "minimize": "Minimize",
+    "showPanel": "Show panel",
+    "showSidebar": "Show sidebar",
+    "unlockPanel": "Unlock panel"
+  },
+  "toasts": {
+    "exportingPackage": "Exporting package...",
+    "packageFailed": "Package export failed: {{error}}",
+    "packageSaved": "Package export saved",
+    "pngFailed": "PNG export failed: {{error}}",
+    "pngSaved": "PNG export saved",
+    "screenshotSaved": "Screenshot saved",
+    "videoFailed": "Video export failed: {{error}}",
+    "videoSaved": "Video export saved"
+  },
+  "view": {
+    "grid": "Grid",
+    "gridAria": "Grid view",
+    "list": "List",
+    "listAria": "List view"
+  }
+}

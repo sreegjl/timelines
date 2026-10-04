@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { renderNoteMarkdown } from "../utils/noteUtils";
 import { createNote, addExistingNote, readNote, writeNote, deleteNote, getNotesBaseDir, getAssetsBaseDir, pickAndImportImage, importImageFromPath } from "../utils/electronApi";
 import { isSafeNoteRef } from "../utils/validation";
@@ -6,6 +7,7 @@ import { getStorageId } from "../utils/idUtils";
 import { resolvePackageAssetSrc } from "../utils/viewerPackageStore";
 
 export function useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate }) {
+  const { t } = useTranslation("timeline");
   const timelineId = getStorageId(timelineData?.file);
   const [noteInitialContent, setNoteInitialContent] = useState("");
   const [isNoteLoading, setIsNoteLoading] = useState(false);
@@ -166,7 +168,7 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
 
   const handleDeleteNote = useCallback(async () => {
     if (!formData?.noteFile || !isSafeNoteRef(formData.noteFile)) return;
-    const confirmed = window.confirm("Delete this note? This cannot be undone.");
+    const confirmed = window.confirm(t("noteEditor.confirmDelete", "Delete this note? This cannot be undone."));
     if (!confirmed) return;
     const timelineId = getStorageId(timelineData?.file);
     if (!timelineId) return;

@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { formatYear } from "../utils/timelineUtils";
 import useEscapeKey from "../hooks/useEscapeKey";
 import "../styles/07-modals-menus.css";
@@ -15,6 +16,17 @@ const RESOLUTION_OPTIONS = [
 ];
 
 export default function ExportPngModal({ isOpen, onClose, onExport, timelineData, timelineViewRef, exportState }) {
+  const { t } = useTranslation("app");
+  // Listed statically so i18next-parser sees every resolution key.
+  const resolutionLabels = useMemo(() => ({
+    current: t("exportPng.resolutions.current", "Timeline"),
+    hd: t("exportPng.resolutions.hd", "1080p (1920 × 1080)"),
+    "4k": t("exportPng.resolutions.4k", "4K (3840 × 2160)"),
+    letter: t("exportPng.resolutions.letter", "Letter 300 DPI (3300 × 2550)"),
+    a4: t("exportPng.resolutions.a4", "A4 300 DPI (3508 × 2480)"),
+    poster: t("exportPng.resolutions.poster", "Poster 36×24\u0022 (10800 × 7200)"),
+    custom: t("exportPng.resolutions.custom", "Custom"),
+  }), [t]);
   const [filename, setFilename] = useState("");
   const [previewData, setPreviewData] = useState(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
@@ -361,11 +373,11 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
           <button
             className="settings-back-button"
             onClick={handleCancel}
-            aria-label="Close"
+            aria-label={t("common:actions.close", "Close")}
           >
             <ArrowLeft size={20} strokeWidth={2} />
           </button>
-          <h2 className="settings-title">EXPORT PNG</h2>
+          <h2 className="settings-title">{t("exportPng.title", "EXPORT PNG")}</h2>
         </div>
 
         {validationErrors.length > 0 && (
@@ -384,7 +396,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
             className={`export-preview-container ${bgOption === 'transparent' ? 'export-preview-transparent' : ''}`}
           >
             {isGeneratingPreview ? (
-              <div className="export-preview-loading">Generating preview...</div>
+              <div className="export-preview-loading">{t("exportPng.generatingPreview", "Generating preview...")}</div>
             ) : previewData?.imageUrl ? (
               <div
                 ref={previewWrapperRef}
@@ -403,7 +415,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
               >
                 <img
                   src={previewData.imageUrl}
-                  alt="Export preview"
+                  alt={t("exportPng.previewAlt", "Export preview")}
                   className="export-preview-image"
                   style={previewImageStyle}
                   draggable={false}
@@ -436,14 +448,14 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                 )}
               </div>
             ) : (
-              <div className="export-preview-placeholder">Preview will appear here</div>
+              <div className="export-preview-placeholder">{t("exportPng.previewPlaceholder", "Preview will appear here")}</div>
             )}
           </div>
 
           {isExporting && (
             <div className="settings-row">
               <div className="settings-row-left" style={{ flex: 1 }}>
-                <div className="settings-row-label">{exportState.stage || 'Exporting...'}</div>
+                <div className="settings-row-label">{exportState.stage || t("exportPng.exporting", "Exporting...")}</div>
                 <div className="export-progress-bar">
                   <div
                     className="export-progress-fill"
@@ -456,11 +468,11 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Resolution</div>
+              <div className="settings-row-label">{t("exportPng.resolution.label", "Resolution")}</div>
               <div className="settings-row-description">
                 {(() => {
                   const dims = getExportDimensions();
-                  return dims ? `${dims.width} × ${dims.height} px` : 'Higher resolutions are better for printing.';
+                  return dims ? `${dims.width} × ${dims.height} px` : t("exportPng.resolution.description", "Higher resolutions are better for printing.");
                 })()}
               </div>
             </div>
@@ -471,7 +483,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                 onChange={(e) => setResolution(e.target.value)}
               >
                 {RESOLUTION_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{resolutionLabels[opt.value] || opt.label}</option>
                 ))}
               </select>
               {resolution === 'custom' && (
@@ -481,7 +493,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                     className="settings-input export-custom-resolution-input"
                     value={customWidth}
                     onChange={(e) => setCustomWidth(e.target.value)}
-                    placeholder="Width"
+                    placeholder={t("exportPng.width", "Width")}
                     min={1}
                     max={16384}
                   />
@@ -491,7 +503,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                     className="settings-input export-custom-resolution-input"
                     value={customHeight}
                     onChange={(e) => setCustomHeight(e.target.value)}
-                    placeholder="Height"
+                    placeholder={t("exportPng.height", "Height")}
                     min={1}
                     max={16384}
                   />
@@ -502,9 +514,9 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Timeline Range</div>
+              <div className="settings-row-label">{t("exportPng.range.label", "Timeline Range")}</div>
               <div className="settings-row-description">
-                {`${displayYear(selectedStartYear)} to ${displayYear(selectedEndYear)} (of ${displayYear(rangeMinYear)} to ${displayYear(rangeMaxYear)})`}
+                {t("exportPng.range.description", "{{start}} to {{end}} (of {{min}} to {{max}})", { start: displayYear(selectedStartYear), end: displayYear(selectedEndYear), min: displayYear(rangeMinYear), max: displayYear(rangeMaxYear) })}
               </div>
             </div>
             <div className="settings-row-right">
@@ -526,7 +538,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                     value={exportRange.startPercent}
                     onChange={handleStartRangeChange}
                     className="export-range-slider export-range-slider-start"
-                    aria-label="Export start year"
+                    aria-label={t("exportPng.range.startAria", "Export start year")}
                     disabled={!previewData}
                   />
                   <input
@@ -537,7 +549,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                     value={exportRange.endPercent}
                     onChange={handleEndRangeChange}
                     className="export-range-slider export-range-slider-end"
-                    aria-label="Export end year"
+                    aria-label={t("exportPng.range.endAria", "Export end year")}
                     disabled={!previewData}
                   />
                 </div>
@@ -551,8 +563,8 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Background</div>
-              <div className="settings-row-description">Choose the background color for the export.</div>
+              <div className="settings-row-label">{t("exportPng.background.label", "Background")}</div>
+              <div className="settings-row-description">{t("exportPng.background.description", "Choose the background color for the export.")}</div>
             </div>
             <div className="settings-row-right">
               <select
@@ -560,21 +572,21 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                 value={bgOption}
                 onChange={(e) => setBgOption(e.target.value)}
               >
-                <option value="default">Default</option>
-                <option value="secondary">Secondary</option>
-                <option value="tertiary">Tertiary</option>
-                <option value="transparent">Transparent</option>
+                <option value="default">{t("exportPng.background.default", "Default")}</option>
+                <option value="secondary">{t("exportPng.background.secondary", "Secondary")}</option>
+                <option value="tertiary">{t("exportPng.background.tertiary", "Tertiary")}</option>
+                <option value="transparent">{t("exportPng.background.transparent", "Transparent")}</option>
               </select>
             </div>
           </div>
 
           <div className="settings-row">
             <div className="settings-row-left">
-              <div className="settings-row-label">Title Watermark</div>
+              <div className="settings-row-label">{t("exportPng.watermark.label", "Title Watermark")}</div>
               <div className="settings-row-description">
                 {resolution === "current"
-                  ? "Available for fixed export resolutions."
-                  : "Overlay the timeline title on the export."}
+                  ? t("exportPng.watermark.unavailable", "Available for fixed export resolutions.")
+                  : t("exportPng.watermark.description", "Overlay the timeline title on the export.")}
               </div>
             </div>
             <div className="settings-row-right">
@@ -593,8 +605,8 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
           {showTitle && resolution !== "current" && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Text</div>
-                <div className="settings-row-description">Custom text used only for this export.</div>
+                <div className="settings-row-label">{t("exportPng.titleText.label", "Title Text")}</div>
+                <div className="settings-row-description">{t("exportPng.titleText.description", "Custom text used only for this export.")}</div>
               </div>
               <div className="settings-row-right">
                 <input
@@ -602,7 +614,7 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                   className="settings-input"
                   value={titleText}
                   onChange={(e) => setTitleText(e.target.value)}
-                  placeholder="Enter export title"
+                  placeholder={t("exportPng.titleText.placeholder", "Enter export title")}
                   maxLength={120}
                   disabled={titleStyle === "logo-only"}
                 />
@@ -613,8 +625,8 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
           {showTitle && resolution !== "current" && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Style</div>
-                <div className="settings-row-description">Choose what appears in the watermark.</div>
+                <div className="settings-row-label">{t("exportPng.titleStyle.label", "Title Style")}</div>
+                <div className="settings-row-description">{t("exportPng.titleStyle.description", "Choose what appears in the watermark.")}</div>
               </div>
               <div className="settings-row-right">
                 <select
@@ -622,9 +634,9 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                   value={titleStyle}
                   onChange={(e) => setTitleStyle(e.target.value)}
                 >
-                  <option value="title-logo">Title and Logo</option>
-                  <option value="title-only">Title Only</option>
-                  <option value="logo-only">Logo Only</option>
+                  <option value="title-logo">{t("exportPng.titleStyle.titleLogo", "Title and Logo")}</option>
+                  <option value="title-only">{t("exportPng.titleStyle.titleOnly", "Title Only")}</option>
+                  <option value="logo-only">{t("exportPng.titleStyle.logoOnly", "Logo Only")}</option>
                 </select>
               </div>
             </div>
@@ -633,8 +645,8 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
           {showTitle && resolution !== "current" && (
             <div className="settings-row">
               <div className="settings-row-left">
-                <div className="settings-row-label">Title Position</div>
-                <div className="settings-row-description">Where to place the title on the export.</div>
+                <div className="settings-row-label">{t("exportPng.titlePosition.label", "Title Position")}</div>
+                <div className="settings-row-description">{t("exportPng.titlePosition.description", "Where to place the title on the export.")}</div>
               </div>
               <div className="settings-row-right">
                 <select
@@ -642,12 +654,12 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
                   value={titlePosition}
                   onChange={(e) => setTitlePosition(e.target.value)}
                 >
-                  <option value="top-left">Top Left</option>
-                  <option value="top-center">Top Center</option>
-                  <option value="top-right">Top Right</option>
-                  <option value="bottom-left">Bottom Left</option>
-                  <option value="bottom-center">Bottom Center</option>
-                  <option value="bottom-right">Bottom Right</option>
+                  <option value="top-left">{t("exportPng.titlePosition.topLeft", "Top Left")}</option>
+                  <option value="top-center">{t("exportPng.titlePosition.topCenter", "Top Center")}</option>
+                  <option value="top-right">{t("exportPng.titlePosition.topRight", "Top Right")}</option>
+                  <option value="bottom-left">{t("exportPng.titlePosition.bottomLeft", "Bottom Left")}</option>
+                  <option value="bottom-center">{t("exportPng.titlePosition.bottomCenter", "Bottom Center")}</option>
+                  <option value="bottom-right">{t("exportPng.titlePosition.bottomRight", "Bottom Right")}</option>
                 </select>
               </div>
             </div>
@@ -661,14 +673,14 @@ export default function ExportPngModal({ isOpen, onClose, onExport, timelineData
             onClick={handleCancel}
             disabled={isExporting}
           >
-            Cancel
+            {t("common:actions.cancel", "Cancel")}
           </button>
           <button
             className="settings-footer-button settings-create-button"
             onClick={handleExport}
             disabled={isExporting}
           >
-            {isExporting ? `Exporting ${exportState.percent || 0}%` : 'Export'}
+            {isExporting ? t("exportPng.exportingPercent", "Exporting {{percent}}%", { percent: exportState.percent || 0 }) : t("exportPng.export", "Export")}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback, startTransition } from "react";
+import { useTranslation } from "react-i18next";
 import TimelineView from "./components/TimelineView";
 import SpreadsheetView from "./components/SpreadsheetView";
 import Sidebar from "./components/Sidebar";
@@ -129,6 +130,7 @@ const getLocalThumbnailFilename = (thumbnail) => {
 };
 
 function App() {
+  const { t } = useTranslation(["app", "common", "timeline"]);
   const normalizeTimelineData = useCallback((data) => {
     if (!data || typeof data !== "object") return data;
 
@@ -705,7 +707,7 @@ function App() {
       } else if (e.shiftKey && e.key === "S") {
         e.preventDefault();
         window.electron?.captureScreenshot()
-          .then(() => showToast("Screenshot saved"))
+          .then(() => showToast(t("app:toasts.screenshotSaved", "Screenshot saved")))
           .catch((err) => console.error("[screenshot] error:", err));
       }
     };
@@ -1442,7 +1444,7 @@ function App() {
 
   const handleDownloadPackage = async () => {
     const baseName = timelineData.file?.uid || timelineData.file?.id?.replace(/-timeline$/, "") || "timeline";
-    showToast("Exporting package...", "pending", 0);
+    showToast(t("app:toasts.exportingPackage", "Exporting package..."), "pending", 0);
     let result;
     try {
       result = await exportTimelinePackage(timelineData, `${baseName}.timeline`);
@@ -1451,14 +1453,18 @@ function App() {
     }
     if (result?.success && result.skipped?.length > 0) {
       setSkippedFilesNotice({
-        title: "EXPORT FINISHED",
-        message: `Package exported, but ${result.skipped.length} referenced file(s) could not be found and were skipped:`,
+        title: t("app:skipped.exportTitle", "EXPORT FINISHED"),
+        message: t("app:skipped.exportMessage", {
+          count: result.skipped.length,
+          defaultValue_one: "Package exported, but {{count}} referenced file could not be found and was skipped:",
+          defaultValue_other: "Package exported, but {{count}} referenced files could not be found and were skipped:",
+        }),
         files: result.skipped,
       });
     } else if (result?.success) {
-      showToast("Package export saved");
+      showToast(t("app:toasts.packageSaved", "Package export saved"));
     } else if (result && !result.success && !result.canceled) {
-      showToast(`Package export failed: ${result.error || "unknown error"}`, "error", 4000);
+      showToast(t("app:toasts.packageFailed", "Package export failed: {{error}}", { error: result.error || t("app:toasts.unknownError", "unknown error") }), "error", 4000);
     }
   };
 
@@ -1466,8 +1472,12 @@ function App() {
     if (result?.success && result.id) {
       if (result.skipped?.length > 0) {
         setSkippedFilesNotice({
-          title: "IMPORT FINISHED",
-          message: `Imported, but ${result.skipped.length} bundled file(s) could not be written:`,
+          title: t("app:skipped.importTitle", "IMPORT FINISHED"),
+          message: t("app:skipped.importMessage", {
+            count: result.skipped.length,
+            defaultValue_one: "Imported, but {{count}} bundled file could not be written:",
+            defaultValue_other: "Imported, but {{count}} bundled files could not be written:",
+          }),
           files: result.skipped,
         });
       }
@@ -1500,24 +1510,22 @@ function App() {
     <div className="settings-backdrop" onClick={() => setImportConflict(null)}>
       <div className="settings-modal confirm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
-          <h2 className="settings-title">ALREADY IN LIBRARY</h2>
+          <h2 className="settings-title">{t("app:alreadyInLibrary.title", "ALREADY IN LIBRARY")}</h2>
         </div>
         <div className="confirm-content">
           <p className="confirm-text">
-            This file looks like "{importConflict.title}", a timeline that is already in
-            your library. You can open your existing timeline, or import this file as a
-            separate copy alongside it.
+            {t("app:alreadyInLibrary.message", "This file looks like \u0022{{title}}\u0022, a timeline that is already in your library. You can open your existing timeline, or import this file as a separate copy alongside it.", { title: importConflict.title })}
           </p>
         </div>
         <div className="confirm-actions">
           <button className="settings-folder-button" onClick={() => setImportConflict(null)}>
-            Cancel
+            {t("common:actions.cancel", "Cancel")}
           </button>
           <button className="settings-folder-button" onClick={() => handleResolveImportConflict("copy")}>
-            Import as Copy
+            {t("app:alreadyInLibrary.importCopy", "Import as Copy")}
           </button>
           <button className="settings-folder-button" onClick={() => handleResolveImportConflict("open-existing")}>
-            Open Existing
+            {t("app:alreadyInLibrary.openExisting", "Open Existing")}
           </button>
         </div>
       </div>
@@ -1540,7 +1548,7 @@ function App() {
         </div>
         <div className="confirm-actions">
           <button className="settings-folder-button" onClick={() => setSkippedFilesNotice(null)}>
-            OK
+            {t("common:actions.ok", "OK")}
           </button>
         </div>
       </div>
@@ -1554,7 +1562,7 @@ function App() {
 
   const handleExportPng = (options) => {
     setExportPngOptions(options);
-    setExportPngProgress({ percent: 0, stage: "Preparing export..." });
+    setExportPngProgress({ percent: 0, stage: t("app:exportPng.preparing", "Preparing export...") });
     setDownloadPngTrigger(prev => prev + 1);
   };
 
@@ -1566,11 +1574,11 @@ function App() {
     setExportPngProgress(null);
     setIsExportPngModalOpen(false);
     if (result?.success) {
-      showToast("PNG export saved");
+      showToast(t("app:toasts.pngSaved", "PNG export saved"));
     } else {
-      showToast(`PNG export failed: ${result?.error || "unknown error"}`, "error", 4000);
+      showToast(t("app:toasts.pngFailed", "PNG export failed: {{error}}", { error: result?.error || t("app:toasts.unknownError", "unknown error") }), "error", 4000);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleDownloadVideo = () => {
     setIsExportVideoModalOpen(true);
@@ -1580,11 +1588,11 @@ function App() {
     if (result?.canceled) return;
     setIsExportVideoModalOpen(false);
     if (result?.success) {
-      showToast("Video export saved");
+      showToast(t("app:toasts.videoSaved", "Video export saved"));
     } else {
-      showToast(`Video export failed: ${result?.error || "unknown error"}`, "error", 4000);
+      showToast(t("app:toasts.videoFailed", "Video export failed: {{error}}", { error: result?.error || t("app:toasts.unknownError", "unknown error") }), "error", 4000);
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleLoadTimeline = async (timelineId, hasThumbnail = false) => {
     try {
@@ -2051,7 +2059,7 @@ function App() {
       startMaximized,
     });
     if (window.electron?.relaunchApp) {
-      const confirmed = window.confirm("Restart required to apply hardware acceleration change. Restart now?");
+      const confirmed = window.confirm(t("app:confirmRestart", "Restart required to apply hardware acceleration change. Restart now?"));
       if (confirmed) window.electron.relaunchApp();
     }
   };
@@ -2409,7 +2417,7 @@ function App() {
             className="app-sidebar overlay-sidebar"
             style={{ width: isLeftCollapsed ? COLLAPSED_WIDTH : sidebarWidth }}
           >
-            <ErrorBoundary name="Sidebar">
+            <ErrorBoundary name={t("common:panels.sidebar", "Sidebar")}>
             <Sidebar
               isCollapsed={isLeftCollapsed}
               onToggle={() => setIsLeftCollapsed((v) => !v)}
@@ -2476,12 +2484,12 @@ function App() {
             boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
           }}
         >
-          <span>Timeline changed on disk.</span>
+          <span>{t("app:diskReload.message", "Timeline changed on disk.")}</span>
           <button className="folder-modal-btn folder-modal-btn-primary" onClick={() => handleLoadTimeline(currentTimelineId)}>
-            Reload
+            {t("common:actions.reload", "Reload")}
           </button>
           <button className="folder-modal-btn" onClick={() => setDiskReloadNotice(false)}>
-            Dismiss
+            {t("common:actions.dismiss", "Dismiss")}
           </button>
         </div>
       )}
@@ -2491,7 +2499,7 @@ function App() {
         style={{ display: isRightMaximized ? "none" : "block" }}
       >
           {viewMode === "spreadsheet" ? (
-            <ErrorBoundary name="Spreadsheet">
+            <ErrorBoundary name={t("common:panels.spreadsheet", "Spreadsheet")}>
               <SpreadsheetView
                 timelineData={filteredTimelineData}
                 selectedId={selectedId}
@@ -2520,7 +2528,7 @@ function App() {
               />
             </ErrorBoundary>
           ) : (
-            <ErrorBoundary name="Timeline">
+            <ErrorBoundary name={t("common:panels.timeline", "Timeline")}>
             <TimelineView
               ref={timelineViewRef}
               selectedId={selectedId}
@@ -2671,7 +2679,7 @@ function App() {
                   : rightWidth
               }}
             >
-              <ErrorBoundary name="Right panel">
+              <ErrorBoundary name={t("common:panels.rightPanel", "Right panel")}>
               <RightPanel
                 onSelect={handleSelect}
                 selectedElement={displayedElement}
@@ -2713,23 +2721,23 @@ function App() {
             <div className="settings-header">
               <h2 className="settings-title">
                 {deleteElementDialog.length > 1
-                  ? `DELETE ${deleteElementDialog.length} ELEMENTS`
-                  : `DELETE ${deleteElementDialog[0].type?.toUpperCase()}`}
+                  ? t("app:deleteElement.titlePlural", "DELETE {{count}} ELEMENTS", { count: deleteElementDialog.length })
+                  : t("app:deleteElement.titleSingular", "DELETE {{type}}", { type: t(`timeline:elementTypes.${deleteElementDialog[0].type}`, deleteElementDialog[0].type || "").toUpperCase() })}
               </h2>
               <button
                 className="settings-back-button"
                 onClick={() => setDeleteElementDialog(null)}
-                aria-label="Close delete dialog"
+                aria-label={t("app:deleteElement.closeAria", "Close delete dialog")}
               >
-                Close
+                {t("common:actions.close", "Close")}
               </button>
             </div>
 
             <div className="confirm-content">
               <p className="confirm-text">
                 {deleteElementDialog.length > 1
-                  ? `Are you sure you want to delete these ${deleteElementDialog.length} elements? This cannot be undone.`
-                  : `Are you sure you want to delete "${deleteElementDialog[0].title}"? This cannot be undone.`}
+                  ? t("app:deleteElement.confirmPlural", "Are you sure you want to delete these {{count}} elements? This cannot be undone.", { count: deleteElementDialog.length })
+                  : t("app:deleteElement.confirmSingular", "Are you sure you want to delete \u0022{{title}}\u0022? This cannot be undone.", { title: deleteElementDialog[0].title })}
               </p>
               <label className="confirm-checkbox">
                 <input
@@ -2738,7 +2746,11 @@ function App() {
                   disabled={!deleteElementDialog.some((el) => el.noteFile)}
                   onChange={(e) => setDeleteElementWithNotes(e.target.checked)}
                 />
-                Also delete linked note file{deleteElementDialog.filter((el) => el.noteFile).length > 1 ? "s" : ""}
+                {t("app:deleteElement.alsoDeleteNotes", {
+                  count: deleteElementDialog.filter((el) => el.noteFile).length,
+                  defaultValue_one: "Also delete linked note file",
+                  defaultValue_other: "Also delete linked note files",
+                })}
               </label>
               <label className="confirm-checkbox">
                 <input
@@ -2747,7 +2759,11 @@ function App() {
                   disabled={!deleteElementDialog.some((el) => getLocalThumbnailFilename(el.thumbnail))}
                   onChange={(e) => setDeleteElementWithImage(e.target.checked)}
                 />
-                Also delete image file{deleteElementDialog.filter((el) => getLocalThumbnailFilename(el.thumbnail)).length > 1 ? "s" : ""}
+                {t("app:deleteElement.alsoDeleteImages", {
+                  count: deleteElementDialog.filter((el) => getLocalThumbnailFilename(el.thumbnail)).length,
+                  defaultValue_one: "Also delete image file",
+                  defaultValue_other: "Also delete image files",
+                })}
               </label>
             </div>
 
@@ -2756,13 +2772,13 @@ function App() {
                 className="settings-folder-button"
                 onClick={() => setDeleteElementDialog(null)}
               >
-                Cancel
+                {t("common:actions.cancel", "Cancel")}
               </button>
               <button
                 className="settings-folder-button confirm-delete-button"
                 onClick={handleConfirmDeleteElement}
               >
-                Delete
+                {t("common:actions.delete", "Delete")}
               </button>
             </div>
           </div>

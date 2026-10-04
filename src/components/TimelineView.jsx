@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle, Fragment, useCallback, lazy, Suspense, useDeferredValue } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation, Trans } from "react-i18next";
 import {
   pickStep,
   buildSpanChildPlacement,
@@ -12,7 +13,7 @@ import {
   formatApproxRange,
   calculateDetailLevel,
   getReadableTextColor,
-  MONTH_LABELS,
+  monthLabels,
 } from "../utils/timelineUtils";
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration } from "../utils/dateUtils";
@@ -445,6 +446,7 @@ const TimelineView = forwardRef(function TimelineView({
   onSetViewMode,
   readOnly = false,
 }, ref) {
+  const { t } = useTranslation(["timeline", "common"]);
   const isMac = navigator.userAgent?.includes("Mac");
   const fmtKey = (bind) => {
     if (!bind?.keys?.length) return "";
@@ -1408,7 +1410,7 @@ const TimelineView = forwardRef(function TimelineView({
             const value = y + (m - 1) / 12 + (d - 1) / (daysInMonth(y, m) * 12);
             if (value > segment.end + epsilon) break;
             if (value >= segment.start - epsilon) {
-              pushTick({ value, label: `${MONTH_LABELS[m - 1]} ${d}` });
+              pushTick({ value, label: `${monthLabels()[m - 1]} ${d}` });
             }
             dateCursor.setUTCDate(dateCursor.getUTCDate() + dayInterval);
           }
@@ -1426,7 +1428,7 @@ const TimelineView = forwardRef(function TimelineView({
             const monthIndex = absMonth % 12;
             const value = y + monthIndex / 12;
             if (value < segment.start - epsilon || value > segment.end + epsilon) continue;
-            pushTick({ value, label: `${MONTH_LABELS[monthIndex]} ${y}` });
+            pushTick({ value, label: `${monthLabels()[monthIndex]} ${y}` });
           }
           continue;
         }
@@ -2064,8 +2066,8 @@ const TimelineView = forwardRef(function TimelineView({
             type="button"
             className="fm-header-btn"
             onClick={() => setFilterModalOpen(false)}
-            title="Close"
-            aria-label="Close filters"
+            title={t("common:actions.close", "Close")}
+            aria-label={t("filters.close", "Close filters")}
           >
             <X size={14} />
           </button>
@@ -2074,8 +2076,8 @@ const TimelineView = forwardRef(function TimelineView({
             type="button"
             className="fm-header-btn"
             onClick={() => { setFilterMenu(null); setFilterModalOpen(true); }}
-            title="Expand"
-            aria-label="Open filters in a larger panel"
+            title={t("common:actions.expand", "Expand")}
+            aria-label={t("filters.expand", "Open filters in a larger panel")}
           >
             <Maximize2 size={16} />
           </button>
@@ -2098,7 +2100,7 @@ const TimelineView = forwardRef(function TimelineView({
                 <button
                   type="button"
                   className="fm-join"
-                  title="Toggle AND / OR"
+                  title={t("filters.toggleAndOr", "Toggle AND / OR")}
                   onClick={() => toggleChipJoin(chip.id)}
                 >{chip.join === "or" ? "OR" : "AND"}</button>
               )}
@@ -2107,13 +2109,13 @@ const TimelineView = forwardRef(function TimelineView({
                 <button
                   type="button"
                   className="fm-fchip-label"
-                  title={chip.negated ? "Include (remove ~)" : "Exclude (~)"}
+                  title={chip.negated ? t("filters.include", "Include (remove ~)") : t("filters.exclude", "Exclude (~)")}
                   onClick={() => toggleChipNegate(chip.id)}
                 >{filterChipLabel(chip)}</button>
                 <button
                   type="button"
                   className="fm-fchip-remove"
-                  aria-label="Remove filter"
+                  aria-label={t("filters.remove", "Remove filter")}
                   onClick={() => removeFilterChip(chip.id)}
                 >×</button>
               </span>
@@ -2125,7 +2127,7 @@ const TimelineView = forwardRef(function TimelineView({
             ref={filterInputRef}
             autoFocus
             className="fm-field-input"
-            placeholder={filterChips.length ? "Filter…" : "Filter elements…"}
+            placeholder={filterChips.length ? t("filters.placeholderShort", "Filter…") : t("filters.placeholder", "Filter elements…")}
             value={filterText}
             onChange={(e) => { setFilterText(e.target.value); setHistoryOpen(true); }}
             onFocus={() => setHistoryOpen(true)}
@@ -2172,7 +2174,7 @@ const TimelineView = forwardRef(function TimelineView({
                 <button
                   type="button"
                   className="fm-history-item-x"
-                  title="Remove from history"
+                  title={t("filters.removeFromHistory", "Remove from history")}
                   aria-label={`Remove "${q}" from history`}
                   onMouseDown={(e) => { e.preventDefault(); removeFilterHistory(q); }}
                 >×</button>
@@ -2182,7 +2184,7 @@ const TimelineView = forwardRef(function TimelineView({
         )}
         </div>
         <div className="fm-chip-row">
-          <span className="fm-chip-label">TYPE</span>
+          <span className="fm-chip-label">{t("filters.labels.type", "TYPE")}</span>
           {FILTER_TYPE_TERMS.map((value) => {
             const active = filterChips.some((c) => c.kind === "type" && c.value === value);
             return (
@@ -2197,7 +2199,7 @@ const TimelineView = forwardRef(function TimelineView({
           })}
         </div>
         <div className="fm-chip-row">
-          <span className="fm-chip-label">DATE</span>
+          <span className="fm-chip-label">{t("filters.labels.date", "DATE")}</span>
           <div className="fm-date-ops">
             {FILTER_DATE_OPS.map(([op, glyph]) => (
               <button
@@ -2211,7 +2213,7 @@ const TimelineView = forwardRef(function TimelineView({
           </div>
           <input
             className="fm-date-input"
-            placeholder="year / date"
+            placeholder={t("filters.datePlaceholder", "year / date")}
             value={filterDateVal}
             onChange={(e) => setFilterDateVal(e.target.value)}
             spellCheck={false}
@@ -2221,20 +2223,20 @@ const TimelineView = forwardRef(function TimelineView({
           <button
             type="button"
             className="fm-date-add"
-            title="Add date filter"
+            title={t("filters.addDateFilter", "Add date filter")}
             disabled={!filterDateVal.trim()}
             onClick={addDateChip}
           >+</button>
         </div>
       </div>
       <div className="fm-tags-header">
-        <span className="fm-tags-title">TAGS</span>
-        <span className="fm-tags-subtitle">CLICK TO FILTER · SHIFT TO QUERY</span>
-        <span className="fm-tags-count">{allTags.length} tags</span>
+        <span className="fm-tags-title">{t("filters.labels.tags", "TAGS")}</span>
+        <span className="fm-tags-subtitle">{t("filters.labels.tagsHint", "CLICK TO FILTER · SHIFT TO QUERY")}</span>
+        <span className="fm-tags-count">{t("filters.tagCount", { count: allTags.length, defaultValue_one: "{{count}} tag", defaultValue_other: "{{count}} tags" })}</span>
       </div>
       <div className="filter-menu-dropdown">
         {allTags.length === 0 && (
-          <div className="filter-menu-empty">No tags found</div>
+          <div className="filter-menu-empty">{t("sidebar.tags.none", "No tags found")}</div>
         )}
         {allTags.map((tag) => {
           const isShown = activeTags.includes(tag);
@@ -2248,7 +2250,7 @@ const TimelineView = forwardRef(function TimelineView({
               className={`sb-tag-row${isHidden ? " is-hidden" : ""}${isShown ? " is-selected" : ""}${inQuery ? " is-in-query" : ""}`}
               onMouseDown={blockShiftSelect}
               onClick={(e) => { if (e.shiftKey) toggleTagChip(tag); else onToggleTag?.(tag); }}
-              title={`${isShown ? "Remove tag filter" : "Filter by this tag"} · Shift-click to ${inQuery ? "remove from" : "add to"} the query`}
+              title={t("filters.tagHint", "{{action}} · Shift-click to {{queryAction}} the query", { action: isShown ? t("filters.removeTagFilter", "Remove tag filter") : t("filters.filterByTag", "Filter by this tag"), queryAction: inQuery ? t("filters.removeFromQuery", "remove from") : t("filters.addToQuery", "add to") })}
             >
               <span className="sb-tag-name"><span className="sb-tag-hash">#</span>{tag}</span>
               <span className="sb-tag-count">{count}</span>
@@ -2257,7 +2259,7 @@ const TimelineView = forwardRef(function TimelineView({
                   type="button"
                   className={`filter-menu-icon-btn filter-menu-hide-btn${isHidden ? " is-active" : ""}`}
                   onClick={(e) => { e.stopPropagation(); onToggleHiddenTag?.(tag); }}
-                  title={isHidden ? "Show tag" : "Hide tag"}
+                  title={isHidden ? t("filters.showTag", "Show tag") : t("filters.hideTag", "Hide tag")}
                 >
                   {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
                 </button>
@@ -2265,7 +2267,7 @@ const TimelineView = forwardRef(function TimelineView({
                   type="button"
                   className={`filter-menu-icon-btn filter-menu-pin-btn${isPinned ? " is-pinned" : ""}`}
                   onClick={(e) => { e.stopPropagation(); onTogglePinnedTag?.(tag); }}
-                  title={isPinned ? "Remove label" : "Use as label"}
+                  title={isPinned ? t("filters.removeLabel", "Remove label") : t("filters.useAsLabel", "Use as label")}
                 >
                   <Tag size={12} />
                 </button>
@@ -2275,8 +2277,8 @@ const TimelineView = forwardRef(function TimelineView({
         })}
       </div>
       <div className="fm-preview">
-        <span className="fm-preview-label">QUERY</span>
-        <code className="fm-preview-text">{fullFilterQuery || "No active filter"}</code>
+        <span className="fm-preview-label">{t("filters.labels.query", "QUERY")}</span>
+        <code className="fm-preview-text">{fullFilterQuery || t("filters.noActiveFilter", "No active filter")}</code>
       </div>
       <div className="fm-footer">
         <button
@@ -2284,19 +2286,19 @@ const TimelineView = forwardRef(function TimelineView({
           type="button"
           onClick={clearAllFilters}
         >
-          Clear
+          {t("common:actions.clear", "Clear")}
         </button>
         <span className="fm-footer-count">
-          <strong>{shownElementCount}</strong> shown
+          <Trans i18nKey="filters.shownCount" ns="timeline" count={shownElementCount}><strong>{{ count: shownElementCount }}</strong> shown</Trans>
         </span>
         <a
           className="fm-footer-syntax"
-          title="Filter syntax help"
+          title={t("filters.syntaxHelp", "Filter syntax help")}
           href="https://www.timelines.studio/wiki/Searching"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <HelpCircle size={11} /> syntax
+          <HelpCircle size={11} /> {t("filters.syntax", "syntax")}
         </a>
       </div>
     </>
@@ -3704,7 +3706,7 @@ const TimelineView = forwardRef(function TimelineView({
                       return duration ? <span className="era-duration" style={{ color: eraTextColor }}>{duration}</span> : null;
                     })()}
                     {era.sourceLink && (
-                      <a className="era-source-link" href={era.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title="Open source" style={{ color: eraTextColor }}><ExternalLink size={8} strokeWidth={2.5} /></a>
+                      <a className="era-source-link" href={era.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title={t("openSource", "Open source")} style={{ color: eraTextColor }}><ExternalLink size={8} strokeWidth={2.5} /></a>
                     )}
                   </span>
                 )}
@@ -4075,7 +4077,7 @@ const TimelineView = forwardRef(function TimelineView({
                             <span className="span-title" style={{ color: spanTextColor }}>{span.icon && ICON_MAP[span.icon] && (() => { const I = ICON_MAP[span.icon]; return <I size={10} className="span-title-icon" />; })()}{span.title}</span>
                           )}
                           {span.sourceLink && !hideSpanName && (
-                            <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title="Open source" style={{ color: spanTextColor }}><ExternalLink size={9} strokeWidth={3} /></a>
+                            <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title={t("openSource", "Open source")} style={{ color: spanTextColor }}><ExternalLink size={9} strokeWidth={3} /></a>
                           )}
                           {!hideSpanYears && (
                             <span className="span-years" style={{ color: spanTextColor, opacity: 0.7 }}>
@@ -4171,7 +4173,7 @@ const TimelineView = forwardRef(function TimelineView({
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            title="Open source"
+                            title={t("openSource", "Open source")}
                           ><ExternalLink size={11} strokeWidth={2.7} /></a>
                         )}
                         {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
@@ -4281,7 +4283,7 @@ const TimelineView = forwardRef(function TimelineView({
                     return duration ? <span className="span-duration" style={{ color: spanTextColor, opacity: 0.7 }}>{duration}</span> : null;
                   })()}
                   {span.sourceLink && !hideSpanYears && (
-                    <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title="Open source" style={{ color: spanTextColor, opacity: 0.85 }}><ExternalLink size={9} strokeWidth={2.5} /></a>
+                    <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title={t("openSource", "Open source")} style={{ color: spanTextColor, opacity: 0.85 }}><ExternalLink size={9} strokeWidth={2.5} /></a>
                   )}
                 </>
                 {(() => {
@@ -4593,23 +4595,23 @@ const TimelineView = forwardRef(function TimelineView({
             onClick={() => handleMenuAction(() => onEditElement?.(contextMenu.element.id))}
           >
             <Edit2 size={16} />
-            <span>Edit {contextMenu.element.type.charAt(0).toUpperCase() + contextMenu.element.type.slice(1)}</span>
+            <span>{t("contextMenu.edit", "Edit {{type}}", { type: t(`elementTypes.${contextMenu.element.type}`, contextMenu.element.type) })}</span>
           </button>
           <button
             className="context-menu-item"
             onClick={() => handleMenuAction(() => onDuplicateElement?.(contextMenu.element.id))}
           >
             <CopyPlus size={16} />
-            <span>Duplicate {contextMenu.element.type.charAt(0).toUpperCase() + contextMenu.element.type.slice(1)}</span>
+            <span>{t("contextMenu.duplicate", "Duplicate {{type}}", { type: t(`elementTypes.${contextMenu.element.type}`, contextMenu.element.type) })}</span>
           </button>
           {contextMenu.element.type === "span" && (
             <button
               className="context-menu-item"
-              title="Shift-click a span to do this without the menu"
+              title={t("contextMenu.focusHint", "Shift-click a span to do this without the menu")}
               onClick={() => handleMenuAction(() => toggleFamilyChip(contextMenu.element.id, contextMenu.element.title))}
             >
               <Crosshair size={16} />
-              <span>{isFamilyFocused(contextMenu.element.id) ? "Clear Focus" : "Focus Span & Children"}</span>
+              <span>{isFamilyFocused(contextMenu.element.id) ? t("contextMenu.clearFocus", "Clear Focus") : t("contextMenu.focusSpan", "Focus Span & Children")}</span>
             </button>
           )}
           <div className="context-menu-separator" />
@@ -4618,7 +4620,7 @@ const TimelineView = forwardRef(function TimelineView({
             onClick={() => handleMenuAction(() => onDelete?.(contextMenu.element.id))}
           >
             <Trash2 size={16} />
-            <span>Delete {contextMenu.element.type.charAt(0).toUpperCase() + contextMenu.element.type.slice(1)}</span>
+            <span>{t("contextMenu.delete", "Delete {{type}}", { type: t(`elementTypes.${contextMenu.element.type}`, contextMenu.element.type) })}</span>
           </button>
         </div>
       )}
@@ -4640,7 +4642,7 @@ const TimelineView = forwardRef(function TimelineView({
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16 }}>
               <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor" }} />
             </span>
-            <span>Add Event</span>
+            <span>{t("contextMenu.addEvent", "Add Event")}</span>
           </button>
           <button
             className="context-menu-item"
@@ -4649,7 +4651,7 @@ const TimelineView = forwardRef(function TimelineView({
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16 }}>
               <span style={{ display: "inline-block", width: 12, height: 2, borderRadius: 1, background: "currentColor" }} />
             </span>
-            <span>Add Span</span>
+            <span>{t("contextMenu.addSpan", "Add Span")}</span>
           </button>
           <button
             className="context-menu-item"
@@ -4658,7 +4660,7 @@ const TimelineView = forwardRef(function TimelineView({
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16 }}>
               <span style={{ display: "inline-block", width: 10, height: 10, border: "2px solid currentColor", borderRadius: 2 }} />
             </span>
-            <span>Add Era</span>
+            <span>{t("contextMenu.addEra", "Add Era")}</span>
           </button>
 
           <div className="context-menu-separator" />
@@ -4668,7 +4670,7 @@ const TimelineView = forwardRef(function TimelineView({
             onClick={() => handleMenuAction(handleDownloadJSON)}
           >
             <FileJson size={16} />
-            <span>Download .json</span>
+            <span>{t("contextMenu.downloadJson", "Download .json")}</span>
           </button>
           {!showMap && (
             <>
@@ -4677,14 +4679,14 @@ const TimelineView = forwardRef(function TimelineView({
                 onClick={() => handleMenuAction(() => onExportPng?.())}
               >
                 <Image size={16} />
-                <span>Download .png</span>
+                <span>{t("sidebar.downloadPng", "Download .png")}</span>
               </button>
               <button
                 className="context-menu-item"
                 onClick={() => handleMenuAction(() => onExportVideo?.())}
               >
                 <Video size={16} />
-                <span>Export Video</span>
+                <span>{t("sidebar.exportVideo", "Export Video")}</span>
               </button>
             </>
           )}
@@ -4696,7 +4698,7 @@ const TimelineView = forwardRef(function TimelineView({
             onClick={() => handleMenuAction(() => onOpenSettings?.())}
           >
             <Settings size={16} />
-            <span>Settings</span>
+            <span>{t("toolbar.settings", "Settings")}</span>
           </button>
         </div>
       )}
@@ -4726,7 +4728,7 @@ const TimelineView = forwardRef(function TimelineView({
             Click the map to set coordinates
             {coordPickRequest.title ? ` for "${coordPickRequest.title}"` : ""}
           </span>
-          <span className="map-pick-banner-hint">Esc to cancel</span>
+          <span className="map-pick-banner-hint">{t("mapPick.escToCancel", "Esc to cancel")}</span>
         </div>
       )}
 
@@ -4735,8 +4737,8 @@ const TimelineView = forwardRef(function TimelineView({
           type="button"
           className="timeline-canvas-button"
           onClick={handleZoomIn}
-          aria-label="Zoom in"
-          data-tooltip="Zoom in (+)"
+          aria-label={t("toolbar.zoomIn", "Zoom in")}
+          data-tooltip={t("toolbar.zoomInTooltip", "Zoom in (+)")}
         >
           <Plus size={16} />
         </button>
@@ -4744,8 +4746,8 @@ const TimelineView = forwardRef(function TimelineView({
           type="button"
           className="timeline-canvas-button"
           onClick={handleZoomOut}
-          aria-label="Zoom out"
-          data-tooltip="Zoom out (-)"
+          aria-label={t("toolbar.zoomOut", "Zoom out")}
+          data-tooltip={t("toolbar.zoomOutTooltip", "Zoom out (-)")}
         >
           <Minus size={16} />
         </button>
@@ -4754,8 +4756,8 @@ const TimelineView = forwardRef(function TimelineView({
           <button
             type="button"
             className="timeline-canvas-button"
-            aria-label={showMap ? "Timeline View" : "Map View"}
-            data-tooltip={showMap ? "Timeline View" : "Map View"}
+            aria-label={showMap ? t("toolbar.timelineView", "Timeline View") : t("toolbar.mapView", "Map View")}
+            data-tooltip={showMap ? t("toolbar.timelineView", "Timeline View") : t("toolbar.mapView", "Map View")}
             onClick={() => setShowMap((v) => !v)}
           >
             {showMap ? <GanttChartSquare size={16} /> : <MapIcon size={16} />}
@@ -4766,8 +4768,8 @@ const TimelineView = forwardRef(function TimelineView({
             type="button"
             className="timeline-canvas-button"
             onClick={() => onSetViewMode("spreadsheet")}
-            aria-label="Spreadsheet view"
-            data-tooltip="Spreadsheet view"
+            aria-label={t("toolbar.spreadsheetView", "Spreadsheet view")}
+            data-tooltip={t("toolbar.spreadsheetView", "Spreadsheet view")}
           >
             <Table2 size={16} />
           </button>
@@ -4776,8 +4778,8 @@ const TimelineView = forwardRef(function TimelineView({
           type="button"
           className={`timeline-canvas-button${hasAnyFilter ? ' timeline-canvas-button-active' : ''}`}
           onClick={handleToggleFilterMenu}
-          aria-label="Filter"
-          data-tooltip="Filter"
+          aria-label={t("toolbar.filter", "Filter")}
+          data-tooltip={t("toolbar.filter", "Filter")}
           ref={filterButtonRef}
         >
           <ListFilter size={16} />
@@ -4787,8 +4789,8 @@ const TimelineView = forwardRef(function TimelineView({
             type="button"
             className="timeline-canvas-button"
             onClick={onOpenSettings}
-            aria-label="Timeline settings"
-            data-tooltip="Settings"
+            aria-label={t("toolbar.timelineSettings", "Timeline settings")}
+            data-tooltip={t("toolbar.settings", "Settings")}
           >
             <Settings size={16} />
           </button>

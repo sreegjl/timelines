@@ -1,0 +1,48 @@
+{
+  "actions": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "change": "Change",
+    "clear": "Clear",
+    "close": "Close",
+    "create": "Create",
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "expand": "Expand",
+    "moreOptions": "More options",
+    "ok": "OK",
+    "open": "Open",
+    "reload": "Reload",
+    "remove": "Remove",
+    "rename": "Rename",
+    "replace": "Replace",
+    "resetToDefault": "Reset to default",
+    "save": "Save"
+  },
+  "errorBoundary": {
+    "crashed": "{{name}} crashed",
+    "reload": "Reload panel"
+  },
+  "loading": "Loading…",
+  "panels": {
+    "rightPanel": "Right panel",
+    "sidebar": "Sidebar",
+    "spreadsheet": "Spreadsheet",
+    "timeline": "Timeline"
+  },
+  "validation": {
+    "eventDateInvalid": "Event date must be a number or MM/DD/YYYY.",
+    "eventOutOfBounds": "Event date must be within the timeline bounds.",
+    "extendFromMismatch": "Extend From only works when the selected span ends exactly at this span's start.",
+    "scaleBothRequired": "Both start and end required",
+    "scaleInvalidEnd": "Invalid end date",
+    "scaleInvalidStart": "Invalid start date",
+    "scaleMustDiffer": "Start and end must differ",
+    "scaleOutOfRange": "Scale must be 0–2",
+    "spanOutOfRange": "Span/Era must overlap with the timeline range.",
+    "startAfterEnd": "Start must be before End.",
+    "startEndInvalid": "Start and end must be numbers or MM/DD/YYYY."
+  }
+}

@@ -1,8 +1,26 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { ICON_CATEGORIES, ALL_ICONS } from "../config/elementIcons";
 
 export default function IconPicker({ value, onChange }) {
+  const { t } = useTranslation("timeline");
+  // Listed statically so i18next-parser can see every category key.
+  const categoryLabels = useMemo(() => ({
+    people: t("iconCategories.people", "People & Emotions"),
+    places: t("iconCategories.places", "Places"),
+    time: t("iconCategories.time", "Time"),
+    events: t("iconCategories.events", "Events & Milestones"),
+    military: t("iconCategories.military", "Military & Politics"),
+    religion: t("iconCategories.religion", "Religion & Culture"),
+    science: t("iconCategories.science", "Science, Tech & Education"),
+    arts: t("iconCategories.arts", "Arts, Media & Gaming"),
+    transport: t("iconCategories.transport", "Transport"),
+    nature: t("iconCategories.nature", "Nature & Animals"),
+    food: t("iconCategories.food", "Food, Health & Commerce"),
+    tools: t("iconCategories.tools", "Tools & Communication"),
+    symbols: t("iconCategories.symbols", "Symbols"),
+  }), [t]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
@@ -42,16 +60,16 @@ export default function IconPicker({ value, onChange }) {
           type="button"
           className={`icon-picker-trigger${value ? " has-icon" : ""}`}
           onClick={() => setOpen((v) => !v)}
-          title={value ? `Icon: ${value}` : "Add icon"}
+          title={value ? t("iconPicker.current", "Icon: {{name}}", { name: value }) : t("iconPicker.add", "Add icon")}
         >
-          {CurrentIcon ? <CurrentIcon size={14} /> : <span className="icon-picker-placeholder">No icon</span>}
+          {CurrentIcon ? <CurrentIcon size={14} /> : <span className="icon-picker-placeholder">{t("iconPicker.none", "No icon")}</span>}
         </button>
         {value && (
           <button
             type="button"
             className="icon-picker-clear"
             onClick={() => onChange(null)}
-            title="Remove icon"
+            title={t("iconPicker.remove", "Remove icon")}
           >
             <X size={10} />
           </button>
@@ -64,7 +82,7 @@ export default function IconPicker({ value, onChange }) {
               ref={searchRef}
               type="text"
               className="icon-picker-search"
-              placeholder="Search icons..."
+              placeholder={t("iconPicker.search", "Search icons...")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -86,12 +104,12 @@ export default function IconPicker({ value, onChange }) {
                   ))}
                 </div>
               ) : (
-                <div className="icon-picker-empty">No icons match</div>
+                <div className="icon-picker-empty">{t("iconPicker.noMatches", "No icons match")}</div>
               )
             ) : (
               ICON_CATEGORIES.map((cat) => (
-                <div key={cat.label} className="icon-picker-category">
-                  <div className="icon-picker-category-label">{cat.label}</div>
+                <div key={cat.id} className="icon-picker-category">
+                  <div className="icon-picker-category-label">{categoryLabels[cat.id] || cat.label}</div>
                   <div className="icon-picker-grid">
                     {cat.icons.map((entry) => (
                       <button
