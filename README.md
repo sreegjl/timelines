@@ -77,4 +77,9 @@ npm run electron:build
 
 The output installer will be in the `release/` folder.
 
+## Support
+
+Timelines is built and maintained by one developer. If it's useful to you, you can
+support development on [Ko-fi](https://ko-fi.com/sreegjl). Thank you!
+
 <!-- ![Design Doc](docs/design-doc.png) -->
