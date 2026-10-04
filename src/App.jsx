@@ -1400,6 +1400,16 @@ function App() {
     });
   }, [enqueuePersist, saveCurrentTimeline]);
 
+  // Ctrl+Shift+Scroll commit; bypasses handleUpdateTimeline's rename path
+  const handleDetailLevelChange = useCallback((detailLevel) => {
+    setTimelineData((prevData) => {
+      if (!prevData?.file) return prevData;
+      const updatedData = { ...prevData, file: { ...prevData.file, detailLevel } };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+  }, [saveCurrentTimeline]);
+
   const handlePatchFile = (patch) => {
     setTimelineData((prevData) => {
       const nextFile = { ...prevData.file, ...patch };
@@ -2569,6 +2579,7 @@ function App() {
               tagColors={timelineData.file?.tagColors || {}}
               keybinds={keybinds}
               onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}
+              onDetailLevelChange={handleDetailLevelChange}
             />
             </ErrorBoundary>
           )}

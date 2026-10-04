@@ -21,6 +21,7 @@ import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
+import { DETAIL_MIN, DETAIL_MAX, clamp } from "../utils/sliderUtils";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
 const FILTER_HISTORY_MAX = 8;
@@ -444,6 +445,7 @@ const TimelineView = forwardRef(function TimelineView({
   tagColors = {},
   keybinds = {},
   onSetViewMode,
+  onDetailLevelChange,
   readOnly = false,
 }, ref) {
   const { t } = useTranslation(["timeline", "common"]);
@@ -465,6 +467,15 @@ const TimelineView = forwardRef(function TimelineView({
   const prevCalculatedHeightRef = useRef(null);
   const isPanningRef = useRef(false);
   const lastPanPositionRef = useRef({ x: 0, y: 0 });
+  // Live Ctrl+Shift+Scroll detail level, committed to the file once scrolling stops
+  const [detailOverride, setDetailOverride] = useState(null);
+  const detailOverrideRef = useRef(null);
+  const committedDetailRef = useRef(1);
+  const detailAnchorRef = useRef(null);
+  const detailDeltaRef = useRef(0);
+  const detailClientXRef = useRef(0);
+  const detailRafRef = useRef(null);
+  const detailCommitTimerRef = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [filterMenu, setFilterMenu] = useState(null);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -818,7 +829,7 @@ const TimelineView = forwardRef(function TimelineView({
     // Calculate detail level automatically based on range
     // The detailLevel setting will be used as a multiplier later
     const baseDetailLevel = calculateDetailLevel(range);
-    const detailMultiplier = file?.detailLevel ?? 1;
+    const detailMultiplier = detailOverride ?? file?.detailLevel ?? 1;
     const PX_PER_YEAR = baseDetailLevel * detailMultiplier;
     const TIMELINE_PADDING = 200; // px padding on each end
     const timelineWidth = range * PX_PER_YEAR + (TIMELINE_PADDING * 2);
@@ -1320,7 +1331,7 @@ const TimelineView = forwardRef(function TimelineView({
       decompressYear,
       evFontSize,
     };
-  }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady]);
+  }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady, detailOverride]);
 
   const ticks = useMemo(() => {
     const minYear = file?.start;
@@ -1648,6 +1659,23 @@ const TimelineView = forwardRef(function TimelineView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calculatedHeight]);
 
+  // Re-anchor horizontal pan after a detail level change rescales time spacing
+  useLayoutEffect(() => {
+    const anchor = detailAnchorRef.current;
+    const container = containerRef.current;
+    if (!anchor || !container) return;
+    detailAnchorRef.current = null;
+    const nextCanvasX = TIMELINE_PADDING + (anchor.canvasX - TIMELINE_PADDING) * anchor.ratio;
+    translateRef.current.x = anchor.localX - nextCanvasX * scaleRef.current;
+    const { minX, maxX, range } = getPanBounds(container);
+    translateRef.current.x = Math.min(maxX, Math.max(minX, translateRef.current.x));
+    applyTransform();
+    if (!isPlaying && range > 0) {
+      queueSliderValue(Math.min(100, Math.max(0, ((maxX - translateRef.current.x) / range) * 100)));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [PX_PER_YEAR]);
+
   const applyTransform = ({ skipLabels = false } = {}) => {
     const timelineEl = timelineRef.current;
     if (!timelineEl) return;
@@ -1820,6 +1848,52 @@ const TimelineView = forwardRef(function TimelineView({
   };
   panTimelineFromWheelRef.current = panTimelineFromWheel;
   zoomTimelineFromWheelRef.current = zoomTimelineFromWheel;
+
+  committedDetailRef.current = timelineData.file?.detailLevel ?? 1;
+
+  // Queue a detail level change that keeps the canvas point under localX fixed
+  const setDetailAnchored = (next, localX) => {
+    const current = detailOverrideRef.current ?? committedDetailRef.current;
+    if (next === current) return;
+    const pending = detailAnchorRef.current;
+    detailAnchorRef.current = pending
+      ? { ...pending, ratio: pending.ratio * (next / current) }
+      : { localX, canvasX: (localX - translateRef.current.x) / scaleRef.current, ratio: next / current };
+    detailOverrideRef.current = next;
+    setDetailOverride(next);
+  };
+
+  const scaleTimelineHorizontallyFromWheel = ({ delta = 0, clientX }) => {
+    detailDeltaRef.current += delta;
+    detailClientXRef.current = clientX;
+    if (detailRafRef.current) return;
+    detailRafRef.current = requestAnimationFrame(() => {
+      detailRafRef.current = null;
+      const container = containerRef.current;
+      if (!container) return;
+      const localX = detailClientXRef.current - container.getBoundingClientRect().left;
+      const current = detailOverrideRef.current ?? committedDetailRef.current;
+      setDetailAnchored(clamp(current * Math.pow(0.999, detailDeltaRef.current), DETAIL_MIN, DETAIL_MAX), localX);
+      detailDeltaRef.current = 0;
+
+      clearTimeout(detailCommitTimerRef.current);
+      detailCommitTimerRef.current = setTimeout(() => {
+        if (detailOverrideRef.current == null || readOnly || !onDetailLevelChange) return;
+        setDetailAnchored(Math.round(detailOverrideRef.current * 100) / 100, localX);
+        const level = detailOverrideRef.current;
+        detailOverrideRef.current = null;
+        setDetailOverride(null);
+        onDetailLevelChange(level);
+      }, 500);
+    });
+  };
+  const scaleTimelineHorizontallyFromWheelRef = useRef(null);
+  scaleTimelineHorizontallyFromWheelRef.current = scaleTimelineHorizontallyFromWheel;
+
+  useEffect(() => () => {
+    clearTimeout(detailCommitTimerRef.current);
+    if (detailRafRef.current) cancelAnimationFrame(detailRafRef.current);
+  }, []);
 
   const handleZoomIn = () => {
     if (showMap) { mapViewRef.current?.zoomIn(); return; }
@@ -2312,6 +2386,10 @@ const TimelineView = forwardRef(function TimelineView({
       translateRef.current = { x: 0, y: 0 };
       scaleRef.current = 1;
       prevCalculatedHeightRef.current = null;
+      clearTimeout(detailCommitTimerRef.current);
+      detailOverrideRef.current = null;
+      detailAnchorRef.current = null;
+      setDetailOverride(null);
     }
     prevFileIdRef.current = file?.id;
   }, [file?.id]);
@@ -2335,6 +2413,17 @@ const TimelineView = forwardRef(function TimelineView({
     // Zoom to cursor with transforms
     const handleWheel = (e) => {
       if (e.target?.closest?.(".timeline-context-menu")) {
+        return;
+      }
+
+      // Shift+wheel arrives as deltaX in Chromium, so fall back to it
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        scaleTimelineHorizontallyFromWheelRef.current?.({
+          delta: e.deltaY || e.deltaX,
+          clientX: e.clientX,
+        });
         return;
       }
 
