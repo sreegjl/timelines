@@ -131,6 +131,16 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
     onChange(next);
   };
 
+  // Outside clicks unmount before blur fires, so apply complete hex values as they're typed or pasted
+  const onHexInput = (raw) => {
+    setHexDraft(raw);
+    const hex = raw.trim().replace(/^#?/, "#");
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    lastEmitted.current = hex.toLowerCase();
+    setHsv(hexToHsv(hex));
+    onChange(hex);
+  };
+
   const hueHex = hsvToHex(hsv.h, 1, 1);
   const currentHex = hsvToHex(hsv.h, hsv.s, hsv.v);
 
@@ -184,7 +194,7 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
           maxLength={7}
           spellCheck={false}
           aria-label={t("colorPicker.hex", "Hex color")}
-          onChange={(e) => setHexDraft(e.target.value)}
+          onChange={(e) => onHexInput(e.target.value)}
           onBlur={(e) => commitHex(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") { e.preventDefault(); commitHex(e.currentTarget.value); }
