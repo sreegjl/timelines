@@ -40,6 +40,7 @@ import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keyb
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fractionalYearToDate, setActiveDateFormat, getActiveDateFormat, setActiveTimeFormat, getActiveTimeFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
+import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -2255,6 +2256,8 @@ function App() {
     });
   }, [timelineData, activeTags, hiddenTags]);
 
+  const timelineColors = useMemo(() => collectTimelineColors(timelineData), [timelineData]);
+
   const filteredTimelineData = useMemo(() => {
     if (!timelineData) return null;
     const groups = timelineData.file?.groups ?? [];
@@ -2494,7 +2497,7 @@ function App() {
       : Boolean(selectedElement) && !isRightCollapsed;
 
   return (
-    <>
+    <TimelineColorsContext.Provider value={timelineColors}>
       <TopBar
         title={timelineData.file?.title || "Timelines"}
         isLeftCollapsed={isLeftCollapsed}
@@ -2934,7 +2937,7 @@ function App() {
       {skippedFilesModal}
       </div>
       <Toast toast={toast} />
-    </>
+    </TimelineColorsContext.Provider>
   );
 }
 

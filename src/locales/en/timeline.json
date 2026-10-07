@@ -1,8 +1,14 @@
 {
   "colorPicker": {
+    "addFavorite": "Add to favorites",
+    "favorites": "Favorites",
+    "favoritesFull": "Favorites are full",
     "hex": "Hex color",
     "hue": "Hue",
-    "saturationBrightness": "Saturation and brightness"
+    "inTimeline": "In this timeline",
+    "removeFromFavorites": "Remove from favorites",
+    "saturationBrightness": "Saturation and brightness",
+    "theme": "Theme"
   },
   "colorStatus": {
     "custom": "Custom",

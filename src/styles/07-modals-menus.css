@@ -2436,6 +2436,71 @@
   text-transform: lowercase;
 }
 
+.cp-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cp-palette-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.cp-swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.cp-swatch {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--text-primary), transparent 80%);
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Beats the global button:focus reset so the clicked swatch shows as current right away */
+.cp-swatches .cp-swatch.is-current {
+  box-shadow: 0 0 0 2px var(--link-color);
+}
+
+.cp-swatches .cp-swatch:focus-visible:not(.is-current) {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--link-color), transparent 40%);
+}
+
+.cp-fav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cp-fav-toggle:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--accent-color);
+}
+
+.cp-fav-toggle.is-active {
+  color: var(--link-color);
+}
+
+.cp-fav-toggle:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 /* Status Toast */
 .app-toast {
   position: fixed;

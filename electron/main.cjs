@@ -1623,7 +1623,7 @@ const ALLOWED_SETTINGS_KEYS = new Set([
   'theme', 'notesSubfolder', 'notesSubfolderEnabled',
   'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'disableThumbnails', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
   'gitSyncAutoSync', 'gitSyncIntervalMinutes', 'gitSyncMachineLabel',
-  'language',
+  'language', 'favoriteColors',
 ]);
 
 ipcMain.handle('set-app-settings', async (event, settings) => {

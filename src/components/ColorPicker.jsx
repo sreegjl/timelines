@@ -1,13 +1,36 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { Star } from "lucide-react";
 import { hexToHsv, hsvToHex, normalizeColor } from "../utils/colorUtils";
+import { readThemeColors, useFavoriteColors, useTimelineColors } from "../hooks/useColorPalette";
 
 const POPOVER_WIDTH = 216;
 const VIEWPORT_MARGIN = 8;
 const ANCHOR_GAP = 6;
 
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
+
+function SwatchRow({ label, colors, current, onPick }) {
+  return (
+    <div className="cp-palette">
+      <span className="cp-palette-label">{label}</span>
+      <div className="cp-swatches">
+        {colors.map((hex) => (
+          <button
+            key={hex}
+            type="button"
+            className={`cp-swatch${hex === current ? " is-current" : ""}`}
+            style={{ background: hex }}
+            title={hex}
+            aria-label={hex}
+            onClick={() => onPick(hex)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ColorPopover({ anchorRef, value, onChange, onClose }) {
   const { t } = useTranslation("timeline");
@@ -18,6 +41,11 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
   const [pos, setPos] = useState(null);
   const [hsv, setHsv] = useState(() => hexToHsv(normalizeColor(value)));
   const [hexDraft, setHexDraft] = useState(() => normalizeColor(value));
+  const [themeColors] = useState(readThemeColors);
+  // Snapshot on open so applying a swatch doesn't reorder the row under the cursor
+  const liveTimelineColors = useTimelineColors();
+  const [timelineColors] = useState(liveTimelineColors);
+  const { favorites, addFavorite, removeFavorite, isFull } = useFavoriteColors();
 
   // Hex loses hue at black and gray, so re-parsing our own emit would snap the slider to red
   useEffect(() => {
@@ -143,6 +171,10 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
 
   const hueHex = hsvToHex(hsv.h, 1, 1);
   const currentHex = hsvToHex(hsv.h, hsv.s, hsv.v);
+  const activeHex = (/^#[0-9A-Fa-f]{6}$/.test(hexDraft) ? hexDraft : currentHex).toLowerCase();
+  const isFavorite = favorites.includes(activeHex);
+  // Outline the current color in the first row that has it, not every row
+  const currentRow = isFavorite ? "favorites" : timelineColors.includes(activeHex) ? "timeline" : "theme";
 
   return createPortal(
     <div
@@ -200,7 +232,35 @@ function ColorPopover({ anchorRef, value, onChange, onClose }) {
             if (e.key === "Enter") { e.preventDefault(); commitHex(e.currentTarget.value); }
           }}
         />
+        <button
+          type="button"
+          className={`cp-fav-toggle${isFavorite ? " is-active" : ""}`}
+          disabled={!isFavorite && isFull}
+          title={isFavorite
+            ? t("colorPicker.removeFromFavorites", "Remove from favorites")
+            : isFull ? t("colorPicker.favoritesFull", "Favorites are full") : t("colorPicker.addFavorite", "Add to favorites")}
+          aria-label={isFavorite ? t("colorPicker.removeFromFavorites", "Remove from favorites") : t("colorPicker.addFavorite", "Add to favorites")}
+          aria-pressed={isFavorite}
+          onClick={() => (isFavorite ? removeFavorite(activeHex) : addFavorite(activeHex))}
+        >
+          <Star size={14} fill={isFavorite ? "currentColor" : "none"} />
+        </button>
       </div>
+
+      {favorites.length > 0 && (
+        <SwatchRow
+          label={t("colorPicker.favorites", "Favorites")}
+          colors={favorites}
+          current={currentRow === "favorites" ? activeHex : null}
+          onPick={commitHex}
+        />
+      )}
+      {timelineColors.length > 0 && (
+        <SwatchRow label={t("colorPicker.inTimeline", "In this timeline")} colors={timelineColors} current={currentRow === "timeline" ? activeHex : null} onPick={commitHex} />
+      )}
+      {themeColors.length > 0 && (
+        <SwatchRow label={t("colorPicker.theme", "Theme")} colors={themeColors} current={currentRow === "theme" ? activeHex : null} onPick={commitHex} />
+      )}
     </div>,
     document.body
   );
