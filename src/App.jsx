@@ -37,7 +37,7 @@ import { loadThemeConfig } from "./utils/themeLoader";
 import { countOldFormatThemes, isOldFormatTheme, migrateThemeColors } from "./utils/themeMigration";
 import { getAppSettings, saveAppSettings } from "./utils/appSettings";
 import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keybinds";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, setActiveDateFormat, getActiveDateFormat, setActiveTimeFormat, getActiveTimeFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fractionalYearToDate, setActiveDateFormat, getActiveDateFormat, setActiveTimeFormat, getActiveTimeFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
 import "./styles/index.css";
@@ -269,7 +269,7 @@ function App() {
   const [exportPngProgress, setExportPngProgress] = useState(null); // { percent, stage }
   const [isExportVideoModalOpen, setIsExportVideoModalOpen] = useState(false);
   const [editRequestId, setEditRequestId] = useState(null);
-  const [editRequestFocusTitle, setEditRequestFocusTitle] = useState(false);
+  const [editRequestFocus, setEditRequestFocus] = useState(null);
   const defaultThemeKey = useMemo(() => getInitialThemeKey(themeConfig), [themeConfig]);
   const [themeKey, setThemeKey] = useState(defaultThemeKey);
   const [appThemeKey, setAppThemeKey] = useState(defaultThemeKey);
@@ -974,7 +974,7 @@ function App() {
 
   const handleEditElement = (id) => {
     setSelectedId(id);
-    setEditRequestFocusTitle(false);
+    setEditRequestFocus(null);
     setEditRequestId(id);
   };
 
@@ -1114,7 +1114,7 @@ function App() {
     });
 
     setSelectedId(newEvent.id);
-    setEditRequestFocusTitle(true);
+    setEditRequestFocus("title");
     setEditRequestId(newEvent.id);
   };
 
@@ -1156,7 +1156,7 @@ function App() {
     });
 
     setSelectedId(newSpan.id);
-    setEditRequestFocusTitle(true);
+    setEditRequestFocus("title");
     setEditRequestId(newSpan.id);
   };
 
@@ -1213,7 +1213,7 @@ function App() {
     });
 
     setSelectedId(newEra.id);
-    setEditRequestFocusTitle(true);
+    setEditRequestFocus("title");
     setEditRequestId(newEra.id);
   };
 
@@ -1246,6 +1246,85 @@ function App() {
 
       return updatedData;
     });
+  };
+
+  // Keeps the id so selection, notes and undo carry over
+  const handleConvertElement = (elementId, toType) => {
+    const file = timelineData?.file;
+    const original = timelineData?.elements.find((el) => el.id === elementId);
+    if (!file || !original || original.type === toType) return;
+
+    let converted;
+    if (toType === "span") {
+      // eslint-disable-next-line no-unused-vars
+      const { date, dateLabel, time, approximate, parents, eventLineStyle, eventBorderStyle, ...rest } = original;
+      const precision = file.useCalendar === true ? parseTimelineInput(dateLabel ?? date).precision : null;
+      let end;
+      if (precision === "day") {
+        const { year, month } = fractionalYearToDate(date);
+        end = snapToDayGrid(date + 1 / (daysInMonth(year, month) * 12));
+      } else if (precision === "month") {
+        end = snapToMonthGrid(date + 1 / 12);
+      } else {
+        end = date + 1;
+      }
+      end = Math.max(date, Math.min(end, file.end));
+      converted = {
+        ...rest,
+        type: "span",
+        start: date,
+        end,
+        groupId: rest.groupId || file.groups?.[0]?.id || DEFAULT_GROUP_ID,
+        color: rest.color || "#A6977E",
+      };
+      if (dateLabel) converted.startLabel = dateLabel;
+      if (time) converted.startTime = time;
+      if (approximate) converted.approxStart = true;
+    } else if (toType === "event") {
+      // eslint-disable-next-line no-unused-vars
+      const { start, end, startLabel, endLabel, startTime, endTime, approxStart, approxEnd, parent, extendFrom, mergeParent, spanSize, fuzzyStart, fuzzyEnd, breaks, ...rest } = original;
+      converted = {
+        ...rest,
+        type: "event",
+        date: start,
+        parents: [],
+        eventLineStyle: "solid",
+        eventBorderStyle: "solid",
+      };
+      if (startLabel) converted.dateLabel = startLabel;
+      if (startTime) converted.time = startTime;
+      if (approxStart) converted.approximate = true;
+    } else {
+      return;
+    }
+
+    setTimelineData((prevData) => {
+      const elements = prevData.elements.map((el) => {
+        if (el.id === elementId) return converted;
+        if (toType !== "event") return el;
+        // A span that becomes an event can no longer be a parent
+        if (el.type === "event" && el.parents?.includes(elementId)) {
+          return { ...el, parents: el.parents.filter((id) => id !== elementId) };
+        }
+        if (el.type === "span" && [el.parent, el.extendFrom, el.mergeParent].includes(elementId)) {
+          const cleaned = { ...el };
+          if (cleaned.parent === elementId) delete cleaned.parent;
+          if (cleaned.extendFrom === elementId) delete cleaned.extendFrom;
+          if (cleaned.mergeParent === elementId) delete cleaned.mergeParent;
+          return cleaned;
+        }
+        return el;
+      });
+      const updatedData = { ...prevData, elements };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+
+    setSelectedId(elementId);
+    if (toType === "span") {
+      setEditRequestFocus("end");
+      setEditRequestId(elementId);
+    }
   };
 
   const handleDelete = (elementId) => {
@@ -2466,6 +2545,7 @@ function App() {
               onBackToHome={handleBackToHome}
               onDelete={handleRequestDelete}
               onDuplicateElement={handleDuplicateElement}
+              onConvertElement={handleConvertElement}
               onEditElement={handleEditElement}
               onPatchFile={handlePatchFile}
               onFocusSpan={handleFocusSpan}
@@ -2550,6 +2630,7 @@ function App() {
               onOpenSettings={() => setIsSettingsOpen(true)}
               onDelete={handleRequestDelete}
               onDuplicateElement={handleDuplicateElement}
+              onConvertElement={handleConvertElement}
               onEditElement={handleEditElement}
               downloadPngTrigger={downloadPngTrigger}
               exportPngOptions={exportPngOptions}
@@ -2697,8 +2778,8 @@ function App() {
                 onUpdate={handleUpdate}
                 timelineData={timelineData}
                 editRequestId={editRequestId}
-                editRequestFocusTitle={editRequestFocusTitle}
-                onEditRequestHandled={() => { setEditRequestId(null); setEditRequestFocusTitle(false); }}
+                editRequestFocus={editRequestFocus}
+                onEditRequestHandled={() => { setEditRequestId(null); setEditRequestFocus(null); }}
                 isMaximized={isRightMaximized}
                 onToggleMaximize={() => setIsRightMaximized((prev) => !prev)}
                 onFilterByTag={handleFilterByTag}

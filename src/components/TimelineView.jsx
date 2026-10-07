@@ -19,7 +19,7 @@ import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
-import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair } from "lucide-react";
+import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair, ArrowLeftRight } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
 import { DETAIL_MIN, DETAIL_MAX, clamp } from "../utils/sliderUtils";
 
@@ -415,6 +415,7 @@ const TimelineView = forwardRef(function TimelineView({
   onOpenSettings,
   onDelete,
   onDuplicateElement,
+  onConvertElement,
   onEditElement,
   downloadPngTrigger,
   exportPngOptions,
@@ -4693,6 +4694,15 @@ const TimelineView = forwardRef(function TimelineView({
             <CopyPlus size={16} />
             <span>{t("contextMenu.duplicate", "Duplicate {{type}}", { type: t(`elementTypes.${contextMenu.element.type}`, contextMenu.element.type) })}</span>
           </button>
+          {(contextMenu.element.type === "event" || contextMenu.element.type === "span") && (
+            <button
+              className="context-menu-item"
+              onClick={() => handleMenuAction(() => onConvertElement?.(contextMenu.element.id, contextMenu.element.type === "event" ? "span" : "event"))}
+            >
+              <ArrowLeftRight size={16} />
+              <span>{contextMenu.element.type === "event" ? t("contextMenu.convertToSpan", "Convert to Span") : t("contextMenu.convertToEvent", "Convert to Event")}</span>
+            </button>
+          )}
           {contextMenu.element.type === "span" && (
             <button
               className="context-menu-item"

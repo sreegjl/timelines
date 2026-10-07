@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { parseFilterQuery, matchesFilter, buildFilterContext, tokenizeFilterQuery, normalizeTag } from "../utils/filterUtils";
-import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package } from "lucide-react";
+import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package, ArrowLeftRight } from "lucide-react";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { displayDateTimeLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
@@ -232,6 +232,7 @@ export default function Sidebar({
   onBackToHome,
   onDelete,
   onDuplicateElement,
+  onConvertElement,
   onEditElement,
   onPatchFile,
   onFocusSpan,
@@ -2123,6 +2124,15 @@ export default function Sidebar({
             <Copy size={16} />
             <span>Duplicate {elementMenu.element.type.charAt(0).toUpperCase() + elementMenu.element.type.slice(1)}</span>
           </button>
+          {(elementMenu.element.type === "event" || elementMenu.element.type === "span") && (
+            <button
+              className="context-menu-item"
+              onClick={() => handleElementMenuAction(() => onConvertElement?.(elementMenu.element.id, elementMenu.element.type === "event" ? "span" : "event"))}
+            >
+              <ArrowLeftRight size={16} />
+              <span>{elementMenu.element.type === "event" ? t("contextMenu.convertToSpan", "Convert to Span") : t("contextMenu.convertToEvent", "Convert to Event")}</span>
+            </button>
+          )}
           <div className="context-menu-separator" />
           <button
             className="context-menu-item context-menu-item-danger"

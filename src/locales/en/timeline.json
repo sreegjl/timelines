@@ -41,6 +41,8 @@
     "addEvent": "Add Event",
     "addSpan": "Add Span",
     "clearFocus": "Clear Focus",
+    "convertToEvent": "Convert to Event",
+    "convertToSpan": "Convert to Span",
     "delete": "Delete {{type}}",
     "downloadJson": "Download .json",
     "duplicate": "Duplicate {{type}}",

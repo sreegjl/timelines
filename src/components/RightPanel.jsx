@@ -90,7 +90,7 @@ export default function RightPanel({
   onUpdate,
   timelineData,
   editRequestId,
-  editRequestFocusTitle = false,
+  editRequestFocus = null,
   onEditRequestHandled,
   isMaximized,
   onToggleMaximize,
@@ -152,7 +152,8 @@ export default function RightPanel({
   } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate });
   const prevSelectedIdRef = useRef(null);
   const titleTextareaRef = useRef(null);
-  const pendingTitleFocusRef = useRef(false);
+  const endInputRef = useRef(null);
+  const pendingFocusRef = useRef(null);
 
   useLayoutEffect(() => {
     const el = titleTextareaRef.current;
@@ -582,19 +583,19 @@ export default function RightPanel({
     if (!selectedElement || !editRequestId) return;
     if (selectedElement.id !== editRequestId) return;
     setIsEditMode(true);
-    if (editRequestFocusTitle) {
-      pendingTitleFocusRef.current = true;
-      setIsDetailsOpen(true);
+    if (editRequestFocus) {
+      pendingFocusRef.current = editRequestFocus;
+      if (editRequestFocus === "title") setIsDetailsOpen(true);
     }
     onEditRequestHandled?.();
-  }, [selectedElement, editRequestId, editRequestFocusTitle, onEditRequestHandled, readOnly]);
+  }, [selectedElement, editRequestId, editRequestFocus, onEditRequestHandled, readOnly]);
 
-  // focus and preselect the name field once the edit form for a new element is mounted
+  // focus and preselect the requested field once the edit form is mounted
   useEffect(() => {
-    if (!isEditMode || !pendingTitleFocusRef.current) return;
-    const el = titleTextareaRef.current;
+    if (!isEditMode || !pendingFocusRef.current) return;
+    const el = pendingFocusRef.current === "end" ? endInputRef.current : titleTextareaRef.current;
     if (!el) return;
-    pendingTitleFocusRef.current = false;
+    pendingFocusRef.current = null;
     el.focus();
     el.select();
   }, [isEditMode, isDetailsOpen, formData?.id]);
@@ -1398,6 +1399,7 @@ export default function RightPanel({
                             {showCalendarInputIcon && renderCalendarMenuButton("endInput", selectedElement?.end)}
                             {showTimeIcon && renderTimeIconButton("endInput", "endTime", showCalendarInputIcon)}
                             <input
+                              ref={endInputRef}
                               id="end"
                               type="text"
                               inputMode="numeric"
