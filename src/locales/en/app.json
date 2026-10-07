@@ -348,6 +348,8 @@
     "unlockPanel": "Unlock panel"
   },
   "toasts": {
+    "colorApplied_one": "Color applied to {{count}} element",
+    "colorApplied_other": "Color applied to {{count}} elements",
     "exportingPackage": "Exporting package...",
     "packageFailed": "Package export failed: {{error}}",
     "packageSaved": "Package export saved",

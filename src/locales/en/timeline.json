@@ -214,6 +214,7 @@
     "placeholder": "Search spans, events, eras…"
   },
   "sidebar": {
+    "applyColor": "Apply Color to Elements",
     "downloadJson": "Download .json (data only)",
     "downloadJsonHint": "Timeline data only; images and notes stay on this computer",
     "downloadPng": "Download .png",

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { parseFilterQuery, matchesFilter, buildFilterContext, tokenizeFilterQuery, normalizeTag } from "../utils/filterUtils";
-import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package, ArrowLeftRight } from "lucide-react";
+import { PanelLeft, PanelRight, ChevronDown, FilePlus, File, Copy, FileJson, Image, Video, Settings, ChevronRight, ArrowLeft, Edit2, Trash2, Plus, Tag, Eye, EyeOff, Target, List, Layers3, Search, MoreVertical, Square, SquareDashed, ArrowUpDown, Check, Package, ArrowLeftRight, PaintBucket } from "lucide-react";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { displayDateTimeLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
@@ -213,6 +213,7 @@ export default function Sidebar({
   onTogglePinnedTag,
   tagColors = {},
   onUpdateTagColor,
+  onApplyColorToElements,
   onAddGroup,
   onUpdateGroup,
   onUpdateGroups,
@@ -274,6 +275,7 @@ export default function Sidebar({
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [sidebarTab, setSidebarTab] = useState("timeline");
   const [elementMenu, setElementMenu] = useState(null);
+  const [tagMenu, setTagMenu] = useState(null);
   const [timelineFiles, setTimelineFiles] = useState([]);
   const [submenuPosition, setSubmenuPosition] = useState(null);
   const [editingGroupId, setEditingGroupId] = useState(null);
@@ -739,15 +741,20 @@ export default function Sidebar({
   }, [timelineMenu, openSubmenu]);
 
   useEffect(() => {
-    if (!elementMenu) return;
+    if (!elementMenu && !tagMenu) return;
 
     const handleClickOutside = (e) => {
       const menu = document.querySelector('.timeline-context-menu');
       if (menu && !menu.contains(e.target)) {
         setElementMenu(null);
+        setTagMenu(null);
       }
     };
-    const handleKeyDown = (e) => { if (e.key === "Escape") setElementMenu(null); };
+    const handleKeyDown = (e) => {
+      if (e.key !== "Escape") return;
+      setElementMenu(null);
+      setTagMenu(null);
+    };
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
@@ -755,7 +762,7 @@ export default function Sidebar({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [elementMenu]);
+  }, [elementMenu, tagMenu]);
 
   useEffect(() => {
     if (!newMenuOpen) return;
@@ -1755,6 +1762,13 @@ export default function Sidebar({
                     className={`sb-tag-row${isHidden ? " is-hidden" : ""}${inQuery ? " is-in-query" : ""}`}
                     onMouseDown={blockShiftSelect}
                     onClick={(e) => { if (e.shiftKey) onToggleTagQuery?.(tag); else onToggleTag?.(tag); }}
+                    onContextMenu={(e) => {
+                      if (readOnly || !tagColor) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setElementMenu(null);
+                      setTagMenu({ x: e.clientX, y: e.clientY, tag });
+                    }}
                     title={`${isShown ? "Disable spotlight filter" : "Spotlight this tag"} · Shift-click to ${inQuery ? "remove from" : "add to"} the filter query`}
                   >
                     {readOnly ? (
@@ -2012,6 +2026,15 @@ export default function Sidebar({
                                 <Edit2 size={13} />
                                 <span>{t("common:actions.rename", "Rename")}</span>
                               </button>
+                              {group.bgColor && (
+                                <button
+                                  className="sb-group-kebab-item"
+                                  onClick={(e) => { e.stopPropagation(); setGroupMenuOpenId(null); onApplyColorToElements?.({ groupId: group.id }); }}
+                                >
+                                  <PaintBucket size={13} />
+                                  <span>{t("sidebar.applyColor", "Apply Color to Elements")}</span>
+                                </button>
+                              )}
                               <button
                                 className="sb-group-kebab-item sb-group-kebab-item-danger"
                                 disabled={!canDelete}
@@ -2140,6 +2163,26 @@ export default function Sidebar({
           >
             <Trash2 size={16} />
             <span>Delete {elementMenu.element.type.charAt(0).toUpperCase() + elementMenu.element.type.slice(1)}</span>
+          </button>
+        </div>
+      )}
+
+      {!readOnly && tagMenu && (
+        <div
+          className="timeline-context-menu"
+          style={{
+            position: 'fixed',
+            left: `${tagMenu.x}px`,
+            top: `${tagMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="context-menu-item"
+            onClick={() => { setTagMenu(null); onApplyColorToElements?.({ tag: tagMenu.tag }); }}
+          >
+            <PaintBucket size={16} />
+            <span>{t("sidebar.applyColor", "Apply Color to Elements")}</span>
           </button>
         </div>
       )}

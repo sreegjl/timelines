@@ -895,6 +895,28 @@ function App() {
     });
   };
 
+  // Copies a tag or group color onto its elements as their own color
+  const handleApplyColorToElements = ({ tag, groupId }) => {
+    if (!timelineData?.file) return;
+    const color = tag
+      ? timelineData.file.tagColors?.[tag]
+      : timelineData.file.groups?.find((g) => g.id === groupId)?.bgColor;
+    if (!color) return;
+    const matches = (el) => (tag ? Array.isArray(el.tags) && el.tags.includes(tag) : el.groupId === groupId);
+    const count = timelineData.elements.filter(matches).length;
+    if (count === 0) return;
+
+    setTimelineData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        elements: prevData.elements.map((el) => (matches(el) ? { ...el, color } : el)),
+      };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+    showToast(t("app:toasts.colorApplied", { count, defaultValue_one: "Color applied to {{count}} element", defaultValue_other: "Color applied to {{count}} elements" }));
+  };
+
   const handleUpdateTagColor = (tag, color) => {
     if (!tag) return;
     setTimelineData((prevData) => {
@@ -2531,6 +2553,7 @@ function App() {
               onCenterGroup={handleCenterGroup}
               tagColors={timelineData.file?.tagColors || {}}
               onUpdateTagColor={handleUpdateTagColor}
+              onApplyColorToElements={handleApplyColorToElements}
               onAddEvent={handleAddEvent}
               onAddSpan={handleAddSpan}
               onAddEra={handleAddEra}
