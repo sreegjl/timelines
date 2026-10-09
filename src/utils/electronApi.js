@@ -105,17 +105,39 @@ export async function importTimeline(payload) {
   }
 }
 
-export async function createNote({ timelineId, title, elementId }) {
+export async function createNote({ timelineId, title, elementId, name }) {
   if (!isElectron()) {
     console.warn('Not running in Electron');
     return { success: false, error: 'Not in Electron environment' };
   }
 
   try {
-    return await window.electron.createNote({ timelineId, title, elementId });
+    return await window.electron.createNote({ timelineId, title, elementId, name });
   } catch (error) {
     console.error('Error creating note:', error);
     return { success: false, error: error.message };
+  }
+}
+
+// The timeline's notes folder relative to the notes root, which honors the vault subfolder setting
+export async function getTimelineNotesDir({ timelineId }) {
+  if (!isElectron() || !window.electron.getTimelineNotesDir) return { success: false };
+  try {
+    return await window.electron.getTimelineNotesDir({ timelineId });
+  } catch (error) {
+    console.error('Error getting timeline notes folder:', error);
+    return { success: false };
+  }
+}
+
+// Root-relative paths of every note in the notes folder; the web viewer has no folder to list
+export async function listNotes() {
+  if (!isElectron() || !window.electron.listNotes) return { success: false, notes: [] };
+  try {
+    return await window.electron.listNotes();
+  } catch (error) {
+    console.error('Error listing notes:', error);
+    return { success: false, notes: [] };
   }
 }
 

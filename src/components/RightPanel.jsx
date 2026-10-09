@@ -1,10 +1,14 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { Maximize2, Minimize2, Underline, Link, Trash2, Unlink, ChevronLeft, ChevronRight, ChevronDown, Pencil, ExternalLink, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X } from "lucide-react";
-import NoteEditor from "./NoteEditor";
+import { Expand, Maximize2, Minimize2, Underline, Link, Trash2, Unlink, ChevronLeft, ChevronRight, ChevronDown, Pencil, ExternalLink, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X } from "lucide-react";
+// Lazy so the read-only web viewer never downloads the CodeMirror editor
+const NoteEditor = lazy(() => import("./NoteEditor"));
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
+import { useNoteIndex } from "../hooks/useNoteIndex";
+import NotePage from "./NotePage";
+import { toNotePath } from "../utils/wikilinks";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
 import { parseTimelineInput, fractionalYearToDate, displayDateTimeLabel, formatDateForInput, formatCalendarDate, formatDuration, formatTimeOfDay, isValidTimeOfDay } from "../utils/dateUtils";
@@ -131,6 +135,22 @@ export default function RightPanel({
   const [isDisplayOpen, setIsDisplayOpen] = useState(true);
   const [isNotesOpen, setIsNotesOpen] = useState(true);
 
+  const { storageId, timelineDir, resolveNote, noteRefFor, linkedElementsFor, refreshNotes } = useNoteIndex(timelineData);
+  // Notes opened from [[wikilinks]]; empty shows the selected element as usual
+  const [noteStack, setNoteStack] = useState([]);
+  const openNote = useCallback((entry) => setNoteStack((stack) => [...stack, entry]), []);
+
+  useEffect(() => {
+    setNoteStack([]);
+  }, [selectedElement?.id]);
+
+  // The note page may have edited the element's own note, so re-read it on the way back
+  const hadNoteStackRef = useRef(false);
+  useEffect(() => {
+    if (hadNoteStackRef.current && noteStack.length === 0) reloadNote?.();
+    hadNoteStackRef.current = noteStack.length > 0;
+  }, [noteStack.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const {
     noteInitialContent,
     isNoteLoading,
@@ -138,6 +158,9 @@ export default function RightPanel({
     isNoteAddOpen,
     setIsNoteAddOpen,
     noteEditorRef,
+    reloadNote,
+    resolveElementWikilink,
+    resolveElementImageSrc,
     noteWordCount,
     noteViewCallbackRef,
     handleTaskToggle,
@@ -149,7 +172,11 @@ export default function RightPanel({
     handlePickLocalImage,
     handlePickThumbnail,
     handleDropThumbnail,
-  } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate });
+    notesBaseUrl,
+    notesBasePath,
+    assetsBasePath,
+    assetsTimelineDir,
+  } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate, resolveNote, timelineDir });
   const prevSelectedIdRef = useRef(null);
   const titleTextareaRef = useRef(null);
   const endInputRef = useRef(null);
@@ -1001,6 +1028,54 @@ export default function RightPanel({
     );
   }
 
+  const panelWindowButton = onClose ? (
+    <button
+      className="close-button"
+      onClick={onClose}
+      title={t("rightPanel.closePanel", "Close panel")}
+    >
+      <X size={18} />
+    </button>
+  ) : (
+    <button
+      className="close-button"
+      onClick={onToggleMaximize}
+      title={isMaximized ? "Restore panel" : "Maximize panel"}
+    >
+      {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+    </button>
+  );
+
+  if (noteStack.length > 0) {
+    const entry = noteStack[noteStack.length - 1];
+    return (
+      <NotePage
+        key={`${noteStack.length}-${entry.notePath || entry.target}`}
+        entry={entry}
+        timelineId={storageId}
+        noteRefFor={noteRefFor}
+        resolveNote={resolveNote}
+        linkedElementsFor={linkedElementsFor}
+        onOpenNote={openNote}
+        onReplaceEntry={(next) => setNoteStack((stack) => [...stack.slice(0, -1), next])}
+        onBack={() => setNoteStack((stack) => stack.slice(0, -1))}
+        onSelectElement={(id) => {
+          if (id === selectedElement.id) setNoteStack([]);
+          else onSelect?.(id);
+        }}
+        onNotesChanged={refreshNotes}
+        notesBaseUrl={notesBaseUrl}
+        notesBasePath={notesBasePath}
+        assetsBasePath={assetsBasePath}
+        assetsTimelineDir={assetsTimelineDir}
+        onPickLocalImage={readOnly ? undefined : handlePickLocalImage}
+        headerActions={panelWindowButton}
+        isMaximized={isMaximized}
+        readOnly={readOnly}
+      />
+    );
+  }
+
   return (
     <div
       ref={panelRef}
@@ -1019,23 +1094,7 @@ export default function RightPanel({
               {isEditMode ? <BookOpen size={18} /> : <Pencil size={18} />}
             </button>
           )}
-          {onClose ? (
-            <button
-              className="close-button"
-              onClick={onClose}
-              title={t("rightPanel.closePanel", "Close panel")}
-            >
-              <X size={18} />
-            </button>
-          ) : (
-            <button
-              className="close-button"
-              onClick={onToggleMaximize}
-              title={isMaximized ? "Restore panel" : "Maximize panel"}
-            >
-              {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-            </button>
-          )}
+          {panelWindowButton}
         </div>
       </div>
 
@@ -1230,6 +1289,13 @@ export default function RightPanel({
                     className="note-render"
                     ref={noteViewCallbackRef}
                     onClick={(e) => {
+                      const link = e.target.closest?.(".wikilink");
+                      if (link) {
+                        e.preventDefault();
+                        const path = link.getAttribute("data-note-path");
+                        openNote(path ? { notePath: path } : { target: link.getAttribute("data-note-target") });
+                        return;
+                      }
                       if (e.target.tagName !== "INPUT" || e.target.type !== "checkbox") return;
                       e.preventDefault();
                       const idx = parseInt(e.target.getAttribute("data-idx"), 10);
@@ -2056,7 +2122,7 @@ export default function RightPanel({
 
             {formData.type === "event" && (
               <>
-              <div className="thumbnail-full-header">
+              {formData.thumbnail && <div className="thumbnail-full-header">
                 <span className="thumbnail-full-label">thumbnail</span>
                 {formData.thumbnail && <span className="thumbnail-full-meta">
                   {(() => {
@@ -2070,7 +2136,7 @@ export default function RightPanel({
                   })()}
                   {thumbnailMeta && ` · ${thumbnailMeta.width}×${thumbnailMeta.height}`}
                 </span>}
-              </div>
+              </div>}
               {formData.thumbnail && <div className="thumbnail-full-card">
                 <img
                   key={formData.thumbnail}
@@ -2151,21 +2217,12 @@ export default function RightPanel({
                 </div>
               </div>}
               {!formData.thumbnail && (
-                <div className="thumbnail-dropzone-wrap">
-                  <button
-                    type="button"
-                    className={`thumbnail-dropzone${isDragOver ? " is-drag-over" : ""}`}
-                    onClick={async () => {
-                      setIsThumbnailUrlMode(false);
-                      setThumbnailUrlInput("");
-                      const url = await handlePickThumbnail();
-                      if (!url) return;
-                      const next = { ...formData, thumbnail: url };
-                      setFormData(next);
-                      commitDraft(next);
-                    }}
+                <div className="form-group">
+                  {/* One row when empty so it doesn't crowd the note; the whole row still takes drops */}
+                  <div
+                    className={`edit-row thumbnail-empty-row${isDragOver ? " is-drag-over" : ""}`}
                     onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                    onDragLeave={() => setIsDragOver(false)}
+                    onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setIsDragOver(false); }}
                     onDrop={async (e) => {
                       e.preventDefault();
                       setIsDragOver(false);
@@ -2181,18 +2238,37 @@ export default function RightPanel({
                       commitDraft(next);
                     }}
                   >
-                    <ImagePlus size={28} strokeWidth={1.5} className="thumbnail-dropzone-icon" />
-                    <span className="thumbnail-dropzone-title">{t("rightPanel.dropImage", "Drop image or click to upload")}</span>
-                    <span className="thumbnail-dropzone-subtitle">PNG · JPG · SVG · up to 10 MB</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`thumbnail-url-icon-btn${isThumbnailUrlMode ? " is-active" : ""}`}
-                    title={t("rightPanel.pasteImageUrl", "Paste image URL")}
-                    onClick={() => { setIsThumbnailUrlMode(v => !v); setThumbnailUrlInput(""); }}
-                  >
-                    <Link size={12} />
-                  </button>
+                    <label>{t("fields.thumbnail", "Thumbnail")}</label>
+                    <div className="edit-separator" />
+                    <div className="thumbnail-empty-actions">
+                      <button
+                        type="button"
+                        className="icon-picker-trigger thumbnail-empty-upload"
+                        title={t("rightPanel.dropImage", "Drop image or click to upload")}
+                        onClick={async () => {
+                          setIsThumbnailUrlMode(false);
+                          setThumbnailUrlInput("");
+                          const url = await handlePickThumbnail();
+                          if (!url) return;
+                          const next = { ...formData, thumbnail: url };
+                          setFormData(next);
+                          commitDraft(next);
+                        }}
+                      >
+                        <ImagePlus size={13} />
+                        <span>{isDragOver ? t("rightPanel.dropHere", "Drop here") : t("rightPanel.upload", "Upload")}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`icon-picker-trigger thumbnail-empty-link${isThumbnailUrlMode ? " is-active" : ""}`}
+                        title={t("rightPanel.pasteImageUrl", "Paste image URL")}
+                        aria-label={t("rightPanel.pasteImageUrl", "Paste image URL")}
+                        onClick={() => { setIsThumbnailUrlMode(v => !v); setThumbnailUrlInput(""); }}
+                      >
+                        <Link size={13} />
+                      </button>
+                    </div>
+                  </div>
                   {isThumbnailUrlMode && (
                     <div className="thumbnail-url-row">
                       <input
@@ -2505,18 +2581,42 @@ export default function RightPanel({
                     {noteWordCount > 0 && (
                       <span className="rp-note-meta">markdown · {noteWordCount} words</span>
                     )}
+                    {noteExists && (
+                      <button
+                        type="button"
+                        className="rp-note-expand"
+                        title={t("noteEditor.expand", "Edit in full panel")}
+                        aria-label={t("noteEditor.expand", "Edit in full panel")}
+                        onClick={async () => {
+                          const notePath = toNotePath(formData.noteFile, timelineDir);
+                          if (!notePath) return;
+                          await noteEditorRef.current?.save();
+                          openNote({ notePath, edit: true });
+                        }}
+                      >
+                        <Expand size={13} />
+                      </button>
+                    )}
                   </div>
-                  <NoteEditor
-                    ref={noteEditorRef}
-                    key={`${selectedElement?.id}-${formData?.noteFile}`}
-                    initialContent={noteInitialContent}
-                    isNoteLoading={isNoteLoading}
-                    noteExists={noteExists}
-                    onSave={handleNoteSave}
-                    onUnlink={handleUnlinkNote}
-                    onDelete={handleDeleteNote}
-                    onPickLocalImage={handlePickLocalImage}
-                  />
+                  <Suspense fallback={<div className="note-textarea note-lp" />}>
+                    <NoteEditor
+                      ref={noteEditorRef}
+                      key={`${selectedElement?.id}-${formData?.noteFile}`}
+                      initialContent={noteInitialContent}
+                      isNoteLoading={isNoteLoading}
+                      noteExists={noteExists}
+                      onSave={handleNoteSave}
+                      onUnlink={handleUnlinkNote}
+                      onDelete={handleDeleteNote}
+                      onPickLocalImage={handlePickLocalImage}
+                      resolveWikilink={resolveElementWikilink}
+                      resolveImageSrc={resolveElementImageSrc}
+                      onOpenWikilink={async ({ notePath, target }) => {
+                        await noteEditorRef.current?.save();
+                        openNote(notePath ? { notePath } : { target });
+                      }}
+                    />
+                  </Suspense>
                 </div>
               )}
               <WikiSection

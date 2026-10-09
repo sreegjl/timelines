@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('electron', {
   createNote: (payload) => ipcRenderer.invoke('create-note', payload),
   addExistingNote: (payload) => ipcRenderer.invoke('add-existing-note', payload),
   readNote: (payload) => ipcRenderer.invoke('read-note', payload),
+  listNotes: () => ipcRenderer.invoke('list-notes'),
+  getTimelineNotesDir: (payload) => ipcRenderer.invoke('get-timeline-notes-dir', payload),
   writeNote: (payload) => ipcRenderer.invoke('write-note', payload),
   deleteNote: (payload) => ipcRenderer.invoke('delete-note', payload),
   renameNote: (payload) => ipcRenderer.invoke('rename-note', payload),

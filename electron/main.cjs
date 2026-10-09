@@ -87,11 +87,24 @@ async function listTimelineFilesRecursive(dir, baseDir) {
   return results;
 }
 
+// Wikilink-created notes keep spaces and case like Obsidian; mirrors cleanNoteFileName in src/utils/wikilinks.js
+const cleanNoteFileName = (name) => String(name || '')
+  .replace(/[<>:"/\\|?*#^[\]\u0000-\u001f]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .replace(/^\.+/, '')
+  .slice(0, 120);
+
 const sanitizeNoteFilename = (value) => {
   const base = String(value || '').replace(/\.md$/i, '');
   const cleaned = sanitizeId(base, 'note');
   return `${cleaned}.md`;
 };
+
+// Bare note refs keep spaces and case; refs saved before this were slugged by sanitizeNoteFilename
+const bareNoteRef = (value) => `${cleanNoteFileName(String(value || '').replace(/\.md$/i, '')) || 'note'}.md`;
+
+const pathExists = (target) => fs.access(target).then(() => true, () => false);
 
 const resolveNotePath = async (timelineId, notePath) => {
   const notesRootDir = await getNotesRootDir();
@@ -103,7 +116,14 @@ const resolveNotePath = async (timelineId, notePath) => {
 
   const usesRelativePath = rawPath.includes('/') || rawPath.includes('\\');
   const base = usesRelativePath ? notesRootDir : notesDir;
-  const relativePath = usesRelativePath ? rawPath : sanitizeNoteFilename(rawPath);
+  let relativePath = rawPath;
+  if (!usesRelativePath) {
+    relativePath = bareNoteRef(rawPath);
+    const legacy = sanitizeNoteFilename(rawPath);
+    if (legacy !== relativePath && !(await pathExists(path.join(base, relativePath))) && await pathExists(path.join(base, legacy))) {
+      relativePath = legacy;
+    }
+  }
 
   const resolvedBase = path.resolve(base);
   const resolvedPath = path.resolve(base, relativePath);
@@ -198,10 +218,30 @@ const getNotesRootDir = async () => {
   return path.join(await getTimelinesDir(), '.notes');
 };
 
+// Optional folder inside the notes root for per-timeline folders, so they don't crowd a vault's top level
+const normalizeNotesSubfolder = (value) => String(value || '')
+  .split(/[/\\]/)
+  .map((part) => cleanNoteFileName(part))
+  .filter(Boolean)
+  .join('/');
+
 const getNotesDir = async (timelineId) => {
   const baseDir = await getNotesRootDir();
   const safePath = sanitizeTimelinePath(String(timelineId || 'timeline'));
-  return path.join(baseDir, ...safePath.split('/'));
+  const rootLevelDir = path.join(baseDir, ...safePath.split('/'));
+  const settings = await readAppSettings();
+  const subfolder = normalizeNotesSubfolder(settings?.timelineNotesFolder);
+  if (!subfolder) return rootLevelDir;
+  const dir = path.join(baseDir, ...subfolder.split('/'), ...safePath.split('/'));
+  // Folders made before the subfolder was set stay put, since slash note refs point into them
+  if (!(await pathExists(dir)) && await pathExists(rootLevelDir)) return rootLevelDir;
+  return dir;
+};
+
+// The timeline's notes folder relative to the notes root, with forward slashes
+const getNotesDirRelative = async (timelineId) => {
+  const root = path.resolve(await getNotesRootDir());
+  return path.relative(root, path.resolve(await getNotesDir(timelineId))).split(path.sep).join('/');
 };
 
 const getAssetsRootDir = async () => {
@@ -798,7 +838,7 @@ async function collectPackageFiles(data, storageId) {
     }
 
     const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
-    const noteRef = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
+    const noteRef = hasSlash ? el.noteFile.replace(/\\/g, '/') : bareNoteRef(el.noteFile);
     files[`notes/${noteRef}`] = strToU8(content);
   }
 
@@ -985,6 +1025,7 @@ async function installTimelineFromBuffer(buf, opts = {}) {
     }
 
     const notesDir = await getNotesDir(storageId);
+    const notesDirRelative = await getNotesDirRelative(storageId);
     const noteRenames = new Map();
     for (const [rel, rawContent] of Object.entries(pkg.notes)) {
       let content = rawContent;
@@ -1001,10 +1042,16 @@ async function installTimelineFromBuffer(buf, opts = {}) {
     data.elements = data.elements.map((el) => {
       if (!el.noteFile || typeof el.noteFile !== 'string') return el;
       const hasSlash = el.noteFile.includes('/') || el.noteFile.includes('\\');
-      let ref = hasSlash ? el.noteFile.replace(/\\/g, '/') : sanitizeNoteFilename(el.noteFile);
+      let ref = el.noteFile.replace(/\\/g, '/');
+      if (!hasSlash) {
+        // Packages from older versions stored bare notes under slugged names
+        ref = bareNoteRef(el.noteFile);
+        const legacy = sanitizeNoteFilename(el.noteFile);
+        if (!Object.prototype.hasOwnProperty.call(pkg.notes, ref) && Object.prototype.hasOwnProperty.call(pkg.notes, legacy)) ref = legacy;
+      }
       if (noteRenames.has(ref)) ref = noteRenames.get(ref);
       // Slash refs resolve against the notes root, so anchor them to this timeline's folder
-      if (ref.includes('/')) ref = `${sanitizeTimelinePath(storageId)}/${ref}`;
+      if (ref.includes('/')) ref = `${notesDirRelative}/${ref}`;
       return ref === el.noteFile ? el : { ...el, noteFile: ref };
     });
   }
@@ -1386,12 +1433,7 @@ ipcMain.handle('move-timeline', async (event, { id, targetFolder }) => {
       const remaining = await fs.readdir(oldDir).catch(() => ['x']);
       if (remaining.length === 0) await fs.rmdir(oldDir).catch(() => {});
     }
-    const notesBase = await getNotesRootDir();
-    const oldNotesPath = path.join(notesBase, ...sanitizeTimelinePath(safePath).split('/'));
-    const newNotesPath = path.join(notesBase, ...sanitizeTimelinePath(newRelId).split('/'));
-    if (oldNotesPath !== newNotesPath) {
-      await fs.rename(oldNotesPath, newNotesPath).catch(e => { if (e.code !== 'ENOENT') throw e; });
-    }
+    // Notes folders are keyed by file.uid, not path, so moving a timeline leaves them alone
     markGitSyncStructureDirty();
     return { success: true, newId: newRelId };
   } catch (error) {
@@ -1399,7 +1441,7 @@ ipcMain.handle('move-timeline', async (event, { id, targetFolder }) => {
   }
 });
 
-ipcMain.handle('create-note', async (event, { timelineId, title, elementId }) => {
+ipcMain.handle('create-note', async (event, { timelineId, title, elementId, name }) => {
   try {
     if (!timelineId) {
       return { success: false, error: 'Missing timelineId' };
@@ -1408,8 +1450,17 @@ ipcMain.handle('create-note', async (event, { timelineId, title, elementId }) =>
     const notesDir = await getNotesDir(timelineId);
     await fs.mkdir(notesDir, { recursive: true });
 
-    const base = safeName(elementId) || safeName(title) || 'note';
-    const filename = sanitizeNoteFilename(base);
+    // name: exact title from an unresolved [[link]], so the new file matches the link
+    const exactName = name ? cleanNoteFileName(name) : '';
+    let filename = `${exactName}.md`;
+    if (!exactName) {
+      // Named after the element so it reads well in Obsidian; numbered when another note has the name
+      const base = cleanNoteFileName(title) || safeName(elementId) || 'note';
+      filename = `${base}.md`;
+      for (let n = 2; n < 1000 && await pathExists(path.join(notesDir, filename)); n += 1) {
+        filename = `${base} (${n}).md`;
+      }
+    }
     const filePath = path.join(notesDir, filename);
 
     try {
@@ -1419,9 +1470,48 @@ ipcMain.handle('create-note', async (event, { timelineId, title, elementId }) =>
       await fs.writeFile(filePath, heading, 'utf8');
     }
     markGitSyncDirty(timelineId);
-    return { success: true, filename };
+    const notePath = `${await getNotesDirRelative(timelineId)}/${filename}`;
+    return { success: true, filename, notePath };
   } catch (error) {
     console.error('Error creating note:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('get-timeline-notes-dir', async (event, { timelineId } = {}) => {
+  try {
+    if (!timelineId) return { success: false, error: 'Missing timelineId' };
+    return { success: true, relativePath: await getNotesDirRelative(timelineId) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Every .md under the notes root, as root-relative paths for wikilink resolution
+ipcMain.handle('list-notes', async () => {
+  try {
+    const root = await getNotesRootDir();
+    const notes = [];
+    const walk = async (dir, rel, depth) => {
+      if (depth > 16 || notes.length >= 50000) return;
+      let entries;
+      try {
+        entries = await fs.readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const entry of entries) {
+        // Skips .obsidian, .trash and similar; Dirent never reports symlinks as dirs, so they aren't followed
+        if (entry.name.startsWith('.')) continue;
+        const relPath = rel ? `${rel}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) await walk(path.join(dir, entry.name), relPath, depth + 1);
+        else if (entry.isFile() && /\.md$/i.test(entry.name)) notes.push(relPath);
+      }
+    };
+    await walk(root, '', 0);
+    return { success: true, notes };
+  } catch (error) {
+    console.error('Error listing notes:', error);
     return { success: false, error: error.message };
   }
 });
@@ -1623,7 +1713,7 @@ const ALLOWED_SETTINGS_KEYS = new Set([
   'theme', 'notesSubfolder', 'notesSubfolderEnabled',
   'appFontFamily', 'appFontSize', 'keybinds', 'hardwareAcceleration', 'startMaximized', 'disableThumbnails', 'assetsStorageDir', 'homeSortMode', 'homeViewMode', 'homeSidebarWidth',
   'gitSyncAutoSync', 'gitSyncIntervalMinutes', 'gitSyncMachineLabel',
-  'language', 'favoriteColors',
+  'language', 'favoriteColors', 'timelineNotesFolder',
 ]);
 
 ipcMain.handle('set-app-settings', async (event, settings) => {

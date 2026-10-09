@@ -136,6 +136,9 @@
     "choose": "Choose...",
     "notesFolder": "Notes Folder",
     "timelineFolder": "Timeline Folder",
+    "timelineNotesFolder": "Timeline Notes Subfolder",
+    "timelineNotesFolderHint": "Optional folder inside the Notes Folder for each timeline's notes, such as Timelines. Useful when the Notes Folder is an Obsidian vault. Notes already created stay where they are.",
+    "timelineNotesFolderNone": "None",
     "useDefault": "Use Default"
   },
   "folderTree": {

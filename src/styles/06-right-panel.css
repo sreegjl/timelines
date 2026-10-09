@@ -1738,6 +1738,180 @@
   border-color: var(--ui-muted);
 }
 
+/* Live preview editor (CodeMirror) inside the note editor */
+.note-lp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  cursor: text;
+}
+
+.note-lp:focus-within {
+  background-color: var(--surface);
+  border-color: var(--ui-muted);
+}
+
+.note-editor-card .note-lp:focus-within {
+  border-color: transparent;
+}
+
+.note-lp .cm-editor {
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.note-lp .cm-editor.cm-focused {
+  outline: none;
+}
+
+.note-lp .cm-scroller {
+  font-family: inherit;
+  line-height: 1.65;
+  overflow: auto;
+}
+
+.note-lp .cm-content {
+  padding: 0;
+  caret-color: var(--text-primary);
+}
+
+.note-lp .cm-line {
+  padding: 0;
+}
+
+.note-lp .cm-cursor {
+  border-left-color: var(--text-primary);
+}
+
+.note-lp .cm-selectionBackground,
+.note-lp .cm-editor.cm-focused .cm-selectionBackground,
+.note-lp .cm-content ::selection {
+  background: color-mix(in srgb, var(--selection-color, var(--link-color)), transparent 60%) !important;
+}
+
+.note-lp .cm-placeholder {
+  color: var(--ui-muted);
+}
+
+.note-lp.is-loading .cm-content {
+  opacity: 0.5;
+}
+
+.note-lp .cm-lp-h1,
+.note-lp .cm-lp-h2,
+.note-lp .cm-lp-h3,
+.note-lp .cm-lp-h4,
+.note-lp .cm-lp-h5,
+.note-lp .cm-lp-h6 {
+  font-weight: 700;
+}
+
+.note-lp .cm-lp-h1 {
+  font-size: var(--text-lg);
+}
+
+.note-lp .cm-lp-h2 {
+  font-size: var(--text-base);
+}
+
+.note-lp .cm-lp-strong {
+  font-weight: 700;
+}
+
+.note-lp .cm-lp-em {
+  font-style: italic;
+}
+
+.note-lp .cm-lp-u {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.note-lp .cm-lp-strike {
+  text-decoration: line-through;
+}
+
+.note-lp .cm-lp-mark {
+  background: var(--highlight-color, color-mix(in srgb, #f6d66a, white 35%));
+  border-radius: 3px;
+}
+
+.note-lp .cm-lp-code {
+  font-family: monospace;
+  background: var(--accent-color);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+.note-lp .cm-lp-codeblock {
+  font-family: monospace;
+  background: var(--accent-color);
+}
+
+.note-lp .cm-lp-link,
+.note-lp .cm-lp-wikilink {
+  color: var(--link-color);
+}
+
+.note-lp .cm-lp-link {
+  text-decoration: underline;
+}
+
+/* Ctrl/Cmd+click opens the note, so hint with a pointer only while the modifier could apply */
+.note-lp .cm-lp-wikilink:hover {
+  text-decoration: underline;
+}
+
+.note-lp .cm-lp-wikilink.is-unresolved {
+  opacity: 0.6;
+}
+
+.note-lp .cm-lp-quote {
+  border-left: 3px solid var(--link-color);
+  padding-left: 0.75rem !important;
+  background: color-mix(in srgb, var(--link-color), transparent 90%);
+}
+
+.note-lp .cm-lp-bullet {
+  color: var(--ui-muted);
+}
+
+.note-lp .cm-lp-checkbox {
+  margin: 0 4px 0 0;
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.note-lp .cm-lp-task-done {
+  color: var(--ui-muted);
+  text-decoration: line-through;
+}
+
+.note-lp .cm-lp-hr {
+  display: inline-block;
+  width: 100%;
+  vertical-align: middle;
+  border-top: 1px solid var(--accent-color);
+}
+
+.note-lp .cm-lp-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 4px 0;
+  border-radius: 4px;
+}
+
+.note-lp .cm-lp-frontmatter {
+  font-family: monospace;
+  font-size: var(--text-xs);
+  color: var(--ui-muted);
+}
+
 .note-editor-card .note-toolbar {
   background: transparent;
   border: none;
@@ -1879,6 +2053,95 @@
 .note-render a {
   color: var(--link-color);
   text-decoration: underline;
+}
+
+.note-render a.wikilink {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.note-render a.wikilink:hover {
+  text-decoration: underline;
+}
+
+/* Faded like Obsidian, since clicking offers to create the note */
+.note-render a.wikilink.is-unresolved {
+  opacity: 0.6;
+}
+
+.note-page-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 10px;
+  grid-column: 3;
+}
+
+.note-page-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+/* Editor fills the panel edge to edge: toolbar as a bar under the header, textarea below */
+.note-page-edit {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin-right: 0;
+}
+
+.note-page-edit .note-editor {
+  margin-top: 0;
+  min-height: 0;
+}
+
+.note-page-edit .note-toolbar {
+  padding: 4px 10px;
+  border: none;
+  border-bottom: 1px solid var(--accent-color);
+  border-radius: 0;
+}
+
+.note-page-edit .note-textarea,
+.note-page-edit .note-textarea:focus {
+  padding: 14px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.note-page-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.note-page-missing p {
+  margin: 0;
+}
+
+.note-page-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--accent-color);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.note-page-create:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .note-render mark {
@@ -2776,75 +3039,34 @@
   cursor: pointer;
 }
 
-.thumbnail-dropzone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 28px 16px;
-  background: color-mix(in srgb, var(--accent-color), var(--surface) 75%);
-  border: 2px dashed color-mix(in srgb, var(--ui-muted), transparent 40%);
-  border-radius: 10px;
-  cursor: pointer;
-  font-family: inherit;
-  text-align: center;
-  transition: background 0.15s, border-color 0.15s;
-  box-sizing: border-box;
-}
-
-.thumbnail-dropzone:hover {
-  background: color-mix(in srgb, var(--accent-color), var(--surface) 55%);
-  border-color: var(--ui-muted);
-}
-
-.thumbnail-dropzone.is-drag-over {
-  background: color-mix(in srgb, var(--accent-color), var(--surface) 55%);
-  border-color: var(--link-color);
-}
-
-.thumbnail-dropzone-icon {
-  color: var(--ui-muted);
-}
-
-.thumbnail-dropzone-title {
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.thumbnail-dropzone-subtitle {
-  font-size: var(--text-xs);
-  color: var(--ui-muted);
-}
-
-.thumbnail-dropzone-wrap {
-  position: relative;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.thumbnail-url-icon-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--ui-muted), transparent 55%);
+.thumbnail-empty-row {
   border-radius: 6px;
-  cursor: pointer;
-  color: var(--ui-muted);
-  transition: color 0.12s, border-color 0.12s;
+  outline: 1px dashed transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.12s;
 }
-.thumbnail-url-icon-btn:hover,
-.thumbnail-url-icon-btn.is-active {
+
+.thumbnail-empty-row.is-drag-over {
+  outline-color: var(--link-color);
+}
+
+.thumbnail-empty-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.thumbnail-empty-upload {
+  gap: 5px;
+}
+
+.thumbnail-empty-link {
+  width: 28px;
+  padding: 0;
+  color: var(--ui-muted);
+}
+
+.thumbnail-empty-link.is-active {
   color: var(--link-color);
   border-color: var(--link-color);
 }
@@ -2977,6 +3199,31 @@
   font-size: var(--text-2xs);
   color: var(--text-subtle);
   line-height: 1;
+}
+
+/* Keeps the word count next to the expand button instead of centered */
+.rp-note-header > .rp-note-meta {
+  margin-left: auto;
+}
+
+.rp-note-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  padding: 0;
+  color: var(--ui-muted);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.rp-note-expand:hover {
+  color: var(--text-primary);
+  background: var(--accent-color);
 }
 
 .coord-pick-button {

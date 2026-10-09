@@ -10,9 +10,11 @@ const TAG_FORBIDDEN = /[,#|()~"<>]|\p{C}/u;
 export const isValidTagValue = (value) => value.length > 0 && !TAG_FORBIDDEN.test(value);
 
 // Bare filename or notes-root-relative slash path, matching what resolveNotePath accepts in main
+// Note names keep spaces and case like Obsidian; main still confines paths to the notes folder
 export const isSafeNoteRef = (name) => {
-  if (!name || typeof name !== "string" || name.includes("..")) return false;
-  return /^[\w.-]+(\/[\w.-]+)*\.md$/i.test(name);
+  if (!name || typeof name !== "string" || name.includes("\\") || !/\.md$/i.test(name)) return false;
+  // eslint-disable-next-line no-control-regex
+  return name.split("/").every((part) => part && part !== "." && part !== ".." && !/[<>:"|?*\u0000-\u001f]/.test(part));
 };
 
 export const normalizeTagValue = (value) => String(value).normalize("NFC").trim().replace(/\s+/g, " ");

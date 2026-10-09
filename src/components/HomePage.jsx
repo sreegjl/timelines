@@ -376,6 +376,7 @@ export default function HomePage({
   const [gitSyncMirrorBytes, setGitSyncMirrorBytes] = useState(null);
   const [showSyncedConfirm, setShowSyncedConfirm] = useState(false);
   const [homeSidebarWidth, setHomeSidebarWidth] = useState(HOME_SIDEBAR_DEFAULT);
+  const [timelineNotesFolder, setTimelineNotesFolder] = useState("");
   const isDraggingSidebar = useRef(false);
   const homeShellRef = useRef(null);
   const [recordingKey, setRecordingKey] = useState(null);
@@ -401,6 +402,7 @@ export default function HomePage({
         setViewMode(settings.homeViewMode);
       }
       if (typeof settings?.language === "string") setLanguage(settings.language);
+      if (typeof settings?.timelineNotesFolder === "string") setTimelineNotesFolder(settings.timelineNotesFolder);
       const w = Number(settings?.homeSidebarWidth);
       const shellWidth = getHomeShellWidth(homeShellRef.current);
       if (Number.isFinite(w)) {
@@ -2785,6 +2787,27 @@ export default function HomePage({
                             </button>
                           </div>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="settings-row">
+                      <div className="settings-row-left">
+                        <div className="settings-row-label">{t("files.timelineNotesFolder", "Timeline Notes Subfolder")}</div>
+                        <div className="settings-row-description">
+                          {t("files.timelineNotesFolderHint", "Optional folder inside the Notes Folder for each timeline's notes, such as Timelines. Useful when the Notes Folder is an Obsidian vault. Notes already created stay where they are.")}
+                        </div>
+                      </div>
+                      <div className="settings-row-right">
+                        <input
+                          className="settings-input"
+                          type="text"
+                          value={timelineNotesFolder}
+                          placeholder={t("files.timelineNotesFolderNone", "None")}
+                          spellCheck={false}
+                          onChange={(e) => setTimelineNotesFolder(e.target.value)}
+                          onBlur={(e) => saveAppSettings({ timelineNotesFolder: e.target.value.trim() })}
+                          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                        />
                       </div>
                     </div>
 

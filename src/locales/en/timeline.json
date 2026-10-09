@@ -95,6 +95,7 @@
     "sizeLower": "size",
     "startDate": "Start Date",
     "tags": "Tags",
+    "thumbnail": "Thumbnail",
     "time": "Time"
   },
   "filters": {
@@ -168,6 +169,7 @@
     "confirmDelete": "Delete this note? This cannot be undone.",
     "delete": "Delete Note",
     "embed": "Embed image or video",
+    "expand": "Edit in full panel",
     "heading1": "Heading 1",
     "heading2": "Heading 2",
     "heading3": "Heading 3",
@@ -176,11 +178,19 @@
     "italic": "Italic",
     "label": "Note",
     "link": "Link",
-    "loading": "Loading note...",
     "placeholder": "Write your note...",
     "strikethrough": "Strikethrough",
     "underline": "Underline",
     "unlink": "Unlink Note"
+  },
+  "notePage": {
+    "back": "Back",
+    "create": "Create note",
+    "doesNotExist": "This note doesn't exist yet.",
+    "edit": "Edit note",
+    "linkedElements": "Linked elements",
+    "notFound": "This note couldn't be found. It may have been moved or deleted.",
+    "view": "View note"
   },
   "openSource": "Open source",
   "options": {
@@ -193,6 +203,7 @@
       "aria": "Open date options",
       "title": "Pick a date, or insert a dynamic date"
     },
+    "dropHere": "Drop here",
     "dropImage": "Drop image or click to upload",
     "dynamicDates": {
       "thisMonth": "This month",
@@ -213,7 +224,8 @@
       "display": "Display",
       "notes": "Notes & Sources"
     },
-    "timePlaceholder": "e.g. 3:30 PM"
+    "timePlaceholder": "e.g. 3:30 PM",
+    "upload": "Upload"
   },
   "search": {
     "noResults": "No results for “{{query}}”",

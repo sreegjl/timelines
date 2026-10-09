@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { renderNoteMarkdown } from "../utils/noteUtils";
+import { renderNoteMarkdown, resolveNoteImageSrc } from "../utils/noteUtils";
 import { createNote, addExistingNote, readNote, writeNote, deleteNote, getNotesBaseDir, getAssetsBaseDir, pickAndImportImage, importImageFromPath } from "../utils/electronApi";
 import { isSafeNoteRef } from "../utils/validation";
 import { getStorageId } from "../utils/idUtils";
 import { resolvePackageAssetSrc } from "../utils/viewerPackageStore";
+import { toNotePath } from "../utils/wikilinks";
 
-export function useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate }) {
+export function useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate, resolveNote, timelineDir }) {
   const { t } = useTranslation("timeline");
   const timelineId = getStorageId(timelineData?.file);
   const [noteInitialContent, setNoteInitialContent] = useState("");
   const [isNoteLoading, setIsNoteLoading] = useState(false);
   const [noteExists, setNoteExists] = useState(false);
+  // Bumped to re-read the note after it was edited elsewhere, like the full-height note page
+  const [noteReloadKey, setNoteReloadKey] = useState(0);
+  const reloadNote = useCallback(() => setNoteReloadKey((k) => k + 1), []);
   const [isNoteAddOpen, setIsNoteAddOpen] = useState(false);
   const [notesBaseUrl, setNotesBaseUrl] = useState("");
   const [notesBasePath, setNotesBasePath] = useState("");
@@ -66,7 +70,7 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
     };
     loadNote();
     return () => { isMounted = false; };
-  }, [selectedElement?.id, selectedElement?.noteFile, timelineData?.file?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedElement?.id, selectedElement?.noteFile, timelineData?.file?.id, noteReloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hide broken images and videos in rendered note
   useEffect(() => {
@@ -96,18 +100,32 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
     return noteInitialContent.trim().split(/\s+/).filter(Boolean).length;
   }, [noteInitialContent]);
 
-  const noteFileBaseUrl = notesBaseUrl && timelineId
-    ? `${notesBaseUrl}${timelineId}/`
+  const noteFileBaseUrl = notesBaseUrl && (timelineDir || timelineId)
+    ? `${notesBaseUrl}${timelineDir || timelineId}/`
     : notesBaseUrl;
 
   const assetsTimelineDir = assetsBasePath && timelineId
     ? `${assetsBasePath.replace(/[/\\]$/, "")}/${timelineId}/`
     : "";
 
+  const elementNotePath = toNotePath(selectedElement?.noteFile, timelineDir);
+
+  // Shared by the rendered note and the live preview editor so both resolve links and images alike
+  const resolveElementWikilink = useCallback(
+    (target) => (resolveNote ? resolveNote(target, elementNotePath) : null),
+    [resolveNote, elementNotePath]
+  );
+  const resolveElementImageSrc = useCallback(
+    (src) => resolveNoteImageSrc(src, noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir, resolvePackageAssetSrc),
+    [noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir]
+  );
+
   const renderedNoteHtml = useMemo(
     // resolvePackageAssetSrc serves images bundled in a packaged .timeline (web viewer); it is a no-op on desktop
-    () => renderNoteMarkdown(noteInitialContent, isNoteLoading, noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir, resolvePackageAssetSrc),
-    [noteInitialContent, isNoteLoading, noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir]
+    () => renderNoteMarkdown(noteInitialContent, isNoteLoading, noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir, resolvePackageAssetSrc, {
+      resolveWikilink: resolveElementWikilink,
+    }),
+    [noteInitialContent, isNoteLoading, noteFileBaseUrl, notesBasePath, assetsBasePath, assetsTimelineDir, resolveElementWikilink]
   );
 
   const noteViewCallbackRef = useCallback((node) => {
@@ -223,7 +241,12 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
     setIsNoteAddOpen,
     notesBaseUrl,
     notesBasePath,
+    assetsBasePath,
+    assetsTimelineDir,
     noteEditorRef,
+    reloadNote,
+    resolveElementWikilink,
+    resolveElementImageSrc,
     noteWordCount,
     renderedNoteHtml,
     noteViewCallbackRef,

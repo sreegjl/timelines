@@ -1,30 +1,82 @@
 import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { useTranslation } from "react-i18next";
 import { Heading1, Heading2, Heading3, Bold, Italic, Strikethrough, Underline, Highlighter, Link2, Trash2, Unlink, ImagePlay, Paperclip } from "lucide-react";
+import { EditorState, EditorSelection, Transaction } from "@codemirror/state";
+import { EditorView, keymap, placeholder } from "@codemirror/view";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { livePreview, refreshLivePreview } from "./noteLivePreview";
 
+// Markdown note editor with Obsidian-style live preview; the saved file is always the plain text
 const NoteEditor = forwardRef(function NoteEditor(
-  { initialContent, isNoteLoading, noteExists, onSave, onUnlink, onDelete, onPickLocalImage },
+  { initialContent, isNoteLoading, noteExists, onSave, onUnlink, onDelete, onPickLocalImage, resolveWikilink, resolveImageSrc, onOpenWikilink },
   ref
 ) {
   const { t } = useTranslation("timeline");
   const [noteContent, setNoteContent] = useState(initialContent ?? "");
   const noteContentRef = useRef(noteContent);
-  const textareaRef = useRef(null);
   noteContentRef.current = noteContent;
   const savedContentRef = useRef(initialContent ?? "");
   const saveTimerRef = useRef(null);
   const onSaveRef = useRef(onSave);
   onSaveRef.current = onSave;
+  const hostRef = useRef(null);
+  const viewRef = useRef(null);
+  const previewOptionsRef = useRef({});
+  previewOptionsRef.current = { resolveWikilink, resolveImageSrc, onOpenWikilink };
 
   const flushSave = useCallback(() => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    if (noteContentRef.current === savedContentRef.current) return;
+    if (noteContentRef.current === savedContentRef.current) return Promise.resolve();
     savedContentRef.current = noteContentRef.current;
-    onSaveRef.current(noteContentRef.current);
+    // Returned so callers can wait for the write, e.g. before another view reads the file
+    return Promise.resolve(onSaveRef.current(noteContentRef.current));
   }, []);
+
+  const wrapSelection = useCallback((prefix, suffix = prefix) => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch(view.state.changeByRange((range) => ({
+      changes: [{ from: range.from, insert: prefix }, { from: range.to, insert: suffix }],
+      range: EditorSelection.range(range.from + prefix.length, range.to + prefix.length),
+    })));
+    view.focus();
+  }, []);
+
+  // Mounted once; content from outside is pushed in by the effect below
+  useEffect(() => {
+    const view = new EditorView({
+      parent: hostRef.current,
+      state: EditorState.create({
+        doc: noteContentRef.current,
+        extensions: [
+          history(),
+          keymap.of([
+            { key: "Mod-b", run: () => { wrapSelection("**"); return true; } },
+            { key: "Mod-i", run: () => { wrapSelection("*"); return true; } },
+            ...defaultKeymap,
+            ...historyKeymap,
+          ]),
+          EditorView.lineWrapping,
+          placeholder(t("noteEditor.placeholder", "Write your note...")),
+          livePreview(previewOptionsRef),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) setNoteContent(update.state.doc.toString());
+          }),
+          EditorView.domEventHandlers({
+            blur: () => { flushSave(); return false; },
+          }),
+        ],
+      }),
+    });
+    viewRef.current = view;
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const next = initialContent ?? "";
@@ -36,7 +88,19 @@ const NoteEditor = forwardRef(function NoteEditor(
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
+    const view = viewRef.current;
+    if (view && view.state.doc.toString() !== next) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: next },
+        annotations: Transaction.addToHistory.of(false),
+      });
+    }
   }, [initialContent]);
+
+  // Links and images re-render when the note index or folders change
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: refreshLivePreview.of(null) });
+  }, [resolveWikilink, resolveImageSrc]);
 
   // Debounced autosave for every edit path (typing and toolbar insertions)
   useEffect(() => {
@@ -57,104 +121,62 @@ const NoteEditor = forwardRef(function NoteEditor(
     save: flushSave,
   }), [flushSave]);
 
-  const wrapSelection = (prefix, suffix = prefix) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart ?? 0;
-    const end = textarea.selectionEnd ?? 0;
-    const before = noteContentRef.current.slice(0, start);
-    const selected = noteContentRef.current.slice(start, end);
-    const after = noteContentRef.current.slice(end);
-    const next = `${before}${prefix}${selected || ''}${suffix}${after}`;
-    setNoteContent(next);
-    const cursorStart = start + prefix.length;
-    const cursorEnd = cursorStart + (selected || '').length;
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(cursorStart, cursorEnd);
+  // Replaces the selection with text and selects [selectFrom, selectTo) inside it
+  const insertText = (text, selectFrom = text.length, selectTo = selectFrom) => {
+    const view = viewRef.current;
+    if (!view) return;
+    const { from, to } = view.state.selection.main;
+    view.dispatch({
+      changes: { from, to, insert: text },
+      selection: EditorSelection.range(from + selectFrom, from + selectTo),
     });
+    view.focus();
+  };
+
+  const selectedText = () => {
+    const view = viewRef.current;
+    if (!view) return "";
+    const { from, to } = view.state.selection.main;
+    return view.state.sliceDoc(from, to);
   };
 
   const insertHeading = (level) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart ?? 0;
-    const end = textarea.selectionEnd ?? 0;
-    const content = noteContentRef.current;
-    const lineStart = content.lastIndexOf('\n', start - 1) + 1;
-    const lineEnd = content.indexOf('\n', end);
-    const actualLineEnd = lineEnd === -1 ? content.length : lineEnd;
-    const line = content.slice(lineStart, actualLineEnd);
-    const cleaned = line.replace(/^#{1,6}\s+/, '');
-    const prefix = `${'#'.repeat(level)} `;
-    const nextLine = `${prefix}${cleaned}`;
-    const next = `${content.slice(0, lineStart)}${nextLine}${content.slice(actualLineEnd)}`;
-    setNoteContent(next);
-    const cursor = lineStart + prefix.length + (start - lineStart);
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(cursor, cursor);
+    const view = viewRef.current;
+    if (!view) return;
+    const { head } = view.state.selection.main;
+    const line = view.state.doc.lineAt(head);
+    const existing = /^#{1,6}\s+/.exec(line.text)?.[0].length ?? 0;
+    const prefix = `${"#".repeat(level)} `;
+    const cursor = Math.max(line.from + prefix.length, head - existing + prefix.length);
+    view.dispatch({
+      changes: { from: line.from, to: line.from + existing, insert: prefix },
+      selection: { anchor: cursor },
     });
+    view.focus();
   };
 
   const insertLink = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart ?? 0;
-    const end = textarea.selectionEnd ?? 0;
-    const content = noteContentRef.current;
-    const before = content.slice(0, start);
-    const selected = content.slice(start, end) || 'link text';
-    const after = content.slice(end);
-    const token = `[${selected}](https://)`;
-    const next = `${before}${token}${after}`;
-    setNoteContent(next);
-    const urlStart = before.length + token.indexOf('https://');
-    const urlEnd = urlStart + 'https://'.length;
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(urlStart, urlEnd);
-    });
+    const label = selectedText() || "link text";
+    const token = `[${label}](https://)`;
+    const urlStart = token.indexOf("https://");
+    insertText(token, urlStart, urlStart + "https://".length);
+  };
+
+  const insertImage = () => {
+    insertText("![](https://)", 4, 12);
   };
 
   const insertLocalImage = async () => {
     if (!onPickLocalImage) return;
     const relativePath = await onPickLocalImage();
     if (!relativePath) return;
-    const textarea = textareaRef.current;
-    const start = textarea?.selectionStart ?? noteContentRef.current.length;
-    const content = noteContentRef.current;
-    const before = content.slice(0, start);
-    const after = content.slice(start);
-    const token = `![](${relativePath})`;
-    setNoteContent(`${before}${token}${after}`);
-    const cursor = before.length + token.length;
-    requestAnimationFrame(() => {
-      textarea?.focus();
-      textarea?.setSelectionRange(cursor, cursor);
-    });
-  };
-
-  const insertImage = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart ?? 0;
-    const content = noteContentRef.current;
-    const before = content.slice(0, start);
-    const after = content.slice(start);
-    const token = `![](https://)`;
-    setNoteContent(`${before}${token}${after}`);
-    const urlStart = before.length + 4;
-    const urlEnd = urlStart + 8;
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(urlStart, urlEnd);
-    });
+    insertText(`![](${relativePath})`);
   };
 
   return (
     <div className="note-editor">
-      <div className="note-toolbar">
+      {/* mousedown default would blur the editor and drop its selection before the click */}
+      <div className="note-toolbar" onMouseDown={(e) => { if (e.target.closest("button")) e.preventDefault(); }}>
         <div className="note-toolbar-format">
           <button type="button" onClick={() => insertHeading(1)} title={t("noteEditor.heading1", "Heading 1")}><Heading1 size={14} /></button>
           <button type="button" onClick={() => insertHeading(2)} title={t("noteEditor.heading2", "Heading 2")}><Heading2 size={14} /></button>
@@ -180,14 +202,10 @@ const NoteEditor = forwardRef(function NoteEditor(
           </div>
         )}
       </div>
-      <textarea
-        ref={textareaRef}
-        className="note-textarea"
-        value={noteContent}
-        onChange={(e) => setNoteContent(e.target.value)}
-        onBlur={flushSave}
-        placeholder={isNoteLoading ? t("noteEditor.loading", "Loading note...") : t("noteEditor.placeholder", "Write your note...")}
-        rows={8}
+      <div
+        ref={hostRef}
+        className={`note-textarea note-lp${isNoteLoading ? " is-loading" : ""}`}
+        aria-busy={isNoteLoading || undefined}
       />
     </div>
   );
