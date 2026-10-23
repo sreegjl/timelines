@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { renderNoteMarkdown, sanitizeNoteHtml } from "../utils/noteUtils";
-import { createNote, addExistingNote, readNote, writeNote, deleteNote, getNotesBaseDir, getAssetsBaseDir, pickAndImportImage, importImageFromPath } from "../utils/electronApi";
+import { createNote, addExistingNote, readNote, writeNote, deleteNote, renameNote, getNotesBaseDir, getAssetsBaseDir, pickAndImportImage, importImageFromPath } from "../utils/electronApi";
 import { isSafeNoteRef } from "../utils/validation";
+import { buildRenamedNoteRef } from "../utils/noteRefs";
 import { getStorageId } from "../utils/idUtils";
 import { resolvePackageAssetSrc } from "../utils/viewerPackageStore";
 
-export function useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate }) {
+export function useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate, onNoteFileRenamed }) {
   const { t } = useTranslation("timeline");
   const timelineId = getStorageId(timelineData?.file);
   const [noteInitialContent, setNoteInitialContent] = useState("");
@@ -189,6 +190,28 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
     onUpdate?.(next);
   }, [formData, timelineData?.file?.id, onUpdate, setFormData]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // error codes, not sentences, so the panel can translate them at render
+  const handleRenameNote = useCallback(async (nextName) => {
+    const oldRef = formData?.noteFile;
+    if (!oldRef || !isSafeNoteRef(oldRef)) return { success: false, error: "LOCKED" };
+    const nextRef = buildRenamedNoteRef(oldRef, nextName);
+    if (!nextRef || !isSafeNoteRef(nextRef)) return { success: false, error: "INVALID_NAME" };
+    if (nextRef === oldRef) return { success: true, filename: oldRef };
+    const timelineId = getStorageId(timelineData?.file);
+    if (!timelineId) return { success: false, error: "NO_TIMELINE" };
+
+    // pending keystrokes go to the old file first, otherwise they'd resurrect it after the move. spooky
+    await noteEditorRef.current?.save?.();
+    const result = await renameNote({ timelineId, oldFilename: oldRef, newFilename: nextRef });
+    if (!result?.success) return { success: false, error: result?.error === "EXISTS" ? "EXISTS" : "FAILED" };
+    const finalRef = result.filename || nextRef;
+    const next = { ...formData, noteFile: finalRef };
+    setFormData(next);
+    if (onNoteFileRenamed) onNoteFileRenamed(oldRef, finalRef);
+    else onUpdate?.(next);
+    return { success: true, filename: finalRef };
+  }, [formData, timelineData?.file?.id, onUpdate, onNoteFileRenamed, setFormData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleUnlinkNote = useCallback(() => {
     if (!formData?.noteFile) return;
     const next = { ...formData };
@@ -241,6 +264,7 @@ export function useNoteManagement({ selectedElement, timelineData, formData, set
     handleAddExistingNote,
     handleDeleteNote,
     handleUnlinkNote,
+    handleRenameNote,
     handlePickLocalImage,
     resolveNoteImageSrc,
     handlePickThumbnail,

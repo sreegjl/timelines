@@ -1576,7 +1576,10 @@ ipcMain.handle('rename-note', async (event, { timelineId, oldFilename, newFilena
     }
     const oldPath = await resolveNotePath(timelineId, oldFilename);
     const nextPath = await resolveNotePath(timelineId, newFilename);
-    if (oldPath === nextPath) return { success: true };
+    // bare names get sanitized on the way in, so tell the renderer what actually landed on disk
+    const rawNext = String(newFilename).trim();
+    const filename = /[/\\]/.test(rawNext) ? rawNext.split('\\').join('/') : sanitizeNoteFilename(rawNext);
+    if (oldPath === nextPath) return { success: true, filename };
     // Case-only renames on Windows point at the same file and are safe to pass through
     const samePath = process.platform === 'win32' && oldPath.toLowerCase() === nextPath.toLowerCase();
     // fs.rename silently replaces the destination, so refuse instead of destroying another note
@@ -1591,7 +1594,7 @@ ipcMain.handle('rename-note', async (event, { timelineId, oldFilename, newFilena
       throw error;
     }
     markGitSyncDirty(timelineId);
-    return { success: true };
+    return { success: true, filename };
   } catch (error) {
     console.error('Error renaming note:', error);
     return { success: false, error: error.message };

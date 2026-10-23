@@ -196,6 +196,18 @@
     "wordCount_one": "{{count}} word",
     "wordCount_other": "{{count}} words"
   },
+  "noteFile": {
+    "errors": {
+      "exists": "A note with that name already exists.",
+      "failed": "Rename failed.",
+      "invalidName": "That name won't work as a file name.",
+      "locked": "This note can't be renamed from here.",
+      "noTimeline": "No timeline open."
+    },
+    "newName": "New note file name",
+    "rename": "Rename note file",
+    "save": "Save name"
+  },
   "openSource": "Open source",
   "options": {
     "inherit": "Inherit"

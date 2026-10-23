@@ -2904,6 +2904,71 @@
 }
 
 
+.note-file-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin-bottom: 6px;
+  font-size: var(--text-2xs);
+  color: var(--text-subtle);
+}
+
+.note-file-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.note-file-name-folder {
+  opacity: 0.6;
+}
+
+.note-file-name-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  color: var(--ui-muted);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.note-file-name-button:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--accent-color);
+}
+
+.note-file-name-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 3px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  background: var(--accent-color);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  outline: none;
+}
+
+.note-file-name-input[aria-invalid="true"] {
+  border-color: #c0392b;
+}
+
+.note-file-name-error {
+  flex-basis: 100%;
+  color: #c0392b;
+}
+
 .rp-note-meta {
   font-size: var(--text-2xs);
   color: var(--text-subtle);

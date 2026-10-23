@@ -1084,6 +1084,20 @@ function App() {
     });
   };
 
+  // every element pointing at the old note follows it to its new name. loyal little things
+  const handleNoteFileRenamed = useCallback((oldRef, newRef) => {
+    if (!oldRef || !newRef || oldRef === newRef) return;
+    setTimelineData((prevData) => {
+      if (!prevData?.elements?.some((el) => el.noteFile === oldRef)) return prevData;
+      const updatedData = {
+        ...prevData,
+        elements: prevData.elements.map((el) => (el.noteFile === oldRef ? { ...el, noteFile: newRef } : el)),
+      };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+  }, [saveCurrentTimeline]);
+
   // Coordinates picked by clicking the map while the right panel picker is armed
   const handleCoordinatePicked = useCallback(({ lat, lng }) => {
     const targetId = coordPickRequest?.id;
@@ -3060,6 +3074,7 @@ function App() {
                 nextElement={selectionNavigation.nextElement}
                 coordPickTargetId={coordPickRequest?.id ?? null}
                 onRequestCoordPick={handleRequestCoordPick}
+                onNoteFileRenamed={handleNoteFileRenamed}
               />
               </ErrorBoundary>
             </aside>

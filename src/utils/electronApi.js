@@ -178,6 +178,19 @@ export async function deleteNote({ timelineId, filename }) {
   }
 }
 
+export async function renameNote({ timelineId, oldFilename, newFilename }) {
+  if (!isElectron()) {
+    console.warn('Not running in Electron');
+    return { success: false, error: 'Not in Electron environment' };
+  }
+
+  try {
+    return await window.electron.renameNote({ timelineId, oldFilename, newFilename });
+  } catch (error) {
+    console.error('Error renaming note:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 export async function renameTimeline({ oldId, newId }) {
   if (!isElectron()) {

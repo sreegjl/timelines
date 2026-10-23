@@ -9,7 +9,7 @@ const openLink = (url) => {
 };
 
 const NoteEditor = forwardRef(function NoteEditor(
-  { initialContent, isNoteLoading, noteExists, onSave, onUnlink, onDelete, onPickLocalImage, resolveImageSrc, label, meta },
+  { initialContent, isNoteLoading, noteExists, onSave, onUnlink, onDelete, onPickLocalImage, resolveImageSrc, label, meta, subheader },
   ref
 ) {
   const { t } = useTranslation("timeline");
@@ -30,9 +30,10 @@ const NoteEditor = forwardRef(function NoteEditor(
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-    if (contentRef.current === savedContentRef.current) return;
+    if (contentRef.current === savedContentRef.current) return Promise.resolve();
     savedContentRef.current = contentRef.current;
-    onSaveRef.current(contentRef.current);
+    // hand back the promise so a rename can wait for the ink to dry
+    return Promise.resolve(onSaveRef.current(contentRef.current));
   }, []);
 
   const placeholderText = isNoteLoading
@@ -155,6 +156,7 @@ const NoteEditor = forwardRef(function NoteEditor(
             </div>
         </span>
       </div>
+      {subheader}
       {/* mousedown would move focus off the editor and briefly re-hide the line being edited */}
       <div className="note-toolbar" onMouseDown={(e) => e.preventDefault()}>
         <div className="note-toolbar-format">

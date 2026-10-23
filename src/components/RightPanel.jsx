@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } fr
 import { useTranslation } from "react-i18next";
 import { Maximize2, Minimize2, Link, Trash2, ChevronLeft, ChevronRight, ChevronDown, Pencil, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X, Image as ImageIcon, Shapes, MoveVertical, Minus, SquareDashed, CalendarOff, EyeOff, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
 import NoteEditor from "./NoteEditor";
+import NoteFileName from "./NoteFileName";
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
@@ -98,6 +99,7 @@ export default function RightPanel({
   onClose,
   coordPickTargetId = null,
   onRequestCoordPick,
+  onNoteFileRenamed,
 }) {
   const { t } = useTranslation("timeline");
   // Listed statically so i18next-parser sees every option key.
@@ -140,11 +142,12 @@ export default function RightPanel({
     handleAddExistingNote,
     handleDeleteNote,
     handleUnlinkNote,
+    handleRenameNote,
     handlePickLocalImage,
     resolveNoteImageSrc,
     handlePickThumbnail,
     handleDropThumbnail,
-  } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate });
+  } = useNoteManagement({ selectedElement, timelineData, formData, setFormData, onUpdate, onNoteFileRenamed });
   const prevSelectedIdRef = useRef(null);
   const titleTextareaRef = useRef(null);
   const endInputRef = useRef(null);
@@ -2721,6 +2724,7 @@ export default function RightPanel({
                     resolveImageSrc={resolveNoteImageSrc}
                     label={<span className="rp-note-label rp-note-label-note">{t("noteEditor.label", "Note")}</span>}
                     meta={noteWordCount > 0 ? noteWordCountLabel : null}
+                    subheader={noteExists ? <NoteFileName noteFile={formData.noteFile} onRename={handleRenameNote} readOnly={readOnly} /> : null}
                   />
                 </div>
               )}
