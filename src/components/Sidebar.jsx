@@ -6,6 +6,7 @@ import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelin
 import { displayDateTimeLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
 import ColorPicker from "./ColorPicker";
+import { sortByManualOrder, moveInOrder } from "../utils/elementOrder";
 import "../styles/07-modals-menus.css";
 
 const DEFAULT_GROUP_COLOR = "#d9d9d9";
@@ -97,13 +98,15 @@ function compareEraGroupItems(a, b) {
   return (a.title || a.id).localeCompare(b.title || b.id);
 }
 
-function SidebarRow({ item, rightText, level = 0, selectedId, onSelect, listRef, lastScrollTopRef, setElementMenu, spanFocus }) {
+function SidebarRow({ item, rightText, level = 0, selectedId, onSelect, listRef, lastScrollTopRef, setElementMenu, spanFocus, reorder }) {
   const isSelected = selectedId && selectedId === item.id;
   const leftIndent = 16 + level * 16;
+  const dropSide = reorder?.dropTarget?.id === item.id ? reorder.dropTarget.side : null;
 
   return (
     <button
-      className={`sb-row ${isSelected ? "is-selected" : ""}`}
+      className={`sb-row ${isSelected ? "is-selected" : ""}${reorder ? " is-reorderable" : ""}${reorder?.draggingId === item.id ? " is-dragging" : ""}${dropSide ? ` drop-${dropSide}` : ""}`}
+      {...(reorder && reorder.rowProps(item))}
       style={{
         marginLeft: "5px",
         paddingLeft: `${Math.max(0, leftIndent - 5)}px`,
@@ -222,6 +225,7 @@ export default function Sidebar({
   onAddEvent,
   onAddSpan,
   onAddEra,
+  onReorderElements,
   onOpenSettings,
   onDownloadJson,
   onDownloadPackage,
@@ -262,7 +266,7 @@ export default function Sidebar({
   const [openSpanGroups, setOpenSpanGroups] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   // Sort prefs live on the file (like panelGroupMode) so they survive reloads
-  const sortField = file?.panelSortField === "name" ? "name" : "year";
+  const sortField = file?.panelSortField === "name" || file?.panelSortField === "manual" ? file.panelSortField : "year";
   const sortOrder = file?.panelSortOrder === "desc" ? "desc" : "asc";
   // Tags tab keeps its own prefs; default is most-used first
   const tagSortField = file?.panelTagSortField === "name" ? "name" : "elements";
@@ -270,6 +274,8 @@ export default function Sidebar({
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef(null);
   const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const [reorderDrag, setReorderDrag] = useState(null);
+  const [reorderDrop, setReorderDrop] = useState(null);
   const newMenuRef = useRef(null);
   const [timelineMenu, setTimelineMenu] = useState(null);
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -909,6 +915,8 @@ export default function Sidebar({
       : t("sidebar.search.groups", "Search groups...");
 
   const applySidebarSort = (items, dateField) => {
+    // manual mode ignores asc/desc, the order is whatever u dragged it into
+    if (sortField === "manual") return sortByManualOrder(items);
     const sorted = [...items].sort((a, b) =>
       sortField === "name"
         ? (a.title || a.id || "").localeCompare(b.title || b.id || "")
@@ -919,6 +927,10 @@ export default function Sidebar({
   };
 
   const sortByHeader = (groups, key) => {
+    if (sortField === "manual") {
+      const ordered = sortByManualOrder(groups.map((g) => g[key]));
+      return [...groups].sort((a, b) => ordered.indexOf(a[key]) - ordered.indexOf(b[key]));
+    }
     const sorted = [...groups].sort((a, b) =>
       sortField === "name"
         ? (a[key].title || a[key].id || "").localeCompare(b[key].title || b[key].id || "")
@@ -939,6 +951,47 @@ export default function Sidebar({
     searchActive ? eventRows.filter((ev) => elMatches(ev)) : eventRows,
     "date"
   );
+
+  // drag to reorder, only in manual mode. rows can only swap places with their own kind, no mixing
+  const makeReorder = (type) => {
+    if (sortField !== "manual" || readOnly || !onReorderElements) return undefined;
+    return {
+      draggingId: reorderDrag?.id,
+      dropTarget: reorderDrop,
+      rowProps: (item) => ({
+        draggable: true,
+        onDragStart: (e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", item.id);
+          setReorderDrag({ id: item.id, type });
+        },
+        onDragOver: (e) => {
+          if (!reorderDrag || reorderDrag.type !== type || reorderDrag.id === item.id) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          const rect = e.currentTarget.getBoundingClientRect();
+          const side = e.clientY > rect.top + rect.height / 2 ? "after" : "before";
+          setReorderDrop((prev) => (prev?.id === item.id && prev.side === side ? prev : { id: item.id, side }));
+        },
+        onDrop: (e) => {
+          e.preventDefault();
+          if (reorderDrag && reorderDrag.type === type && reorderDrag.id !== item.id) {
+            const pool = (allElements ?? timelineData?.elements ?? []).filter((el) => el.type === type);
+            onReorderElements(moveInOrder(pool, reorderDrag.id, item.id, reorderDrop?.side === "after"));
+          }
+          setReorderDrag(null);
+          setReorderDrop(null);
+        },
+        onDragEnd: () => {
+          setReorderDrag(null);
+          setReorderDrop(null);
+        },
+      }),
+    };
+  };
+  const eraReorder = makeReorder("era");
+  const spanReorder = makeReorder("span");
+  const eventReorder = makeReorder("event");
 
   const visibleGroups = searchActive
     ? eraGroups.groups
@@ -1402,6 +1455,16 @@ export default function Sidebar({
                     <span>{t("sidebar.sort.name", "Name")}</span>
                     {sortField === "name" && <Check size={12} className="sb-sort-check" />}
                   </button>
+                  {!readOnly && onReorderElements && (
+                    <button
+                      className="context-menu-item"
+                      title={t("sidebar.sort.manualHint", "Drag rows to reorder. Span order also decides which spans sit closest to the line")}
+                      onClick={() => { onPatchFile?.({ panelSortField: "manual" }); setSortMenuOpen(false); }}
+                    >
+                      <span>{t("sidebar.sort.manual", "Manual (drag)")}</span>
+                      {sortField === "manual" && <Check size={12} className="sb-sort-check" />}
+                    </button>
+                  )}
                   <div className="sb-sort-divider" />
                   <button className="context-menu-item" onClick={() => { onPatchFile?.({ panelSortOrder: "asc" }); setSortMenuOpen(false); }}>
                     <span>{t("sidebar.sort.ascending", "Ascending")}</span>
@@ -1574,7 +1637,7 @@ export default function Sidebar({
               {(openEras || searchActive) && (
                 <div className="sb-section-body">
                   {visibleEras.map((e) => (
-                    <SidebarRow key={e.id} item={e} rightText={formatRange(e)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} />
+                    <SidebarRow key={e.id} item={e} rightText={formatRange(e)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} reorder={eraReorder} />
                   ))}
                 </div>
               )}
@@ -1590,7 +1653,7 @@ export default function Sidebar({
               {(openSpans || searchActive) && (
                 <div className="sb-section-body">
                   {visibleSpans.map((s) => (
-                    <SidebarRow key={s.id} item={s} rightText={formatRange(s)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} />
+                    <SidebarRow key={s.id} item={s} rightText={formatRange(s)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} reorder={spanReorder} />
                   ))}
                 </div>
               )}
@@ -1606,7 +1669,7 @@ export default function Sidebar({
               {(openEvents || searchActive) && (
                 <div className="sb-section-body">
                   {visibleEvents.map((ev) => (
-                    <SidebarRow key={ev.id} item={ev} rightText={withApproxLabel(displayDateTimeLabel(ev.dateLabel, ev.time) ?? fmtYear(ev.date), file?.approxID, ev.approximate === true)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} />
+                    <SidebarRow key={ev.id} item={ev} rightText={withApproxLabel(displayDateTimeLabel(ev.dateLabel, ev.time) ?? fmtYear(ev.date), file?.approxID, ev.approximate === true)} level={0} selectedId={selectedId} onSelect={onSelect} listRef={listRef} lastScrollTopRef={lastScrollTopRef} setElementMenu={setElementMenu} spanFocus={spanFocus} reorder={eventReorder} />
                   ))}
                 </div>
               )}

@@ -285,6 +285,8 @@
       "groupEras": "Eras",
       "groupSpans": "Spans",
       "label": "Sort",
+      "manual": "Manual (drag)",
+      "manualHint": "Drag rows to reorder. Span order also decides which spans sit closest to the line",
       "name": "Name",
       "nestSubEras": "Nest Sub-Eras",
       "sortBy": "Sort by"

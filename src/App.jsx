@@ -1084,6 +1084,25 @@ function App() {
     });
   };
 
+  // sidebar drag reorder: whoever lands first gets order 0, and so on down the line
+  const handleReorderElements = useCallback((orderedIds) => {
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
+    const indexById = new Map(orderedIds.map((id, index) => [id, index]));
+    setTimelineData((prevData) => {
+      if (!prevData?.elements) return prevData;
+      let changed = false;
+      const elements = prevData.elements.map((el) => {
+        if (!indexById.has(el.id) || el.order === indexById.get(el.id)) return el;
+        changed = true;
+        return { ...el, order: indexById.get(el.id) };
+      });
+      if (!changed) return prevData;
+      const updatedData = { ...prevData, elements };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+  }, [saveCurrentTimeline]);
+
   // Coordinates picked by clicking the map while the right panel picker is armed
   const handleCoordinatePicked = useCallback(({ lat, lng }) => {
     const targetId = coordPickRequest?.id;
@@ -1537,7 +1556,7 @@ function App() {
       const nextFile = { ...prevData.file, ...patch };
       if (!nextFile.panelGroupMode || nextFile.panelGroupMode === "default") delete nextFile.panelGroupMode;
       if (!nextFile.nestEraSubGroups) delete nextFile.nestEraSubGroups;
-      if (nextFile.panelSortField !== "name") delete nextFile.panelSortField;
+      if (nextFile.panelSortField !== "name" && nextFile.panelSortField !== "manual") delete nextFile.panelSortField;
       if (nextFile.panelSortOrder !== "desc") delete nextFile.panelSortOrder;
       if (nextFile.panelTagSortField !== "name") delete nextFile.panelTagSortField;
       if (nextFile.panelTagSortOrder !== "asc") delete nextFile.panelTagSortOrder;
@@ -2798,6 +2817,7 @@ function App() {
               onAddEvent={handleAddEvent}
               onAddSpan={handleAddSpan}
               onAddEra={handleAddEra}
+              onReorderElements={handleReorderElements}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onDownloadJson={handleDownloadJSON}
               onDownloadPackage={handleDownloadPackage}

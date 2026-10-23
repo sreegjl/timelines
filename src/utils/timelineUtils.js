@@ -1,5 +1,6 @@
 import { daysInMonth, displayDateLabel, getActiveDateFormat, formatCalendarDate } from "./dateUtils";
 import i18n from "../i18n";
+import { compareManualOrder } from "./elementOrder";
 
 // English fallback used when Intl is unavailable.
 export const MONTH_LABELS = [
@@ -349,8 +350,10 @@ export function layoutSpans({
   const familyRoots = rootSpans.filter(span => parentToChildren[span.id]?.length > 0);
   const otherRoots = rootSpans.filter(span => !parentToChildren[span.id]?.length);
 
-  familyRoots.sort((a, b) => a.start - b.start);
-  otherRoots.sort((a, b) => a.start - b.start);
+  // manual order (from the sidebar drag dance) decides who gets the lanes closest to the line first
+  const byManualThenStart = (a, b) => compareManualOrder(a, b) || a.start - b.start;
+  familyRoots.sort(byManualThenStart);
+  otherRoots.sort(byManualThenStart);
 
   const processed = new Set();
 
