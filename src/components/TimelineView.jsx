@@ -23,6 +23,7 @@ import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2,
 import { ICON_MAP } from "../config/elementIcons";
 import { drawTitleWatermark, saveExportFile } from "../utils/exportUtils";
 import { DETAIL_MIN, DETAIL_MAX, clamp } from "../utils/sliderUtils";
+import { getElementNoteContent } from "../hooks/useNoteContents";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
 const FILTER_HISTORY_MAX = 8;
@@ -490,6 +491,7 @@ const TimelineView = forwardRef(function TimelineView({
   keybinds = {},
   onSetViewMode,
   onDetailLevelChange,
+  noteContents,
   readOnly = false,
 }, ref) {
   const { t } = useTranslation(["timeline", "common"]);
@@ -557,9 +559,9 @@ const TimelineView = forwardRef(function TimelineView({
   const shownElementCount = useMemo(() => {
     const elements = timelineData?.elements ?? [];
     return parsedChipQuery
-      ? elements.filter((el) => matchesFilter(el, parsedChipQuery, null, filterContext)).length
+      ? elements.filter((el) => matchesFilter(el, parsedChipQuery, getElementNoteContent(noteContents, el), filterContext)).length
       : elements.length;
-  }, [timelineData?.elements, parsedChipQuery, filterContext]);
+  }, [timelineData?.elements, parsedChipQuery, filterContext, noteContents]);
   const hasAnyFilter = filterChips.length > 0 || activeTags.length > 0 || hiddenTags.length > 0;
   const [showMap, setShowMap] = useState(false);
   const mapViewRef = useRef(null);
@@ -603,9 +605,9 @@ const TimelineView = forwardRef(function TimelineView({
     );
     return (timelineData?.elements ?? []).filter(
       (el) => (!el.groupId || !hiddenGroupIds.has(el.groupId)) &&
-        (!parsedChipQuery || matchesFilter(el, parsedChipQuery, null, filterContext))
+        (!parsedChipQuery || matchesFilter(el, parsedChipQuery, getElementNoteContent(noteContents, el), filterContext))
     );
-  }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery, filterContext]);
+  }, [showMap, timelineData?.file?.groups, timelineData?.elements, parsedChipQuery, filterContext, noteContents]);
 
   const [appFontStack, setAppFontStack] = useState(() => readAppFontStack());
   useEffect(() => {
@@ -658,7 +660,7 @@ const TimelineView = forwardRef(function TimelineView({
     evFontSize,
   } = useMemo(() => {
     const file = timelineData.file;
-    const passesQuery = (el) => !parsedChipQuery || matchesFilter(el, parsedChipQuery, null, filterContext);
+    const passesQuery = (el) => !parsedChipQuery || matchesFilter(el, parsedChipQuery, getElementNoteContent(noteContents, el), filterContext);
     const events = timelineData.elements.filter(e => e.type === "event" && passesQuery(e));
     const spans = timelineData.elements.filter(e => e.type === "span" && passesQuery(e));
     const eras = timelineData.elements.filter(e => e.type === "era" && passesQuery(e));
@@ -1385,7 +1387,7 @@ const TimelineView = forwardRef(function TimelineView({
       decompressYear,
       evFontSize,
     };
-  }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady, detailOverride]);
+  }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady, detailOverride, noteContents]);
 
   const ticks = useMemo(() => {
     const minYear = file?.start;

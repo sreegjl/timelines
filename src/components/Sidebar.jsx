@@ -6,6 +6,7 @@ import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelin
 import { displayDateTimeLabel } from "../utils/dateUtils";
 import { ICON_MAP as iconMap } from "../config/elementIcons";
 import ColorPicker from "./ColorPicker";
+import { getElementNoteContent } from "../hooks/useNoteContents";
 import "../styles/07-modals-menus.css";
 
 const DEFAULT_GROUP_COLOR = "#d9d9d9";
@@ -202,6 +203,7 @@ export default function Sidebar({
   timelineData,
   allElements,
   chipFilter = null,
+  noteContents,
   chipQuery = "",
   activeTags = [],
   hiddenTags = [],
@@ -900,8 +902,8 @@ export default function Sidebar({
   );
   // Combine the sidebar's own search with the timeline's active chip filter (AND semantics).
   const elMatches = (el) =>
-    matchesFilter(el, parsedFilter, null, filterContext) &&
-    (!hasChipFilter || matchesFilter(el, chipFilter, null, filterContext));
+    matchesFilter(el, parsedFilter, getElementNoteContent(noteContents, el), filterContext) &&
+    (!hasChipFilter || matchesFilter(el, chipFilter, getElementNoteContent(noteContents, el), filterContext));
   const searchPlaceholder = sidebarTab === "timeline"
     ? t("sidebar.search.elements", "Search spans, events, eras...")
     : sidebarTab === "tags"

@@ -243,8 +243,10 @@
     "uploadImage": "Upload image"
   },
   "search": {
+    "hitCount": "{{n}} hits",
+    "inNotes": "In notes",
     "noResults": "No results for “{{query}}”",
-    "placeholder": "Search spans, events, eras…"
+    "placeholderWithNotes": "Search spans, events, eras, notes…"
   },
   "sidebar": {
     "applyColor": "Apply Color to Elements",

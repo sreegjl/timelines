@@ -42,6 +42,7 @@ import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fracti
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
 import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
+import { useNoteContents } from "./hooks/useNoteContents";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -318,6 +319,17 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [diskReloadNotice, setDiskReloadNotice] = useState(false);
   const [thumbnailRefreshSignal, setThumbnailRefreshSignal] = useState(0);
+  const [noteSearchRefresh, setNoteSearchRefresh] = useState(0);
+  // notes get re-read every time search opens so fresh edits show up. no stale gossip here
+  const noteContents = useNoteContents({
+    timelineFile: timelineData?.file,
+    elements: timelineData?.elements,
+    enabled: Boolean(timelineData),
+    refreshKey: noteSearchRefresh,
+  });
+  useEffect(() => {
+    if (isSearchOpen) setNoteSearchRefresh((n) => n + 1);
+  }, [isSearchOpen]);
 
   useEscapeKey(!!importConflict, () => setImportConflict(null));
   useEscapeKey(!!skippedFilesNotice, () => setSkippedFilesNotice(null));
@@ -2779,6 +2791,7 @@ function App() {
               allElements={timelineData.elements}
               chipFilter={parsedChipQuery}
               chipQuery={chipQuery}
+              noteContents={noteContents}
               activeTags={activeTags}
               hiddenTags={hiddenTags}
               onToggleTag={handleToggleTag}
@@ -2856,6 +2869,7 @@ function App() {
             <ErrorBoundary name={t("common:panels.spreadsheet", "Spreadsheet")}>
               <SpreadsheetView
                 timelineData={filteredTimelineData}
+                noteContents={noteContents}
                 selectedId={selectedId}
                 onSelect={handleSelect}
                 onUpdate={handleUpdate}
@@ -2917,6 +2931,7 @@ function App() {
               onTogglePinnedTag={handleTogglePinnedTag}
               onViewportYearChange={handleViewportYearChange}
               onChipQueryChange={setChipQuery}
+              noteContents={noteContents}
               tagFilterRequest={tagFilterRequest}
               focusSpanRequest={focusSpanRequest}
               coordPickRequest={coordPickRequest}
@@ -3172,6 +3187,7 @@ function App() {
         elements={timelineData?.elements ?? []}
         onSelect={handleSearchSelect}
         fileSettings={timelineData?.file}
+        noteContents={noteContents}
       />
       {importConflictModal}
       {skippedFilesModal}

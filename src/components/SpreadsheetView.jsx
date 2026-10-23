@@ -12,6 +12,7 @@ import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/fi
 import { applyFieldValue } from "../utils/elementFields";
 import { ICON_MAP } from "../config/elementIcons";
 import { pickAndImportImage } from "../utils/electronApi";
+import { getElementNoteContent } from "../hooks/useNoteContents";
 
 const TYPE_LABEL = { event: "Event", span: "Span", era: "Era" };
 
@@ -28,6 +29,7 @@ const DEFAULT_WIDTHS = {
 
 export default function SpreadsheetView({
   timelineData,
+  noteContents,
   selectedId,
   onSelect,
   onUpdate,
@@ -211,8 +213,8 @@ export default function SpreadsheetView({
     if (!search.trim()) return elements;
     const parsed = parseFilterQuery(search);
     const context = buildFilterContext(elements);
-    return elements.filter((el) => matchesFilter(el, parsed, null, context));
-  }, [elements, search]);
+    return elements.filter((el) => matchesFilter(el, parsed, getElementNoteContent(noteContents, el), context));
+  }, [elements, search, noteContents]);
 
   const getCellDisplayValue = useCallback((el, field) => {
     if (!el) return "";

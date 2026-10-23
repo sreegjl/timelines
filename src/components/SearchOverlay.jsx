@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
+import { Search, FileText } from "lucide-react";
+import { getElementNoteContent } from "../hooks/useNoteContents";
+import { findNoteSnippet, getNoteSearchText } from "../utils/noteSearch";
 import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
 
@@ -36,7 +38,9 @@ const TYPE_ICONS = {
   era: <TypeBox />,
 };
 
-export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fileSettings }) {
+const MAX_NOTE_RESULTS = 30;
+
+export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fileSettings, noteContents }) {
   const { t } = useTranslation("timeline");
   const typeLabels = useMemo(() => ({
     event: t("elementTypes.event", "Event"),
@@ -51,10 +55,33 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
 
   const parsedFilter = useMemo(() => parseFilterQuery(query), [query]);
   const filterContext = useMemo(() => buildFilterContext(elements), [elements]);
-  const results = useMemo(() => {
+  const titleResults = useMemo(() => {
     if (!query.trim()) return elements.slice(0, 50);
-    return elements.filter((el) => matchesFilter(el, parsedFilter, null, filterContext));
-  }, [query, elements, parsedFilter, filterContext]);
+    return elements.filter((el) => matchesFilter(el, parsedFilter, getElementNoteContent(noteContents, el), filterContext));
+  }, [query, elements, parsedFilter, filterContext, noteContents]);
+
+  // second act: elements whose notes mention the query even if the title plays coy
+  const noteResults = useMemo(() => {
+    const needle = getNoteSearchText(query);
+    if (needle.length < 2 || !noteContents) return [];
+    const already = new Set(titleResults.map((el) => el.id));
+    const hits = [];
+    for (const el of elements) {
+      if (already.has(el.id)) continue;
+      const content = getElementNoteContent(noteContents, el);
+      if (!content) continue;
+      const snippet = findNoteSnippet(content, needle);
+      if (!snippet) continue;
+      hits.push({ el, snippet });
+      if (hits.length >= MAX_NOTE_RESULTS) break;
+    }
+    return hits;
+  }, [query, elements, noteContents, titleResults]);
+
+  const results = useMemo(
+    () => [...titleResults, ...noteResults.map((hit) => hit.el)],
+    [titleResults, noteResults]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -113,7 +140,7 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
           <input
             ref={inputRef}
             className="search-overlay-input"
-            placeholder={t("search.placeholder", "Search spans, events, eras…")}
+            placeholder={t("search.placeholderWithNotes", "Search spans, events, eras, notes…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             spellCheck={false}
@@ -124,7 +151,7 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
 
         {results.length > 0 && (
           <div className="search-overlay-results" ref={listRef}>
-            {results.map((el, i) => (
+            {titleResults.map((el, i) => (
               <button
                 key={el.id}
                 ref={i === activeIndex ? activeItemRef : null}
@@ -148,6 +175,38 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
                 </span>
               </button>
             ))}
+            {noteResults.length > 0 && (
+              <div className="search-result-section">{t("search.inNotes", "In notes")}</div>
+            )}
+            {noteResults.map(({ el, snippet }, j) => {
+              const i = titleResults.length + j;
+              return (
+                <button
+                  key={`note-${el.id}`}
+                  ref={i === activeIndex ? activeItemRef : null}
+                  className={`search-result-item search-result-item--note${i === activeIndex ? " search-result-item--active" : ""}`}
+                  onMouseDown={() => {
+                    onSelect(el.id);
+                    onClose();
+                  }}
+                  onMouseEnter={() => setActiveIndex(i)}
+                >
+                  <span className="search-result-type-badge" data-type={el.type}>
+                    <FileText size={11} />
+                    <span className="search-result-type-label">{typeLabels[el.type]}</span>
+                  </span>
+                  <span className="search-result-note-body">
+                    <span className="search-result-title">{el.title || "(untitled)"}</span>
+                    <span className="search-result-snippet">
+                      {snippet.before}<mark>{snippet.match}</mark>{snippet.after}
+                    </span>
+                  </span>
+                  <span className="search-result-date">
+                    {snippet.count > 1 ? t("search.hitCount", "{{n}} hits", { n: snippet.count }) : formatElementDate(el, fileSettings)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 

@@ -150,6 +150,26 @@ export async function readNote({ timelineId, filename }) {
   }
 }
 
+// many notes in one trip. the web viewer just digs them out of the loaded package
+export async function readNotes({ timelineId, filenames }) {
+  const list = Array.isArray(filenames) ? filenames : [];
+  if (!isElectron()) {
+    const notes = {};
+    for (const filename of list) {
+      const packaged = getPackageNote(filename);
+      if (packaged !== null) notes[filename] = packaged;
+    }
+    return { success: true, notes };
+  }
+
+  try {
+    return await window.electron.readNotes({ timelineId, filenames: list });
+  } catch (error) {
+    console.error('Error reading notes:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function writeNote({ timelineId, filename, content }) {
   if (!isElectron()) {
     console.warn('Not running in Electron');

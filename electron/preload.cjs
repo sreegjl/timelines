@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electron', {
   createNote: (payload) => ipcRenderer.invoke('create-note', payload),
   addExistingNote: (payload) => ipcRenderer.invoke('add-existing-note', payload),
   readNote: (payload) => ipcRenderer.invoke('read-note', payload),
+  readNotes: (payload) => ipcRenderer.invoke('read-notes', payload),
   writeNote: (payload) => ipcRenderer.invoke('write-note', payload),
   deleteNote: (payload) => ipcRenderer.invoke('delete-note', payload),
   renameNote: (payload) => ipcRenderer.invoke('rename-note', payload),

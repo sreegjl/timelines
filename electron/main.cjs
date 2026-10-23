@@ -1552,6 +1552,31 @@ ipcMain.handle('read-note', async (event, { timelineId, filename }) => {
   }
 });
 
+// batch read for searching inside notes. capped so a 900mb vault doesn't turn the app into a space heater
+const READ_NOTES_MAX_FILES = 5000;
+const READ_NOTES_MAX_BYTES = 2 * 1024 * 1024;
+ipcMain.handle('read-notes', async (event, { timelineId, filenames } = {}) => {
+  try {
+    if (!timelineId || !Array.isArray(filenames)) {
+      return { success: false, error: 'Missing timelineId or filenames' };
+    }
+    const unique = [...new Set(filenames.filter((f) => typeof f === 'string' && f.trim()))].slice(0, READ_NOTES_MAX_FILES);
+    const notes = {};
+    await Promise.all(unique.map(async (filename) => {
+      try {
+        const filePath = await resolveNotePath(timelineId, filename);
+        const stat = await fs.stat(filePath);
+        if (!stat.isFile() || stat.size > READ_NOTES_MAX_BYTES) return;
+        notes[filename] = await fs.readFile(filePath, 'utf8');
+      } catch { /* missing or sus path, just skip it */ }
+    }));
+    return { success: true, notes };
+  } catch (error) {
+    console.error('Error reading notes:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('write-note', async (event, { timelineId, filename, content }) => {
   try {
     if (!timelineId || !filename) {
