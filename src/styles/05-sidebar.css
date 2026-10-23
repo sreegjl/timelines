@@ -1230,6 +1230,19 @@
   background: var(--accent-color);
 }
 
+.sb-new-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--accent-color);
+}
+
+.sb-new-menu-preset-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
 .sb-new-menu-icon {
   display: flex;
   align-items: center;

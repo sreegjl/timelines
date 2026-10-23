@@ -210,9 +210,9 @@ export default function SpreadsheetView({
   const searchedElements = useMemo(() => {
     if (!search.trim()) return elements;
     const parsed = parseFilterQuery(search);
-    const context = buildFilterContext(elements);
+    const context = buildFilterContext(elements, timelineData?.file?.presets);
     return elements.filter((el) => matchesFilter(el, parsed, null, context));
-  }, [elements, search]);
+  }, [elements, search, timelineData?.file?.presets]);
 
   const getCellDisplayValue = useCallback((el, field) => {
     if (!el) return "";

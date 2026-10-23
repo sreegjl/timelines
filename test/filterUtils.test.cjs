@@ -181,3 +181,21 @@ test("contains: still parses with a space before its value", async () => {
     { t: "LEAF", kind: "contains", value: "siege" },
   ]);
 });
+
+test("prop: and preset: filters look at custom properties", async () => {
+  const { parseFilterQuery, matchesFilter, buildFilterContext } = await import("../src/utils/filterUtils.js");
+  const els = [
+    { id: "span-ada", type: "span", title: "Ada", preset: "preset-character", properties: [{ key: "Eye Color", value: "Green" }, { key: "Role", value: "" }] },
+    { id: "event-x", type: "event", title: "X", preset: "preset-p2", properties: [{ key: "Role", value: "Spy" }] },
+    { id: "event-y", type: "event", title: "Y" },
+  ];
+  const ctx = buildFilterContext(els, [{ id: "preset-p2", name: "Location" }]);
+  const run = (q) => els.filter((el) => matchesFilter(el, parseFilterQuery(q), null, ctx)).map((el) => el.id);
+  assert.deepStrictEqual(run("prop:eye_color"), ["span-ada"]);
+  assert.deepStrictEqual(run("prop:eyecolor=gre"), ["span-ada"]);
+  assert.deepStrictEqual(run("prop:role"), ["event-x"]);
+  assert.deepStrictEqual(run("prop: role=spy"), ["event-x"]);
+  assert.deepStrictEqual(run("preset:character"), ["span-ada"]);
+  assert.deepStrictEqual(run("preset:location"), ["event-x"]);
+  assert.deepStrictEqual(run("~preset:character is:event"), ["event-x", "event-y"]);
+});

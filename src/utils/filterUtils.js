@@ -69,6 +69,14 @@ function tokenize(input) {
       const v = wl.slice(7);
       if (v) raw.push({ t: 'LEAF', kind: 'parent', value: v });
       else raw.push({ t: 'PENDING', kind: 'parent' });
+    } else if (wl.startsWith('prop:')) {
+      const v = wl.slice(5);
+      if (v) raw.push({ t: 'LEAF', kind: 'prop', value: v });
+      else raw.push({ t: 'PENDING', kind: 'prop' });
+    } else if (wl.startsWith('preset:')) {
+      const v = wl.slice(7);
+      if (v) raw.push({ t: 'LEAF', kind: 'preset', value: v });
+      else raw.push({ t: 'PENDING', kind: 'preset' });
     } else if (wl.startsWith('tag:')) {
       const v = word.slice(4);
       if (v) raw.push({ t: 'LEAF', kind: 'tagsearch', value: normalizeTag(v) });
@@ -184,8 +192,11 @@ function parentIdsOf(el) {
   return ids;
 }
 
-export function buildFilterContext(elements) {
+export function buildFilterContext(elements, presets = null) {
   const list = Array.isArray(elements) ? elements : [];
+  const presetNameById = new Map(
+    (Array.isArray(presets) ? presets : []).filter((p) => p?.id).map((p) => [p.id, String(p.name ?? '').toLowerCase()])
+  );
   const childIdsByParent = new Map();
   const nameById = new Map();
   for (const el of list) {
@@ -196,7 +207,7 @@ export function buildFilterContext(elements) {
       childIdsByParent.get(parentId).push(lowerId(el.id));
     }
   }
-  return { elements: list, childIdsByParent, nameById, familyCache: new Map() };
+  return { elements: list, childIdsByParent, nameById, presetNameById, familyCache: new Map() };
 }
 
 const EMPTY_FAMILY = new Set();
@@ -226,6 +237,8 @@ function resolveFamily(context, value) {
   context.familyCache.set(value, ids);
   return ids;
 }
+
+const normalizePropKey = (key) => String(key ?? '').toLowerCase().replace(/[\s_-]+/g, '');
 
 // ─── Evaluator ────────────────────────────────────────────────────────────────
 
@@ -258,6 +271,25 @@ function evalLeaf(leaf, el, noteContent, context) {
     case 'contains':
       if (!noteContent) return false;
       return noteContent.toLowerCase().includes(leaf.value);
+
+    // prop:key has the property filled in, prop:key=value has it containing value
+    case 'prop': {
+      const props = Array.isArray(el.properties) ? el.properties : [];
+      const eq = leaf.value.indexOf('=');
+      const key = normalizePropKey(eq === -1 ? leaf.value : leaf.value.slice(0, eq));
+      const want = eq === -1 ? null : leaf.value.slice(eq + 1);
+      return props.some((p) => {
+        if (normalizePropKey(p?.key) !== key) return false;
+        const value = String(p?.value ?? '').toLowerCase();
+        return want == null ? value.trim() !== '' : value.includes(want);
+      });
+    }
+
+    case 'preset':
+      return !!el.preset && (
+        String(el.preset).toLowerCase().includes(leaf.value) ||
+        (context?.presetNameById?.get(el.preset) ?? '').includes(leaf.value)
+      );
 
     case 'family':
       if (!context) return false;

@@ -222,6 +222,7 @@ export default function Sidebar({
   onAddEvent,
   onAddSpan,
   onAddEra,
+  onAddFromPreset,
   onOpenSettings,
   onDownloadJson,
   onDownloadPackage,
@@ -895,8 +896,8 @@ export default function Sidebar({
   );
   const parsedFilter = useMemo(() => parseFilterQuery(searchQuery), [searchQuery]);
   const filterContext = useMemo(
-    () => buildFilterContext(allElements ?? timelineData?.elements ?? []),
-    [allElements, timelineData?.elements]
+    () => buildFilterContext(allElements ?? timelineData?.elements ?? [], timelineData?.file?.presets),
+    [allElements, timelineData?.elements, timelineData?.file?.presets]
   );
   // Combine the sidebar's own search with the timeline's active chip filter (AND semantics).
   const elMatches = (el) =>
@@ -1341,6 +1342,24 @@ export default function Sidebar({
                   Event
                   {formatKeybind(keybinds.newEvent) && <span className="sb-new-menu-shortcut">{formatKeybind(keybinds.newEvent)}</span>}
                 </button>
+                {onAddFromPreset && Array.isArray(timelineData?.file?.presets) && timelineData.file.presets.length > 0 && (
+                  <>
+                    <div className="sb-new-menu-separator" />
+                    {timelineData.file.presets.map((preset) => (
+                      <button
+                        key={preset.id}
+                        className="sb-new-menu-item"
+                        title={t("sidebar.newFromPreset", "New {{name}} ({{type}})", { name: preset.name, type: preset.type })}
+                        onClick={() => { setNewMenuOpen(false); onAddFromPreset(preset.id); }}
+                      >
+                        <span className="sb-new-menu-icon">
+                          <span className="sb-new-menu-preset-dot" style={{ background: preset.color || "currentColor" }} />
+                        </span>
+                        {preset.name}
+                      </button>
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </div>

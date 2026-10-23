@@ -19,12 +19,25 @@
 }
 
 .rp-type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ui-muted);
   white-space: nowrap;
+}
+
+.rp-preset-badge {
+  padding: 2px 6px;
+  font-size: var(--text-2xs);
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--preset-color, var(--accent-color)), transparent 60%);
+  border: 1px solid color-mix(in srgb, var(--preset-color, var(--ui-muted)), transparent 40%);
+  border-radius: 999px;
 }
 
 .rp-header-tabs {
@@ -3303,4 +3316,92 @@
   border-radius: 6px;
   font-size: var(--text-xs);
   color: var(--ui-muted);
+}
+
+.properties-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 10px;
+}
+
+.properties-preset-wrap {
+  grid-column: 2;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.properties-preset-select {
+  min-width: 140px;
+}
+
+.property-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 22px;
+  align-items: center;
+  gap: 6px;
+}
+
+.property-key-input {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ui-muted);
+}
+
+.property-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--ui-muted);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.property-remove:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--accent-color);
+}
+
+.properties-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.properties-actions .btn-add-break {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.properties-preset-name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.properties-preset-name .edit-input {
+  text-align: left;
+}
+
+.view-group-property label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.view-group-property p {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

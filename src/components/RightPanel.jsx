@@ -2,6 +2,8 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } fr
 import { useTranslation } from "react-i18next";
 import { Maximize2, Minimize2, Link, Trash2, ChevronLeft, ChevronRight, ChevronDown, Pencil, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X, Image as ImageIcon, Shapes, MoveVertical, Minus, SquareDashed, CalendarOff, EyeOff, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
 import NoteEditor from "./NoteEditor";
+import PropertiesEditor, { PropertiesView, PresetBadge } from "./PropertiesSection";
+import { getPropertyKeysInUse, normalizePresets } from "../utils/presets";
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
@@ -98,6 +100,7 @@ export default function RightPanel({
   onClose,
   coordPickTargetId = null,
   onRequestCoordPick,
+  onUpdatePresets,
 }) {
   const { t } = useTranslation("timeline");
   // Listed statically so i18next-parser sees every option key.
@@ -124,6 +127,11 @@ export default function RightPanel({
   const [openSelectField, setOpenSelectField] = useState(null);
   const [isWikiAdding, setIsWikiAdding] = useState(false);
   const [isSourceAdding, setIsSourceAdding] = useState(false);
+  const presets = useMemo(() => normalizePresets(timelineData?.file?.presets), [timelineData?.file?.presets]);
+  const propertyKeys = useMemo(
+    () => getPropertyKeysInUse(timelineData?.elements, presets),
+    [timelineData?.elements, presets]
+  );
 
   const {
     noteInitialContent,
@@ -1186,7 +1194,10 @@ export default function RightPanel({
         </div>
       )}
       <div className="right-panel-header">
-        <span className="rp-type-label">{formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}</span>
+        <span className="rp-type-label">
+          {formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}
+          <PresetBadge element={formData} presets={presets} />
+        </span>
         <div className="right-panel-actions">
           {!readOnly && (
             <button
@@ -1393,6 +1404,8 @@ export default function RightPanel({
                 <p>{[formData.lat, formData.lng].filter((v) => v !== "" && v != null).join(", ")}</p>
               </div>
             )}
+
+            <PropertiesView element={formData} />
 
             {formData.noteFile && (
               <>
@@ -2653,6 +2666,19 @@ export default function RightPanel({
                 )}
               </div>
             )}
+
+            <div className="edit-section-divider" />
+
+            <PropertiesEditor
+              element={formData}
+              presets={presets}
+              propertyKeys={propertyKeys}
+              onCommit={(next) => {
+                setFormData(next);
+                commitDraft(next);
+              }}
+              onUpdatePresets={onUpdatePresets}
+            />
 
             <div className="edit-section-divider" />
 

@@ -50,7 +50,7 @@ export default function SearchOverlay({ isOpen, onClose, elements, onSelect, fil
   const activeItemRef = useRef(null);
 
   const parsedFilter = useMemo(() => parseFilterQuery(query), [query]);
-  const filterContext = useMemo(() => buildFilterContext(elements), [elements]);
+  const filterContext = useMemo(() => buildFilterContext(elements, fileSettings?.presets), [elements, fileSettings?.presets]);
   const results = useMemo(() => {
     if (!query.trim()) return elements.slice(0, 50);
     return elements.filter((el) => matchesFilter(el, parsedFilter, null, filterContext));

@@ -42,6 +42,7 @@ import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fracti
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
 import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
+import { applyPreset, normalizePresets } from "./utils/presets";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -1084,6 +1085,19 @@ function App() {
     });
   };
 
+  const handleUpdatePresets = useCallback((nextPresets) => {
+    setTimelineData((prevData) => {
+      if (!prevData?.file) return prevData;
+      const presets = normalizePresets(nextPresets);
+      const nextFile = { ...prevData.file };
+      if (presets.length) nextFile.presets = presets;
+      else delete nextFile.presets;
+      const updatedData = { ...prevData, file: nextFile };
+      saveCurrentTimeline(updatedData).catch(console.error);
+      return updatedData;
+    });
+  }, [saveCurrentTimeline]);
+
   // Coordinates picked by clicking the map while the right panel picker is armed
   const handleCoordinatePicked = useCallback(({ lat, lng }) => {
     const targetId = coordPickRequest?.id;
@@ -1122,7 +1136,7 @@ function App() {
     if (!stillValid) setCoordPickRequest(null);
   }, [coordPickRequest?.id, selectedId, timelineData?.file?.useMaps, timelineData?.elements]);
 
-  const handleAddEvent = (groupId, clickYear, clickCoords) => {
+  const handleAddEvent = (groupId, clickYear, clickCoords, preset) => {
     if (!timelineData?.file) return;
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
     const fallbackMid = (timelineData.file.start + timelineData.file.end) / 2;
@@ -1144,11 +1158,12 @@ function App() {
       newEvent.lat = clickCoords.lat;
       newEvent.lng = clickCoords.lng;
     }
+    const createdEvent = preset ? applyPreset({ ...newEvent, title: `New ${preset.name}` }, preset) : newEvent;
 
     setTimelineData((prevData) => {
       const updatedData = {
         ...prevData,
-        elements: [...prevData.elements, newEvent],
+        elements: [...prevData.elements, createdEvent],
       };
 
       saveCurrentTimeline(updatedData).catch(console.error);
@@ -1161,7 +1176,7 @@ function App() {
     setEditRequestId(newEvent.id);
   };
 
-  const handleAddSpan = (groupId, clickYear, clickCoords) => {
+  const handleAddSpan = (groupId, clickYear, clickCoords, preset) => {
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
     const range = timelineData.file.end - timelineData.file.start;
     const duration = Math.max(1, Math.floor(range / 4));
@@ -1186,11 +1201,12 @@ function App() {
       newSpan.lat = clickCoords.lat;
       newSpan.lng = clickCoords.lng;
     }
+    const createdSpan = preset ? applyPreset({ ...newSpan, title: `New ${preset.name}` }, preset) : newSpan;
 
     setTimelineData((prevData) => {
       const updatedData = {
         ...prevData,
-        elements: [...prevData.elements, newSpan],
+        elements: [...prevData.elements, createdSpan],
       };
 
       saveCurrentTimeline(updatedData).catch(console.error);
@@ -1203,7 +1219,7 @@ function App() {
     setEditRequestId(newSpan.id);
   };
 
-  const handleAddEra = (_clickYear, clickCoords) => {
+  const handleAddEra = (_clickYear, clickCoords, preset) => {
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
     const tlStart = timelineData.file.start;
     const tlEnd = timelineData.file.end;
@@ -1243,11 +1259,12 @@ function App() {
       newEra.lat = clickCoords.lat;
       newEra.lng = clickCoords.lng;
     }
+    const createdEra = preset ? applyPreset({ ...newEra, title: `New ${preset.name}` }, preset) : newEra;
 
     setTimelineData((prevData) => {
       const updatedData = {
         ...prevData,
-        elements: [...prevData.elements, newEra],
+        elements: [...prevData.elements, createdEra],
       };
 
       saveCurrentTimeline(updatedData).catch(console.error);
@@ -1258,6 +1275,15 @@ function App() {
     setSelectedId(newEra.id);
     setEditRequestFocus("title");
     setEditRequestId(newEra.id);
+  };
+
+  // new element straight out of a preset, already dressed up
+  const handleAddFromPreset = (presetId, groupId, clickYear, clickCoords) => {
+    const preset = normalizePresets(timelineData?.file?.presets).find((p) => p.id === presetId);
+    if (!preset) return;
+    if (preset.type === "span") handleAddSpan(groupId, clickYear, clickCoords, preset);
+    else if (preset.type === "era") handleAddEra(clickYear, clickCoords, preset);
+    else handleAddEvent(groupId, clickYear, clickCoords, preset);
   };
 
   const handleDuplicateElement = (elementId) => {
@@ -2798,6 +2824,7 @@ function App() {
               onAddEvent={handleAddEvent}
               onAddSpan={handleAddSpan}
               onAddEra={handleAddEra}
+              onAddFromPreset={handleAddFromPreset}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onDownloadJson={handleDownloadJSON}
               onDownloadPackage={handleDownloadPackage}
@@ -2891,6 +2918,7 @@ function App() {
               onAddEvent={handleAddEvent}
               onAddSpan={handleAddSpan}
               onAddEra={handleAddEra}
+              onAddFromPreset={handleAddFromPreset}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onDelete={handleRequestDelete}
               onDuplicateElement={handleDuplicateElement}
@@ -3060,6 +3088,7 @@ function App() {
                 nextElement={selectionNavigation.nextElement}
                 coordPickTargetId={coordPickRequest?.id ?? null}
                 onRequestCoordPick={handleRequestCoordPick}
+                onUpdatePresets={handleUpdatePresets}
               />
               </ErrorBoundary>
             </aside>

@@ -45,6 +45,7 @@
   "contextMenu": {
     "addEra": "Add Era",
     "addEvent": "Add Event",
+    "addFromPreset": "Add {{name}}",
     "addSpan": "Add Span",
     "clearFocus": "Clear Focus",
     "convertToEvent": "Convert to Event",
@@ -200,6 +201,24 @@
   "options": {
     "inherit": "Inherit"
   },
+  "presets": {
+    "addProperty": "Add custom property",
+    "addStarters": "Add starter presets…",
+    "confirmDelete": "Delete the \"{{name}}\" preset? Elements keep their properties.",
+    "delete": "Delete this preset",
+    "keyLabel": "Property name",
+    "keyPlaceholder": "property",
+    "label": "Preset",
+    "nameLabel": "Preset name",
+    "namePlaceholder": "Preset name (Character, Location…)",
+    "none": "None",
+    "removeProperty": "Remove {{field}}",
+    "save": "Save preset",
+    "saveAs": "Save as preset",
+    "saveHint": "Save this element's type, color, icon, tags and property names as a preset",
+    "valueLabel": "{{field}} value",
+    "valuePlaceholder": "value"
+  },
   "rightPanel": {
     "addProperty": "Add property",
     "approxToggleHint": "prefixes the displayed date with \"{{marker}}\"",
@@ -261,6 +280,7 @@
       "noMatches": "No matching groups",
       "none": "No groups found"
     },
+    "newFromPreset": "New {{name}} ({{type}})",
     "newTimeline": "New Timeline",
     "noTimelines": "No timelines found",
     "openTimeline": "Open Timeline",

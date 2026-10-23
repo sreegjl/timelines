@@ -488,6 +488,7 @@ const TimelineView = forwardRef(function TimelineView({
   suppressFocusSelect = false,
   tagColors = {},
   keybinds = {},
+  onAddFromPreset,
   onSetViewMode,
   onDetailLevelChange,
   readOnly = false,
@@ -541,8 +542,8 @@ const TimelineView = forwardRef(function TimelineView({
   const chipsQuery = useMemo(() => buildChipQuery(filterChips), [filterChips]);
   const parsedChipQuery = useMemo(() => parseFilterQuery(chipsQuery), [chipsQuery]);
   const filterContext = useMemo(
-    () => buildFilterContext(timelineData?.elements ?? []),
-    [timelineData?.elements]
+    () => buildFilterContext(timelineData?.elements ?? [], timelineData?.file?.presets),
+    [timelineData?.elements, timelineData?.file?.presets]
   );
 
   useEffect(() => {
@@ -4769,6 +4770,18 @@ const TimelineView = forwardRef(function TimelineView({
             </span>
             <span>{t("contextMenu.addEra", "Add Era")}</span>
           </button>
+          {onAddFromPreset && (timelineData?.file?.presets ?? []).map((preset) => (
+            <button
+              key={preset.id}
+              className="context-menu-item"
+              onClick={() => handleMenuAction(() => onAddFromPreset(preset.id, contextMenu.groupId, contextMenu.clickYear, { lat: contextMenu.lat, lng: contextMenu.lng }))}
+            >
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16, height: 16 }}>
+                <span style={{ display: "inline-block", width: 9, height: 9, borderRadius: 2, background: preset.color || "currentColor" }} />
+              </span>
+              <span>{t("contextMenu.addFromPreset", "Add {{name}}", { name: preset.name })}</span>
+            </button>
+          ))}
 
           <div className="context-menu-separator" />
 
