@@ -279,12 +279,25 @@
       "description": "Choose the marker style used for events in map view.",
       "label": "Event Marker"
     },
+    "globe": {
+      "description": "Show the map as a 3D globe instead of a flat map. Needs WebGL.",
+      "label": "Globe"
+    },
     "markers": {
       "circle": "Circle",
       "diamond": "Diamond",
       "pin": "Pin",
       "square": "Square",
       "triangle": "Triangle"
+    },
+    "routes": {
+      "all": "Everything, in order",
+      "description": "Connect located elements with lines in date order. Great for journeys, campaigns and very long walks.",
+      "group": "By group",
+      "label": "Routes",
+      "off": "Off",
+      "span": "By parent span",
+      "tag": "By tag"
     },
     "scrollbarDateOnly": "Scrollbar Date Only",
     "spanMarker": {

@@ -1193,3 +1193,43 @@
   color: var(--text-subtle);
   flex-shrink: 0;
 }
+
+/* globe mode. same pins, rounder planet */
+.timeline-globe-view .globe-container {
+  width: 100%;
+  height: 100%;
+}
+
+.timeline-globe-view.is-picking .globe-container canvas {
+  cursor: crosshair;
+}
+
+.globe-marker {
+  cursor: pointer;
+  line-height: 0;
+}
+
+.timeline-globe-view .maplibregl-popup.map-element-tooltip .maplibregl-popup-content {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.timeline-globe-view .maplibregl-popup.map-element-tooltip .maplibregl-popup-tip {
+  display: none;
+}
+
+.timeline-globe-view .maplibregl-ctrl-attrib {
+  font-size: 10px;
+  background: color-mix(in srgb, var(--app-bg), white 12%);
+}
+
+.timeline-globe-view .maplibregl-ctrl-group {
+  background: var(--surface);
+  border: 1px solid var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-globe-view {
+  background: var(--app-bg);
+}

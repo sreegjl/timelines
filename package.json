@@ -80,6 +80,7 @@
     "isomorphic-git": "^1.38.6",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.553.0",
+    "maplibre-gl": "^6.15.0",
     "marked": "^12.0.2",
     "mp4-muxer": "^5.2.2",
     "papaparse": "^5.7.0",

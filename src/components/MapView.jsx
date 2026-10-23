@@ -1,88 +1,25 @@
-import { useMemo, useEffect, useRef, useState, memo, forwardRef, useImperativeHandle } from "react";
-import { MapContainer, TileLayer, Marker, Tooltip, Rectangle, useMap, useMapEvents } from "react-leaflet";
+import { useMemo, useEffect, useRef, useState, memo, forwardRef, useImperativeHandle, Fragment } from "react";
+import { MapContainer, TileLayer, Marker, Tooltip, Rectangle, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { buildRoutes, screenBearing } from "../utils/mapRoutes";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { formatYear, withApproxLabel, formatApproxRange } from "../utils/timelineUtils";
-import { displayDateTimeLabel } from "../utils/dateUtils";
-
-const DEFAULT_COLOR = "#6b7280";
-const TYPE_LABEL = { event: "Event", span: "Span", era: "Era" };
-const DEFAULT_MARKER_TYPE = "pin";
-const DEFAULT_MARKER_TYPES = {
-  event: "pin",
-  span: "circle",
-  era: "diamond",
-};
-
-function resolveElementColor(el, spanById) {
-  if (el.type === "event") {
-    const parentId = el.parents?.[0];
-    const parentSpan = parentId ? spanById.get(parentId) : null;
-    if (parentSpan?.color) return parentSpan.color;
-  }
-  if (el.color) return el.color;
-  return DEFAULT_COLOR;
-}
+import {
+  buildMarkerSvg,
+  resolveElementColor,
+  resolveMarkerType,
+  isMarkerVisibleAtViewportYear,
+  formatElementDate,
+  normalizeLng,
+  roundCoord,
+  TYPE_LABEL,
+  DEFAULT_MARKER_TYPE,
+  DEFAULT_TILE_URL,
+  DEFAULT_ATTRIBUTION,
+  isOpenStreetMapTileUrl,
+} from "../utils/mapMarkers";
 
 function makeColoredIcon(color, selected, markerType = DEFAULT_MARKER_TYPE) {
-  const stroke = selected
-    ? getComputedStyle(document.documentElement).getPropertyValue("--selection-color").trim() || "#5282DB"
-    : "white";
-  const strokeWidth = selected ? 4 : 1.5;
-  let svg = "";
-  let iconSize = [24, 36];
-  let iconAnchor = [12, 36];
-  let tooltipAnchor = [14, -18];
-
-  if (markerType === "circle") {
-    iconSize = [24, 24];
-    iconAnchor = [12, 12];
-    tooltipAnchor = [0, -12];
-    svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="cursor:pointer;display:block;">
-        <circle cx="12" cy="12" r="9" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
-        <circle cx="12" cy="12" r="3.5" fill="white" opacity="0.7"/>
-      </svg>`;
-  } else if (markerType === "square") {
-    iconSize = [24, 24];
-    iconAnchor = [12, 12];
-    tooltipAnchor = [0, -12];
-    svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="cursor:pointer;display:block;">
-        <rect x="4" y="4" width="16" height="16" rx="2" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
-        <circle cx="12" cy="12" r="3.5" fill="white" opacity="0.7"/>
-      </svg>`;
-  } else if (markerType === "diamond") {
-    iconSize = [24, 24];
-    iconAnchor = [12, 12];
-    tooltipAnchor = [0, -12];
-    svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="cursor:pointer;display:block;">
-        <path d="M12 2 L22 12 L12 22 L2 12 Z" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
-        <circle cx="12" cy="12" r="3.2" fill="white" opacity="0.7"/>
-      </svg>`;
-  } else if (markerType === "triangle") {
-    iconSize = [24, 24];
-    iconAnchor = [12, 18];
-    tooltipAnchor = [0, -14];
-    svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="cursor:pointer;display:block;">
-        <path d="M12 3 L22 20 H2 Z" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"/>
-        <circle cx="12" cy="14" r="3" fill="white" opacity="0.7"/>
-      </svg>`;
-  } else {
-    iconSize = [20, 30];
-    iconAnchor = [10, 30];
-    tooltipAnchor = [0, -14];
-    svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="30" viewBox="0 0 24 36" style="cursor:pointer;display:block;">
-        <rect x="0" y="0" width="24" height="36" fill="transparent"/>
-        <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z"
-          fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
-        <circle cx="12" cy="12" r="5" fill="white" opacity="0.7"/>
-      </svg>`;
-  }
-
+  const { svg, iconSize, iconAnchor, tooltipAnchor } = buildMarkerSvg(color, selected, markerType);
   return L.divIcon({
     html: svg,
     className: "",
@@ -90,49 +27,6 @@ function makeColoredIcon(color, selected, markerType = DEFAULT_MARKER_TYPE) {
     iconAnchor,
     tooltipAnchor,
   });
-}
-
-function resolveMarkerType(elType, fileConfig) {
-  if (elType === "span") return fileConfig?.mapSpanMarker || DEFAULT_MARKER_TYPES.span;
-  if (elType === "era") return fileConfig?.mapEraMarker || DEFAULT_MARKER_TYPES.era;
-  return fileConfig?.mapEventMarker || DEFAULT_MARKER_TYPES.event;
-}
-
-function isMarkerVisibleAtViewportYear(el, viewportYear, fileConfig) {
-  if (!fileConfig?.mapLimitToViewportYear || !Number.isFinite(viewportYear)) return true;
-
-  if (el.type === "event") {
-    return Number.isFinite(el.date) && Math.abs(el.date - viewportYear) < 1e-6;
-  }
-
-  const start = Number.isFinite(el.start) ? el.start : null;
-  const end = Number.isFinite(el.end) ? el.end : null;
-  if (start == null && end == null) return false;
-  if (start == null) return viewportYear <= end;
-  if (end == null) return viewportYear >= start;
-  return viewportYear >= start && viewportYear <= end;
-}
-
-function formatElementDate(el, fileConfig) {
-  const { negID, posID, approxID, useCalendar, hideDecimals } = fileConfig ?? {};
-  if (el.type === "event") {
-    const year = displayDateTimeLabel(el.dateLabel, el.time) ?? (el.date != null ? formatYear(el.date, negID, posID, useCalendar === true, hideDecimals) : null);
-    return withApproxLabel(year ?? "", approxID, el.approximate === true);
-  }
-  const start = displayDateTimeLabel(el.startLabel, el.startTime) ?? (el.start != null ? formatYear(el.start, negID, posID, useCalendar === true, hideDecimals) : null);
-  const end = displayDateTimeLabel(el.endLabel, el.endTime) ?? (el.end != null ? formatYear(el.end, negID, posID, useCalendar === true, hideDecimals) : null);
-  if (start && end) return formatApproxRange(el, start, end, approxID);
-  if (start) return withApproxLabel(start, approxID, el.approxStart === true);
-  return withApproxLabel(end ?? "", approxID, el.approxEnd === true);
-}
-
-// Wrap into [-180, 180] so clicks on the repeated world copies stay valid
-function normalizeLng(lng) {
-  return ((((lng + 180) % 360) + 360) % 360) - 180;
-}
-
-function roundCoord(value) {
-  return Math.round(value * 1e6) / 1e6;
 }
 
 function MapClickHandler({ onSelect, pickMode, onPickCoordinate }) {
@@ -293,12 +187,43 @@ function RepeatOverlay() {
   );
 }
 
-const DEFAULT_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-const DEFAULT_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const arrowIconCache = new Map();
+function makeArrowIcon(color, angle) {
+  const key = `${color}|${Math.round(angle)}`;
+  if (!arrowIconCache.has(key)) {
+    arrowIconCache.set(key, L.divIcon({
+      html: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" style="display:block;transform:rotate(${angle}deg)"><path d="M2 2 L12 7 L2 12 L5 7 Z" fill="${color}" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg>`,
+      className: "map-route-arrow",
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    }));
+  }
+  return arrowIconCache.get(key);
+}
 
-function isOpenStreetMapTileUrl(url) {
-  if (!url) return true;
-  return /^https:\/\/(?:[a-z0-9-]+\.)*tile\.openstreetmap\.org\//i.test(url);
+// the journeys. lines under the pins, little arrows so nobody argues about which way they went
+function RouteLayer({ routes }) {
+  return routes.map((route) => (
+    <Fragment key={route.id}>
+      <Polyline
+        positions={route.points.map((p) => [p.lat, p.lng])}
+        pathOptions={{ color: route.color, weight: 3, opacity: 0.8, lineCap: "round", lineJoin: "round" }}
+        interactive={false}
+      />
+      {route.points.slice(1).map((point, index) => {
+        const prev = route.points[index];
+        return (
+          <Marker
+            key={`${prev.id}-${point.id}`}
+            position={[(prev.lat + point.lat) / 2, (prev.lng + point.lng) / 2]}
+            icon={makeArrowIcon(route.color, screenBearing(prev, point))}
+            interactive={false}
+            keyboard={false}
+          />
+        );
+      })}
+    </Fragment>
+  ));
 }
 
 export default memo(forwardRef(function MapView({ elements = [], onSelect, onOpenContextMenu, onAltWheelPan, onCtrlWheelZoom, viewportYear, selectedId, fileConfig, pickMode = false, onPickCoordinate }, ref) {
@@ -316,6 +241,12 @@ export default memo(forwardRef(function MapView({ elements = [], onSelect, onOpe
     [elements, spanById, viewportYear, fileConfig]
   );
   const [hoveredId, setHoveredId] = useState(null);
+  const routes = useMemo(() => buildRoutes(elements, fileConfig?.mapRoutes, {
+    viewportYear,
+    limitToYear: fileConfig?.mapLimitToViewportYear === true,
+    tagColors: fileConfig?.tagColors,
+    groups: fileConfig?.groups,
+  }), [elements, fileConfig?.mapRoutes, fileConfig?.mapLimitToViewportYear, fileConfig?.tagColors, fileConfig?.groups, viewportYear]);
 
   const [initialView] = useState(() => ({
     center: markers.length > 0 ? [Number(markers[0].lat), Number(markers[0].lng)] : [20, 0],
@@ -349,6 +280,7 @@ export default memo(forwardRef(function MapView({ elements = [], onSelect, onOpe
           referrerPolicy="strict-origin-when-cross-origin"
         />
         <RepeatOverlay />
+        <RouteLayer routes={routes} />
         {markers.map((el) => {
           const dateStr = formatElementDate(el, fileConfig);
           const tags = Array.isArray(el.tags) && el.tags.length > 0 ? el.tags : null;

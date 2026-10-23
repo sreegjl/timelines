@@ -1480,6 +1480,8 @@ function App() {
       if (!nextFile.mapEventMarker || nextFile.mapEventMarker === "pin") delete nextFile.mapEventMarker;
       if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
       if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
+      if (!nextFile.mapRoutes || nextFile.mapRoutes === "off") delete nextFile.mapRoutes;
+      if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
@@ -1541,6 +1543,7 @@ function App() {
       if (nextFile.panelSortOrder !== "desc") delete nextFile.panelSortOrder;
       if (nextFile.panelTagSortField !== "name") delete nextFile.panelTagSortField;
       if (nextFile.panelTagSortOrder !== "asc") delete nextFile.panelTagSortOrder;
+      if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
       const updatedData = { ...prevData, file: nextFile };
       saveCurrentTimeline(updatedData).catch(console.error);
       return updatedData;
@@ -2925,6 +2928,8 @@ function App() {
               keybinds={keybinds}
               onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}
               onDetailLevelChange={handleDetailLevelChange}
+              onPatchFile={handlePatchFile}
+              onNotify={showToast}
             />
             </ErrorBoundary>
           )}

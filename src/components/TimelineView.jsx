@@ -19,7 +19,7 @@ import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
-import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair, ArrowLeftRight } from "lucide-react";
+import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair, ArrowLeftRight, Globe2 } from "lucide-react";
 import { ICON_MAP } from "../config/elementIcons";
 import { drawTitleWatermark, saveExportFile } from "../utils/exportUtils";
 import { DETAIL_MIN, DETAIL_MAX, clamp } from "../utils/sliderUtils";
@@ -244,6 +244,8 @@ const chipsFromQuery = (query, nextId) => {
   return chips;
 };
 const MapView = lazy(() => import("./MapView"));
+// the globe drags maplibre along, so it only gets loaded when someone actually asks for a planet
+const GlobeView = lazy(() => import("./GlobeView"));
 import "../styles/04-timeline.css";
 import "../styles/07-modals-menus.css";
 
@@ -490,6 +492,8 @@ const TimelineView = forwardRef(function TimelineView({
   keybinds = {},
   onSetViewMode,
   onDetailLevelChange,
+  onPatchFile,
+  onNotify,
   readOnly = false,
 }, ref) {
   const { t } = useTranslation(["timeline", "common"]);
@@ -562,6 +566,8 @@ const TimelineView = forwardRef(function TimelineView({
   }, [timelineData?.elements, parsedChipQuery, filterContext]);
   const hasAnyFilter = filterChips.length > 0 || activeTags.length > 0 || hiddenTags.length > 0;
   const [showMap, setShowMap] = useState(false);
+  const [localGlobe, setLocalGlobe] = useState(null);
+  const [globeFailed, setGlobeFailed] = useState(false);
   const mapViewRef = useRef(null);
   const [sliderValue, setSliderValue] = useState(0);
   const [sliderYearLabel, setSliderYearLabel] = useState("");
@@ -4810,7 +4816,29 @@ const TimelineView = forwardRef(function TimelineView({
         </div>
       )}
 
-      {showMap && (
+      {showMap && (localGlobe ?? file?.mapGlobe === true) && !globeFailed && (
+        <Suspense fallback={<div className="timeline-map-placeholder" />}>
+          <GlobeView
+            ref={mapViewRef}
+            elements={mapElements}
+            onSelect={onSelect}
+            onOpenContextMenu={handleMapContextMenu}
+            onAltWheelPan={stablePanTimelineFromWheel}
+            onCtrlWheelZoom={stableZoomTimelineFromWheel}
+            viewportYear={deferredMapViewportYear}
+            selectedId={selectedId}
+            fileConfig={file}
+            pickMode={!!coordPickRequest?.id}
+            onPickCoordinate={onCoordinatePicked}
+            onUnavailable={() => {
+              setGlobeFailed(true);
+              onNotify?.(t("map.globeUnavailable", "Globe needs WebGL, showing the flat map instead"), "error", 3500);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {showMap && !((localGlobe ?? file?.mapGlobe === true) && !globeFailed) && (
         <Suspense fallback={<div className="timeline-map-placeholder" />}>
           <MapView
             ref={mapViewRef}
@@ -4859,6 +4887,29 @@ const TimelineView = forwardRef(function TimelineView({
           <Minus size={16} />
         </button>
         <div className="timeline-canvas-divider" />
+        {showMap && (() => {
+          const isGlobe = (localGlobe ?? file?.mapGlobe === true) && !globeFailed;
+          return (
+            <button
+              type="button"
+              className={`timeline-canvas-button${isGlobe ? " timeline-canvas-button-active" : ""}`}
+              aria-label={isGlobe ? t("toolbar.flatMap", "Flat map") : t("toolbar.globe", "Globe")}
+              aria-pressed={isGlobe}
+              data-tooltip={isGlobe ? t("toolbar.flatMap", "Flat map") : t("toolbar.globe", "Globe")}
+              onClick={() => {
+                setGlobeFailed(false);
+                if (onPatchFile && !readOnly) {
+                  setLocalGlobe(null);
+                  onPatchFile({ mapGlobe: !isGlobe || undefined });
+                } else {
+                  setLocalGlobe(!isGlobe);
+                }
+              }}
+            >
+              <Globe2 size={16} />
+            </button>
+          );
+        })()}
         {timelineData?.file?.useMaps && (
           <button
             type="button"
