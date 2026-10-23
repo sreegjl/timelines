@@ -1,4 +1,19 @@
 {
+  "calendar": {
+    "addHint": "Double-click to add an event",
+    "backToMonth": "Back to the month",
+    "empty": "Nothing dated yet. Double-click a day to add an event.",
+    "month": "Month",
+    "more": "+{{n}} more",
+    "nextMonth": "Next month",
+    "nextYear": "Next year",
+    "previousMonth": "Previous month",
+    "previousYear": "Previous year",
+    "range": "Calendar range",
+    "showYear": "Show the whole year",
+    "today": "Today",
+    "year": "Year"
+  },
   "colorPicker": {
     "addFavorite": "Add to favorites",
     "favorites": "Favorites",
@@ -347,6 +362,7 @@
   },
   "toolbar": {
     "backToFiles": "Back to Files",
+    "calendarView": "Calendar view",
     "export": "Export",
     "filter": "Filter",
     "mapView": "Map View",

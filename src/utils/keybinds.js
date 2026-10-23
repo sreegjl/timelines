@@ -13,6 +13,10 @@ export const DEFAULT_KEYBINDS = {
   newEvent: { label: "New Event", keys: ["Ctrl", "Shift", "E"] },
   newSpan: { label: "New Span", keys: ["Ctrl", "Shift", "S"] },
   newEra: { label: "New Era", keys: ["Ctrl", "Shift", "R"] },
+  viewTimeline: { label: "Timeline View", keys: ["Alt", "1"] },
+  viewMap: { label: "Map View", keys: ["Alt", "2"] },
+  viewSpreadsheet: { label: "Table View", keys: ["Alt", "3"] },
+  viewCalendar: { label: "Calendar View", keys: ["Alt", "4"] },
 };
 
 export function cloneDefaultKeybinds() {

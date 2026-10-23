@@ -268,7 +268,11 @@
     "selectPrevious": "Select Previous",
     "selectTypeDown": "Select Type Down",
     "selectTypeUp": "Select Type Up",
-    "undo": "Undo"
+    "undo": "Undo",
+    "viewCalendar": "Calendar View",
+    "viewMap": "Map View",
+    "viewSpreadsheet": "Table View",
+    "viewTimeline": "Timeline View"
   },
   "maps": {
     "eraMarker": {

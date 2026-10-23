@@ -27,6 +27,7 @@
   },
   "loading": "Loading…",
   "panels": {
+    "calendar": "Calendar",
     "rightPanel": "Right panel",
     "sidebar": "Sidebar",
     "spreadsheet": "Spreadsheet",

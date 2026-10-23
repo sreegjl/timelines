@@ -490,6 +490,8 @@ const TimelineView = forwardRef(function TimelineView({
   keybinds = {},
   onSetViewMode,
   onDetailLevelChange,
+  viewMode,
+  viewSwitcher = null,
   readOnly = false,
 }, ref) {
   const { t } = useTranslation(["timeline", "common"]);
@@ -561,7 +563,15 @@ const TimelineView = forwardRef(function TimelineView({
       : elements.length;
   }, [timelineData?.elements, parsedChipQuery, filterContext]);
   const hasAnyFilter = filterChips.length > 0 || activeTags.length > 0 || hiddenTags.length > 0;
-  const [showMap, setShowMap] = useState(false);
+  // map is a real view now when the parent drives it; the web viewer can still keep it to itself
+  const [internalShowMap, setInternalShowMap] = useState(false);
+  const isViewControlled = typeof viewMode === "string";
+  const showMap = isViewControlled ? viewMode === "map" : internalShowMap;
+  const setShowMap = useCallback((next) => {
+    const value = typeof next === "function" ? next(showMap) : next;
+    if (isViewControlled) onSetViewMode?.(value ? "map" : "timeline");
+    else setInternalShowMap(value);
+  }, [isViewControlled, onSetViewMode, showMap]);
   const mapViewRef = useRef(null);
   const [sliderValue, setSliderValue] = useState(0);
   const [sliderYearLabel, setSliderYearLabel] = useState("");
@@ -3506,7 +3516,7 @@ const TimelineView = forwardRef(function TimelineView({
     if (!file.useMaps && showMap) {
       setShowMap(false);
     }
-  }, [file.useMaps, showMap]);
+  }, [file.useMaps, showMap, setShowMap]);
 
   // Sync slider element with state (for non-animation updates like panning)
   useEffect(() => {
@@ -4859,7 +4869,8 @@ const TimelineView = forwardRef(function TimelineView({
           <Minus size={16} />
         </button>
         <div className="timeline-canvas-divider" />
-        {timelineData?.file?.useMaps && (
+        {isViewControlled && viewSwitcher}
+        {timelineData?.file?.useMaps && !isViewControlled && (
           <button
             type="button"
             className="timeline-canvas-button"
@@ -4870,7 +4881,7 @@ const TimelineView = forwardRef(function TimelineView({
             {showMap ? <GanttChartSquare size={16} /> : <MapIcon size={16} />}
           </button>
         )}
-        {onSetViewMode && (
+        {onSetViewMode && !isViewControlled && (
           <button
             type="button"
             className="timeline-canvas-button"

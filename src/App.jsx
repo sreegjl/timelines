@@ -13,6 +13,9 @@ import Toast from "./components/Toast";
 import TopBar from "./components/TopBar";
 import HomePage from "./components/HomePage";
 import SearchOverlay from "./components/SearchOverlay";
+import CalendarView from "./components/CalendarView";
+import ViewSwitcher from "./components/ViewSwitcher";
+import { getAvailableViews } from "./utils/views";
 import {
   saveTimelineToFile,
   chooseTimelinesDir,
@@ -231,7 +234,7 @@ function App() {
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   const [rightLockState, setRightLockState] = useState(null); // null | "open" | "closed"
-  const [viewMode, setViewMode] = useState("timeline"); // "timeline" | "spreadsheet"
+  const [viewMode, setViewMode] = useState("timeline"); // "timeline" | "map" | "spreadsheet" | "calendar"
   const [isRightMaximized, setIsRightMaximized] = useState(false);
   const [lastSelectedId, setLastSelectedId] = useState(null);
 
@@ -304,6 +307,8 @@ function App() {
   const [coordPickRequest, setCoordPickRequest] = useState(null);
   const handleRequestCoordPick = useCallback((id, title) => {
     setCoordPickRequest((prev) => (prev?.id === id ? null : { id, title, n: (prev?.n ?? 0) + 1 }));
+    // picking coordinates only makes sense on a map, so go there
+    setViewMode((mode) => (mode === "calendar" ? "map" : mode));
   }, []);
   const [viewportYear, setViewportYear] = useState(null);
   const handleViewportYearChange = useCallback((year) => {
@@ -1762,7 +1767,8 @@ function App() {
   })();
 
   const handleDownloadPNG = () => {
-    // Open the export PNG modal
+    // exports photograph the timeline canvas, so make sure it's actually on stage
+    if (viewMode !== "timeline") setViewMode("timeline");
     setIsExportPngModalOpen(true);
   };
 
@@ -1789,6 +1795,7 @@ function App() {
   }, [showToast, t]);
 
   const handleDownloadVideo = () => {
+    if (viewMode !== "timeline") setViewMode("timeline");
     setIsExportVideoModalOpen(true);
   };
 
@@ -2543,11 +2550,33 @@ function App() {
     }
   }, [filteredElements, selectedId]);
 
+  const availableViews = useMemo(() => getAvailableViews(timelineData?.file), [timelineData?.file]);
+
+  // a view whose setting got switched off quietly hands the stage back to the timeline
   useEffect(() => {
-    if (viewMode === "spreadsheet" && !timelineData?.file?.useSpreadsheet) {
-      setViewMode("timeline");
-    }
-  }, [viewMode, timelineData?.file?.useSpreadsheet]);
+    if (!availableViews.some((view) => view.id === viewMode)) setViewMode("timeline");
+  }, [viewMode, availableViews]);
+
+  useEffect(() => {
+    if (!timelineData) return undefined;
+    const handleViewKeys = (e) => {
+      const target = e.target;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.tagName === "SELECT" || target?.isContentEditable) return;
+      for (const view of availableViews) {
+        const bind = keybinds[`view${view.id.charAt(0).toUpperCase()}${view.id.slice(1)}`];
+        // option+digit on a mac types a fancy symbol instead of the digit, so peek at the physical key too
+        const digit = bind?.keys?.find((k) => /^\d$/.test(k));
+        const macFallback = digit && e.altKey && e.code === `Digit${digit}` && matchesKeybind({ ...e, key: digit, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, shiftKey: e.shiftKey }, bind);
+        if (matchesKeybind(e, bind) || macFallback) {
+          e.preventDefault();
+          setViewMode(view.id);
+          return;
+        }
+      }
+    };
+    window.addEventListener("keydown", handleViewKeys);
+    return () => window.removeEventListener("keydown", handleViewKeys);
+  }, [timelineData, availableViews, keybinds]);
 
   const compareElementsByTimelineOrder = useCallback((a, b) => {
     if (a.type === "event" && b.type === "event") {
@@ -2862,7 +2891,7 @@ function App() {
                 leftPanelWidth={0}
                 rightPanelWidth={0}
                 isRightPanelOpen={false}
-                onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}
+                viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onBackToHome={handleBackToHome}
                 onAddEvent={handleAddEvent}
@@ -2879,6 +2908,19 @@ function App() {
                 onClearTags={handleClearTags}
                 pinnedTags={pinnedTags}
                 onTogglePinnedTag={handleTogglePinnedTag}
+              />
+            </ErrorBoundary>
+          ) : viewMode === "calendar" ? (
+            <ErrorBoundary name={t("common:panels.calendar", "Calendar")}>
+              <CalendarView
+                timelineData={filteredTimelineData}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onAddEvent={handleAddEvent}
+                focusYear={viewportYear}
+                leftInset={isLeftCollapsed ? COLLAPSED_WIDTH : sidebarWidth}
+                rightInset={isRightPanelVisible ? rightWidth : 0}
+                viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
               />
             </ErrorBoundary>
           ) : (
@@ -2923,7 +2965,9 @@ function App() {
               onCoordinatePicked={handleCoordinatePicked}
               tagColors={timelineData.file?.tagColors || {}}
               keybinds={keybinds}
-              onSetViewMode={filteredTimelineData?.file?.useSpreadsheet ? setViewMode : undefined}
+              viewMode={viewMode}
+              onSetViewMode={setViewMode}
+              viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
               onDetailLevelChange={handleDetailLevelChange}
             />
             </ErrorBoundary>
