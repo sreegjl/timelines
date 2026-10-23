@@ -165,6 +165,23 @@
     "none": "None",
     "solid": "Solid"
   },
+  "links": {
+    "add": "Add link",
+    "empty": "No links yet",
+    "goTo": "Go to {{label}}",
+    "label": "Links",
+    "loading": "Loading…",
+    "missingHint": "That timeline isn't in your library anymore",
+    "missingTimeline": "Missing timeline",
+    "pickElement": "Pick an element…",
+    "pickElementLabel": "Element to land on",
+    "pickTimeline": "Pick a timeline…",
+    "pickTimelineLabel": "Timeline to link",
+    "remove": "Remove link to {{label}}",
+    "start": "Link to a timeline or element",
+    "thisTimeline": "This timeline",
+    "wholeTimeline": "Whole timeline"
+  },
   "mapPick": {
     "escToCancel": "Esc to cancel"
   },

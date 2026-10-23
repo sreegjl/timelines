@@ -93,3 +93,18 @@
   align-self: center;
 }
 
+.title-bar-back {
+  width: auto;
+  max-width: 260px;
+  gap: 6px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.title-bar-back-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

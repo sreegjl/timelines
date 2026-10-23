@@ -42,6 +42,7 @@ import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fracti
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
 import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
+import { findLinkTarget, normalizeListing } from "./utils/timelineLinks";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -318,6 +319,9 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [diskReloadNotice, setDiskReloadNotice] = useState(false);
   const [thumbnailRefreshSignal, setThumbnailRefreshSignal] = useState(0);
+  // breadcrumbs for link hopping so u can always find ur way back home
+  const [linkBackStack, setLinkBackStack] = useState([]);
+  const [pendingLinkSelect, setPendingLinkSelect] = useState(null);
 
   useEscapeKey(!!importConflict, () => setImportConflict(null));
   useEscapeKey(!!skippedFilesNotice, () => setSkippedFilesNotice(null));
@@ -1852,14 +1856,63 @@ function App() {
     }
   }, []);
 
+  const scheduleCardSave = (pending) => {
+    if (!pending) return;
+    const run = () => saveTimelineCard(pending);
+    if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });
+    else setTimeout(run, 0);
+  };
+
+  const handleFollowLink = async (link) => {
+    if (!link?.timeline || !timelineData) return;
+    const currentUid = getStorageId(timelineData.file);
+    if (link.timeline === currentUid) {
+      if (!link.element) return;
+      if (!timelineData.elements.some((el) => el.id === link.element)) {
+        showToast(t("app:links.elementMissing", "That element isn't here anymore"), "error", 2500);
+        return;
+      }
+      setLinkBackStack((prev) => [...prev, { timelineId: currentTimelineId, title: timelineData.file?.title, selectedId }].slice(-20));
+      setPendingLinkSelect({ id: link.element, n: Date.now() });
+      return;
+    }
+    const target = findLinkTarget(normalizeListing(await listTimelines()), link);
+    if (!target) {
+      showToast(t("app:links.timelineMissing", "Linked timeline not found in your library"), "error", 3000);
+      return;
+    }
+    scheduleCardSave(captureTimelineSnapshot());
+    setLinkBackStack((prev) => [...prev, { timelineId: currentTimelineId, title: timelineData.file?.title, selectedId }].slice(-20));
+    setPendingLinkSelect(link.element ? { id: link.element, n: Date.now() } : null);
+    await handleLoadTimeline(target.id, Boolean(target.thumbnailUrl));
+  };
+
+  const handleLinkBack = async () => {
+    const entry = linkBackStack[linkBackStack.length - 1];
+    if (!entry) return;
+    setLinkBackStack((prev) => prev.slice(0, -1));
+    if (entry.timelineId !== currentTimelineId) {
+      scheduleCardSave(captureTimelineSnapshot());
+      await handleLoadTimeline(entry.timelineId);
+    }
+    setPendingLinkSelect(entry.selectedId ? { id: entry.selectedId, n: Date.now() } : null);
+  };
+
+  // land on the linked element once its timeline has actually shown up
+  useEffect(() => {
+    if (!pendingLinkSelect?.id || !timelineData?.elements) return;
+    if (!timelineData.elements.some((el) => el.id === pendingLinkSelect.id)) return;
+    const id = pendingLinkSelect.id;
+    setPendingLinkSelect(null);
+    handleSelect(id);
+    requestAnimationFrame(() => requestAnimationFrame(() => timelineViewRef.current?.scrollToElement(id)));
+  }, [pendingLinkSelect, timelineData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleBackToHome = () => {
     // Snapshot needs the live DOM; drawing waits until home has painted
-    const pending = captureTimelineSnapshot();
-    if (pending) {
-      const run = () => saveTimelineCard(pending);
-      if (window.requestIdleCallback) window.requestIdleCallback(run, { timeout: 1000 });
-      else setTimeout(run, 0);
-    }
+    scheduleCardSave(captureTimelineSnapshot());
+    setLinkBackStack([]);
+    setPendingLinkSelect(null);
     setTimelineData(null);
     setCurrentTimelineId(null);
     setSelectedId(null);
@@ -2737,6 +2790,8 @@ function App() {
     <TimelineColorsContext.Provider value={timelineColors}>
       <TopBar
         title={timelineData.file?.title || "Timelines"}
+        backTitle={linkBackStack.length > 0 ? (linkBackStack[linkBackStack.length - 1].title || "") : null}
+        onBack={linkBackStack.length > 0 ? handleLinkBack : undefined}
         isLeftCollapsed={isLeftCollapsed}
         onToggleLeft={viewMode !== "spreadsheet" ? () => setIsLeftCollapsed((v) => !v) : undefined}
         isRightCollapsed={!isRightPanelVisible}
@@ -3060,6 +3115,7 @@ function App() {
                 nextElement={selectionNavigation.nextElement}
                 coordPickTargetId={coordPickRequest?.id ?? null}
                 onRequestCoordPick={handleRequestCoordPick}
+                onFollowLink={handleFollowLink}
               />
               </ErrorBoundary>
             </aside>

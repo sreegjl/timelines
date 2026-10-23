@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } fr
 import { useTranslation } from "react-i18next";
 import { Maximize2, Minimize2, Link, Trash2, ChevronLeft, ChevronRight, ChevronDown, Pencil, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X, Image as ImageIcon, Shapes, MoveVertical, Minus, SquareDashed, CalendarOff, EyeOff, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
 import NoteEditor from "./NoteEditor";
+import TimelineLinksSection from "./TimelineLinksSection";
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
@@ -98,6 +99,7 @@ export default function RightPanel({
   onClose,
   coordPickTargetId = null,
   onRequestCoordPick,
+  onFollowLink,
 }) {
   const { t } = useTranslation("timeline");
   // Listed statically so i18next-parser sees every option key.
@@ -1394,6 +1396,14 @@ export default function RightPanel({
               </div>
             )}
 
+            <TimelineLinksSection
+              element={formData}
+              timelineData={timelineData}
+              isEditMode={false}
+              readOnly={readOnly}
+              onFollowLink={onFollowLink}
+            />
+
             {formData.noteFile && (
               <>
                 <div className="note-divider" />
@@ -2653,6 +2663,20 @@ export default function RightPanel({
                 )}
               </div>
             )}
+
+            <div className="edit-section-divider" />
+
+            <TimelineLinksSection
+              element={formData}
+              timelineData={timelineData}
+              isEditMode
+              readOnly={readOnly}
+              onFollowLink={onFollowLink}
+              onCommit={(next) => {
+                setFormData(next);
+                commitDraft(next);
+              }}
+            />
 
             <div className="edit-section-divider" />
 

@@ -252,6 +252,10 @@
   },
   "importHint": "Import a .timeline, .json or .csv file into your library",
   "library": "Library",
+  "links": {
+    "elementMissing": "That element isn't here anymore",
+    "timelineMissing": "Linked timeline not found in your library"
+  },
   "loadingTimelines": "Loading timelines...",
   "marketplace": {
     "bulkActions": "Bulk theme actions",
@@ -424,6 +428,9 @@
     "yesterday": "yesterday"
   },
   "titleBar": {
+    "back": "Back",
+    "backHint": "Go back to where you followed the link from",
+    "backTo": "Back to {{title}}",
     "hidePanel": "Hide panel",
     "hideSidebar": "Hide sidebar",
     "lockPanel": "Lock panel",

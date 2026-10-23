@@ -1,4 +1,4 @@
-import { Minus, Square, X, PanelLeft, PanelRight, Lock, LockOpen } from "lucide-react";
+import { Minus, Square, X, PanelLeft, PanelRight, Lock, LockOpen, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function TopBar({
@@ -10,6 +10,8 @@ export default function TopBar({
   onToggleRight,
   rightLockState,
   onCycleRightLock,
+  backTitle = null,
+  onBack,
 }) {
   const { t } = useTranslation("app");
   const isElectron = window.electron !== undefined;
@@ -56,6 +58,19 @@ export default function TopBar({
         </span>
       </div>
       <div className="title-bar-controls">
+        {/* way back after following a timeline link */}
+        {onBack && (
+          <button
+            className="title-bar-button title-bar-back"
+            onClick={onBack}
+            title={t("titleBar.backHint", "Go back to where you followed the link from")}
+          >
+            <ArrowLeft size={13} />
+            <span className="title-bar-back-label">
+              {backTitle ? t("titleBar.backTo", "Back to {{title}}", { title: backTitle }) : t("titleBar.back", "Back")}
+            </span>
+          </button>
+        )}
         {onToggleLeft && (
           <button
             className="title-bar-button title-bar-panel-toggle"
