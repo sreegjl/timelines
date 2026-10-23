@@ -286,6 +286,15 @@
       "square": "Square",
       "triangle": "Triangle"
     },
+    "routes": {
+      "all": "Everything, in order",
+      "description": "Connect located elements with lines in date order. Great for journeys, campaigns and very long walks.",
+      "group": "By group",
+      "label": "Routes",
+      "off": "Off",
+      "span": "By parent span",
+      "tag": "By tag"
+    },
     "scrollbarDateOnly": "Scrollbar Date Only",
     "spanMarker": {
       "description": "Choose the marker style used for spans in map view.",

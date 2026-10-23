@@ -1,6 +1,7 @@
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { ROUTE_MODES } from "../utils/mapRoutes";
 import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
@@ -41,6 +42,13 @@ export default function SettingsModal({
 }) {
   const { t } = useTranslation("settings");
   // Listed statically so i18next-parser sees every marker key.
+  const routeLabels = useMemo(() => ({
+    off: t("maps.routes.off", "Off"),
+    span: t("maps.routes.span", "By parent span"),
+    tag: t("maps.routes.tag", "By tag"),
+    group: t("maps.routes.group", "By group"),
+    all: t("maps.routes.all", "Everything, in order"),
+  }), [t]);
   const markerLabels = useMemo(() => ({
     pin: t("maps.markers.pin", "Pin"),
     circle: t("maps.markers.circle", "Circle"),
@@ -109,6 +117,7 @@ export default function SettingsModal({
   const [mapEventMarker, setMapEventMarker] = useState(DEFAULT_EVENT_MARKER);
   const [mapSpanMarker, setMapSpanMarker] = useState(DEFAULT_SPAN_MARKER);
   const [mapEraMarker, setMapEraMarker] = useState(DEFAULT_ERA_MARKER);
+  const [mapRoutes, setMapRoutes] = useState("off");
   const [settingsSection, setSettingsSection] = useState("general");
   const [isInitialized, setIsInitialized] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -166,6 +175,7 @@ export default function SettingsModal({
     mapEventMarker,
     mapSpanMarker,
     mapEraMarker,
+    mapRoutes: mapRoutes !== "off" ? mapRoutes : undefined,
     __scaleKey: JSON.stringify(scaleSections),
   });
 
@@ -331,6 +341,7 @@ export default function SettingsModal({
         setMapEventMarker(timelineData.file.mapEventMarker || DEFAULT_EVENT_MARKER);
         setMapSpanMarker(timelineData.file.mapSpanMarker || DEFAULT_SPAN_MARKER);
         setMapEraMarker(timelineData.file.mapEraMarker || DEFAULT_ERA_MARKER);
+        setMapRoutes(timelineData.file.mapRoutes || "off");
         setValidationErrors([]);
         setScaleSectionErrors([]);
         lastFilePathRef.current = currentPath;
@@ -489,6 +500,7 @@ export default function SettingsModal({
     mapEventMarker,
     mapSpanMarker,
     mapEraMarker,
+    mapRoutes,
     isInitialized,
     isOpen,
   ]);
@@ -1537,6 +1549,25 @@ export default function SettingsModal({
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("maps.routes.label", "Routes")}</div>
+                  <div className="settings-row-description">
+                    {t("maps.routes.description", "Connect located elements with lines in date order. Great for journeys, campaigns and very long walks.")}
+                  </div>
+                </div>
+                <div className="settings-row-right">
+                  <select
+                    className="settings-select"
+                    value={mapRoutes}
+                    onChange={(e) => setMapRoutes(e.target.value)}
+                  >
+                    {ROUTE_MODES.map((value) => (
+                      <option key={value} value={value}>{routeLabels[value]}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="settings-row">

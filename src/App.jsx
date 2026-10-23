@@ -1480,6 +1480,7 @@ function App() {
       if (!nextFile.mapEventMarker || nextFile.mapEventMarker === "pin") delete nextFile.mapEventMarker;
       if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
       if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
+      if (!nextFile.mapRoutes || nextFile.mapRoutes === "off") delete nextFile.mapRoutes;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
