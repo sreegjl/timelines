@@ -3304,3 +3304,8 @@
   font-size: var(--text-xs);
   color: var(--ui-muted);
 }
+
+.edit-font-size-input {
+  justify-self: end;
+  width: 64px;
+}

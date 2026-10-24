@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Maximize2, Minimize2, Link, Trash2, ChevronLeft, ChevronRight, ChevronDown, Pencil, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X, Image as ImageIcon, Shapes, MoveVertical, Minus, SquareDashed, CalendarOff, EyeOff, ArrowLeftToLine, ArrowRightToLine } from "lucide-react";
+import { Maximize2, Minimize2, Link, Trash2, ChevronLeft, ChevronRight, ChevronDown, Pencil, Calendar, Clock, FileText, BookOpen, ImagePlus, MapPin, RotateCcw, X, Image as ImageIcon, Shapes, MoveVertical, Minus, SquareDashed, CalendarOff, EyeOff, ArrowLeftToLine, ArrowRightToLine, CaseSensitive } from "lucide-react";
 import NoteEditor from "./NoteEditor";
 import WikiSection from "./WikiSection";
 import SourcesSection from "./SourcesSection";
@@ -58,6 +58,7 @@ const parseTypedTime = (raw) => {
   return null;
 };
 import { formatYear, withApproxLabel, formatApproxRange, DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
+import { resolveElementFontSize, ELEMENT_FONT_SIZE_MIN, ELEMENT_FONT_SIZE_MAX } from "../utils/elementFont";
 import { isValidIdValue, isValidTagValue, normalizeTagValue, buildValidatedUpdate } from "../utils/validation";
 import { validationMessage } from "../i18n/validationMessages";
 import { normalizeColor } from "../utils/colorUtils";
@@ -1102,6 +1103,7 @@ export default function RightPanel({
     { key: "coordinates", icon: MapPin, group: "location", label: t("fields.coordinates", "Coordinates"), available: !!timelineData?.file?.useMaps, isSet: formData.lat != null || formData.lng != null },
     { key: "thumbnail", icon: ImageIcon, group: "appearance", label: t("fields.thumbnail", "Thumbnail"), available: isEvent, isSet: !!formData.thumbnail },
     { key: "icon", icon: Shapes, group: "appearance", label: t("fields.icon", "Icon"), available: true, isSet: !!formData.icon },
+    { key: "fontSize", icon: CaseSensitive, group: "appearance", label: t("fields.fontSize", "Font Size"), available: isEvent || isSpan, isSet: formData.fontSize != null },
     { key: "size", icon: MoveVertical, group: "appearance", label: t("fields.size", "Size"), available: isSpan || isEra, isSet: !!(isSpan ? formData.spanSize : formData.eraSize) },
     { key: "lineStyle", icon: Minus, group: "appearance", label: t("fields.lineStyle", "Line Style"), available: isEvent, isSet: !!formData.eventLineStyle && formData.eventLineStyle !== "solid" },
     { key: "borderStyle", icon: SquareDashed, group: "appearance", label: t("fields.borderStyle", "Border Style"), available: isEvent, isSet: !!formData.eventBorderStyle && formData.eventBorderStyle !== "solid" },
@@ -1115,6 +1117,7 @@ export default function RightPanel({
     coordinates: { delete: ["lat", "lng"] },
     thumbnail: { delete: ["thumbnail", "thumbnailStyle", "thumbnailFit"] },
     icon: { delete: ["icon"] },
+    fontSize: { delete: ["fontSize"] },
     size: { delete: ["spanSize", "eraSize"] },
     lineStyle: { set: { eventLineStyle: "solid" } },
     borderStyle: { set: { eventBorderStyle: "solid" } },
@@ -2027,6 +2030,41 @@ export default function RightPanel({
                 </div>
               </div>
             )}
+
+            {/* font size. blank means "whatever the timeline says", the chillest option */}
+            {(isEvent || isSpan) && isPropVisible("fontSize") && (() => {
+              const defaultSize = isEvent ? (Number(timelineData?.file?.eventFontSize) || 10) : 11;
+              const commitFontSize = (raw) => {
+                const next = { ...formData };
+                const size = resolveElementFontSize(raw);
+                if (size == null || size === defaultSize) delete next.fontSize;
+                else next.fontSize = size;
+                setFormData(next);
+                commitDraft(next);
+              };
+              return (
+                <div className="form-group">
+                  {renderRemoveProp("fontSize")}
+                  <div className="edit-row">
+                    <label htmlFor="fontSize" title={t("rightPanel.fontSizeHint", "In pixels")}>{t("fields.fontSize", "Font Size")}</label>
+                    <div className="edit-separator" />
+                    <input
+                      id="fontSize"
+                      type="number"
+                      className="edit-input edit-font-size-input"
+                      min={ELEMENT_FONT_SIZE_MIN}
+                      max={ELEMENT_FONT_SIZE_MAX}
+                      step={1}
+                      value={formData.fontSize ?? ""}
+                      placeholder={String(defaultSize)}
+                      onChange={(e) => handleChange("fontSize", e.target.value === "" ? undefined : Number(e.target.value))}
+                      onBlur={(e) => commitFontSize(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Size (spans only) */}
             {formData.type === "span" && isPropVisible("size") && (

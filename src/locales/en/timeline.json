@@ -84,6 +84,7 @@
     "duration": "Duration",
     "endDate": "End Date",
     "extendFrom": "Extend From",
+    "fontSize": "Font Size",
     "fuzzyEnd": "Fuzzy End",
     "fuzzyStart": "Fuzzy Start",
     "group": "Group",
@@ -236,6 +237,7 @@
       "today": "Today"
     },
     "extendFrom": "Extend from",
+    "fontSizeHint": "In pixels",
     "noContiguousSpans": "No contiguous spans",
     "noMatchingSpans": "No matching spans",
     "noMatchingTimes": "No matching times",

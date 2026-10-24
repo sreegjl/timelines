@@ -15,6 +15,7 @@ import {
   getReadableTextColor,
   monthLabels,
 } from "../utils/timelineUtils";
+import { getEventFontVars, getSpanFontSize, resolveElementFontSize } from "../utils/elementFont";
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
 import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
@@ -683,6 +684,7 @@ const TimelineView = forwardRef(function TimelineView({
     TIMELINE_PADDING,
     decompressYear,
     evFontSize,
+    evHeight,
   } = useMemo(() => {
     const file = timelineData.file;
     const passesQuery = (el) => !parsedChipQuery || matchesFilter(el, parsedChipQuery, null, filterContext);
@@ -1411,6 +1413,7 @@ const TimelineView = forwardRef(function TimelineView({
       TIMELINE_PADDING,
       decompressYear,
       evFontSize,
+      evHeight,
     };
   }, [timelineData, pinnedTags, showMap, parsedChipQuery, filterContext, resolvedFont, fontReady, detailOverride]);
 
@@ -4263,6 +4266,7 @@ const TimelineView = forwardRef(function TimelineView({
                         className={`span-item ${isSelected ? "is-selected" : ""}${span.spanSize === "thin" ? " span-thin" : ""}${span.spanSize === "thick" ? " span-thick" : ""}${isExtension ? " span-extension" : ""}${extensionChildLarger ? " span-extension-child-larger" : ""}${extensionParentLarger ? " span-extension-parent-larger" : ""}${thinConnectorChild ? " span-thin-connector-child" : ""}${thinConnectorMergeOut ? " span-thin-connector-merge-out" : ""}${span.sourceLink ? " has-source-link" : ""}`}
                         style={{
                           "--span-fill": span.color || "var(--secondary-text)",
+                          ...(getSpanFontSize(span) && { fontSize: `${getSpanFontSize(span)}px` }),
                           left: `${span.left - childInset + neckLeft}px`,
                           width: `${span.width + childInset + mergeInset - neckLeft - neckRight}px`,
                           top: `${spanRenderTopById.get(span.id) ?? span.top}px`,
@@ -4279,7 +4283,7 @@ const TimelineView = forwardRef(function TimelineView({
                       >
                         <>
                           {!hideSpanName && (
-                            <span className="span-title" style={{ color: spanTextColor }}>{span.icon && ICON_MAP[span.icon] && (() => { const I = ICON_MAP[span.icon]; return <I size={10} className="span-title-icon" />; })()}{span.title}</span>
+                            <span className="span-title" style={{ color: spanTextColor }}>{span.icon && ICON_MAP[span.icon] && (() => { const I = ICON_MAP[span.icon]; return <I size={getSpanFontSize(span) ? Math.round(getSpanFontSize(span) * 0.9) : 10} className="span-title-icon" />; })()}{span.title}</span>
                           )}
                           {span.sourceLink && !hideSpanName && (
                             <a className="span-source-link" href={span.sourceLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} title={t("openSource", "Open source")} style={{ color: spanTextColor }}><ExternalLink size={9} strokeWidth={3} /></a>
@@ -4351,6 +4355,7 @@ const TimelineView = forwardRef(function TimelineView({
                         data-id={event.id}
                         className={`event ${isSelected ? "is-selected" : ""}${event._isMultiLine ? " multi-lane" : ""}${event.hideYears === true && !(Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t)) ? " event-no-year" : ""}${event.sourceLink ? " has-source-link" : ""}${event.thumbnail && event.thumbnailStyle !== "banner" && event.thumbnailStyle !== "square-fill" && event.thumbnailStyle !== "circle-fill" ? " has-thumbnail" : ""}${event.thumbnail && event.thumbnailStyle === "banner" ? " has-thumbnail-banner" : ""}${event.thumbnail && event.thumbnailStyle === "square-fill" ? " has-thumbnail-square" : ""}${event.thumbnail && event.thumbnailStyle === "circle-fill" ? " has-thumbnail-circle" : ""}`}
                         style={{
+                          ...getEventFontVars(event.fontSize, evFontSize, evHeight),
                           left: `${event._x}px`,
                           top: `${event.top}px`,
                           position: "absolute",
@@ -4370,7 +4375,7 @@ const TimelineView = forwardRef(function TimelineView({
                         {event.thumbnail && event.thumbnailStyle !== "banner" && <div className="event-thumbnail-tile" style={{ backgroundImage: `url("${event.thumbnail}")`, backgroundSize: event.thumbnailFit || "cover" }} />}
                         {event.thumbnail && event.thumbnailStyle === "banner" && <img className="event-thumbnail-banner" src={event.thumbnail} alt="" style={{ objectFit: event.thumbnailFit || "cover" }} />}
                         <div className={event.thumbnail && event.thumbnailStyle !== "banner" ? "event-text-content" : ""}>
-                        <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={evFontSize} className="event-title-icon" />; })()}{event.title}</div>
+                        <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={resolveElementFontSize(event.fontSize) ?? evFontSize} className="event-title-icon" />; })()}{event.title}</div>
                         {event.sourceLink && (
                           <a
                             className="event-source-link"
@@ -4460,6 +4465,7 @@ const TimelineView = forwardRef(function TimelineView({
                 className={`span-item ${isSelected ? "is-selected" : ""}${span.spanSize === "thin" ? " span-thin" : ""}${span.spanSize === "thick" ? " span-thick" : ""}${isExtension ? " span-extension" : ""}${extensionChildLarger ? " span-extension-child-larger" : ""}${extensionParentLarger ? " span-extension-parent-larger" : ""}${thinConnectorChild ? " span-thin-connector-child" : ""}${thinConnectorMergeOut ? " span-thin-connector-merge-out" : ""}`}
                 style={{
                   "--span-fill": span.color || "var(--secondary-text)",
+                  ...(getSpanFontSize(span) && { fontSize: `${getSpanFontSize(span)}px` }),
                   left: `${span.left - childInset + neckLeft}px`,
                   width: `${span.width + childInset + mergeInset - neckLeft - neckRight}px`,
                   top: `${spanRenderTopById.get(span.id) ?? span.top}px`,
@@ -4689,6 +4695,7 @@ const TimelineView = forwardRef(function TimelineView({
                 data-id={event.id}
                 className={`event ${isSelected ? "is-selected" : ""}${event._isMultiLine ? " multi-lane" : ""}${event.hideYears === true && !(Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t)) ? " event-no-year" : ""}${event.thumbnail && event.thumbnailStyle !== "banner" && event.thumbnailStyle !== "square-fill" && event.thumbnailStyle !== "circle-fill" ? " has-thumbnail" : ""}${event.thumbnail && event.thumbnailStyle === "banner" ? " has-thumbnail-banner" : ""}${event.thumbnail && event.thumbnailStyle === "square-fill" ? " has-thumbnail-square" : ""}${event.thumbnail && event.thumbnailStyle === "circle-fill" ? " has-thumbnail-circle" : ""}`}
                 style={{
+                  ...getEventFontVars(event.fontSize, evFontSize, evHeight),
                   left: `${event._x}px`,
                   top: `${event.top}px`,
                   position: "absolute",
@@ -4707,7 +4714,7 @@ const TimelineView = forwardRef(function TimelineView({
                 {event.thumbnail && event.thumbnailStyle !== "banner" && <div className="event-thumbnail-tile" style={{ backgroundImage: `url("${event.thumbnail}")`, backgroundSize: event.thumbnailFit || "cover" }} />}
                 {event.thumbnail && event.thumbnailStyle === "banner" && <img className="event-thumbnail-banner" src={event.thumbnail} alt="" style={{ objectFit: event.thumbnailFit || "cover" }} />}
                 <div className={event.thumbnail && event.thumbnailStyle !== "banner" ? "event-text-content" : ""}>
-                <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={evFontSize} className="event-title-icon" />; })()}{event.title}</div>
+                <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={resolveElementFontSize(event.fontSize) ?? evFontSize} className="event-title-icon" />; })()}{event.title}</div>
                 {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
                   {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateTimeLabel(event.dateLabel, event.time) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}</span>}
                   {(() => {
