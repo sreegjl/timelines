@@ -280,6 +280,13 @@
     "viewTimeline": "Timeline View"
   },
   "maps": {
+    "dateFilter": {
+      "active": "Active at the date",
+      "all": "All elements",
+      "description": "Which map markers to show for the date in the scrollbar.",
+      "label": "Scrollbar Date",
+      "upTo": "Up to the date"
+    },
     "eraMarker": {
       "description": "Choose the marker style used for eras in map view.",
       "label": "Era Marker"
@@ -295,6 +302,10 @@
     "globeFarSide": {
       "description": "Show markers on the other side of the globe faintly through it. Turn off to hide them.",
       "label": "Show Markers on the Far Side"
+    },
+    "globeGlow": {
+      "description": "Show a glow in the theme's link color around the globe.",
+      "label": "Atmosphere Glow"
     },
     "markers": {
       "circle": "Circle",
@@ -317,8 +328,6 @@
       "span": "By parent span",
       "tag": "By tag"
     },
-    "scrollbarDateOnly": "Scrollbar Date Only",
-    "scrollbarDateOnlyDescription": "Only show map markers active at the current date shown in the scrollbar.",
     "spanMarker": {
       "description": "Choose the marker style used for spans in map view.",
       "label": "Span Marker"

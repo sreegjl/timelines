@@ -215,10 +215,10 @@ export default memo(forwardRef(function GlobeView({
 
   const routes = useMemo(() => buildRoutes(elements, fileConfig?.mapRoutes, {
     // match marker visibility
-    isPointVisible: (el) => isMarkerVisibleAtViewportYear(el, viewportYear, { mapLimitToViewportYear: fileConfig?.mapLimitToViewportYear }),
+    isPointVisible: (el) => isMarkerVisibleAtViewportYear(el, viewportYear, fileConfig),
     tagColors: fileConfig?.tagColors,
     groups: fileConfig?.groups,
-  }), [elements, fileConfig?.mapRoutes, fileConfig?.mapLimitToViewportYear, fileConfig?.tagColors, fileConfig?.groups, viewportYear]);
+  }), [elements, fileConfig?.mapRoutes, fileConfig?.mapLimitToViewportYear, fileConfig?.mapDateFilter, fileConfig?.tagColors, fileConfig?.groups, viewportYear]);
 
   const tileUrl = fileConfig?.mapTileUrl || DEFAULT_TILE_URL;
   const attribution = isOpenStreetMapTileUrl(tileUrl) ? DEFAULT_ATTRIBUTION : "";
@@ -256,6 +256,21 @@ export default memo(forwardRef(function GlobeView({
       if (String(e?.error?.message || "").toLowerCase().includes("webgl")) onUnavailable?.(e.error);
     });
     map.on("load", () => setIsReady(true));
+
+    // globe's screen center and radius for the css atmosphere; a point 90° away sits on the rim
+    const updateHalo = () => {
+      const view = container.parentElement;
+      if (!view) return;
+      const center = map.getCenter();
+      const middle = map.project(center);
+      const rim = map.project([center.lng + 90, 0]);
+      view.style.setProperty("--globe-x", `${middle.x}px`);
+      view.style.setProperty("--globe-y", `${middle.y}px`);
+      view.style.setProperty("--globe-r", `${Math.hypot(rim.x - middle.x, rim.y - middle.y)}px`);
+    };
+    map.on("load", updateHalo);
+    map.on("move", updateHalo);
+    map.on("resize", updateHalo);
 
     map.on("click", (e) => {
       if (e.originalEvent?.target?.closest?.(".maplibregl-marker")) return;
@@ -308,6 +323,7 @@ export default memo(forwardRef(function GlobeView({
       const x = Math.max(-maxX, Math.min(maxX, slide.offsetX + e.clientX - slide.x));
       const y = Math.max(-maxY, Math.min(maxY, slide.offsetY + e.clientY - slide.y));
       map.setPadding({ left: Math.max(0, 2 * x), right: Math.max(0, -2 * x), top: Math.max(0, 2 * y), bottom: Math.max(0, -2 * y) });
+      updateHalo();
     };
     const handleSlideEnd = () => {
       if (!slide) return;
@@ -455,7 +471,7 @@ export default memo(forwardRef(function GlobeView({
   }, [selectedId, markers]);
 
   return (
-    <div className={pickMode ? "timeline-map-view timeline-globe-view is-picking" : "timeline-map-view timeline-globe-view"}>
+    <div className={`timeline-map-view timeline-globe-view${pickMode ? " is-picking" : ""}${fileConfig?.mapGlobeHideGlow === true ? " no-glow" : ""}`}>
       <div ref={containerRef} className="globe-container" />
     </div>
   );

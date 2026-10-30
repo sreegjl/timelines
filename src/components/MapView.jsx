@@ -243,10 +243,10 @@ export default memo(forwardRef(function MapView({ elements = [], onSelect, onOpe
   const [hoveredId, setHoveredId] = useState(null);
   const routes = useMemo(() => buildRoutes(elements, fileConfig?.mapRoutes, {
     // same rule as the markers above, so lines only join points that are actually on the map
-    isPointVisible: (el) => isMarkerVisibleAtViewportYear(el, viewportYear, { mapLimitToViewportYear: fileConfig?.mapLimitToViewportYear }),
+    isPointVisible: (el) => isMarkerVisibleAtViewportYear(el, viewportYear, fileConfig),
     tagColors: fileConfig?.tagColors,
     groups: fileConfig?.groups,
-  }), [elements, fileConfig?.mapRoutes, fileConfig?.mapLimitToViewportYear, fileConfig?.tagColors, fileConfig?.groups, viewportYear]);
+  }), [elements, fileConfig?.mapRoutes, fileConfig?.mapLimitToViewportYear, fileConfig?.mapDateFilter, fileConfig?.tagColors, fileConfig?.groups, viewportYear]);
 
   const [initialView] = useState(() => ({
     center: markers.length > 0 ? [Number(markers[0].lat), Number(markers[0].lng)] : [20, 0],

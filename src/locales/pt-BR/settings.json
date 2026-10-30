@@ -282,6 +282,13 @@
     "viewTimeline": "Visualização da linha do tempo"
   },
   "maps": {
+    "dateFilter": {
+      "active": "",
+      "all": "",
+      "description": "",
+      "label": "",
+      "upTo": ""
+    },
     "eraMarker": {
       "description": "Escolha o estilo de marcador usado para eras na visualização do mapa.",
       "label": "Marcador de era"
@@ -295,6 +302,10 @@
       "label": ""
     },
     "globeFarSide": {
+      "description": "",
+      "label": ""
+    },
+    "globeGlow": {
       "description": "",
       "label": ""
     },
@@ -319,8 +330,6 @@
       "span": "Por período pai",
       "tag": "Por etiqueta"
     },
-    "scrollbarDateOnly": "Mostrar apenas marcadores disponíveis na data da barra de rolagem",
-    "scrollbarDateOnlyDescription": "Mostrar apenas os marcadores do mapa ativos na data exibida na barra de rolagem, ocultando os demais.",
     "spanMarker": {
       "description": "Escolha o estilo de marcador usado para períodos na visualização do mapa.",
       "label": "Marcador de período"

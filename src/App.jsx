@@ -1514,12 +1514,14 @@ function App() {
       if (!nextFile.useMaps) delete nextFile.useMaps;
       if (!nextFile.mapTileUrl) delete nextFile.mapTileUrl;
       if (!nextFile.mapLimitToViewportYear) delete nextFile.mapLimitToViewportYear;
+      if (!nextFile.mapDateFilter || nextFile.mapDateFilter === "all") delete nextFile.mapDateFilter;
       if (!nextFile.mapEventMarker || nextFile.mapEventMarker === "pin") delete nextFile.mapEventMarker;
       if (!nextFile.mapSpanMarker || nextFile.mapSpanMarker === "circle") delete nextFile.mapSpanMarker;
       if (!nextFile.mapEraMarker || nextFile.mapEraMarker === "diamond") delete nextFile.mapEraMarker;
       if (!nextFile.mapRoutes || nextFile.mapRoutes === "off") delete nextFile.mapRoutes;
       if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
       if (!nextFile.mapGlobeHideFarSide) delete nextFile.mapGlobeHideFarSide;
+      if (!nextFile.mapGlobeHideGlow) delete nextFile.mapGlobeHideGlow;
       if (!nextFile.mapHideRouteArrows) delete nextFile.mapHideRouteArrows;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;

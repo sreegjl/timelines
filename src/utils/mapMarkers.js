@@ -89,8 +89,22 @@ export function resolveMarkerType(elType, fileConfig) {
   return fileConfig?.mapEventMarker || DEFAULT_MARKER_TYPES.event;
 }
 
+export const MAP_DATE_FILTERS = ["all", "active", "upTo"];
+
+// "active" is still the original mapLimitToViewportYear flag; only "upTo" needs the new field
+export function getMapDateFilter(fileConfig) {
+  if (fileConfig?.mapDateFilter === "upTo") return "upTo";
+  return fileConfig?.mapLimitToViewportYear ? "active" : "all";
+}
+
 export function isMarkerVisibleAtViewportYear(el, viewportYear, fileConfig) {
-  if (!fileConfig?.mapLimitToViewportYear || !Number.isFinite(viewportYear)) return true;
+  const filter = getMapDateFilter(fileConfig);
+  if (filter === "all" || !Number.isFinite(viewportYear)) return true;
+
+  if (filter === "upTo") {
+    const begins = el.type === "event" ? el.date : Number.isFinite(el.start) ? el.start : el.end;
+    return Number.isFinite(begins) && begins <= viewportYear + 1e-6;
+  }
 
   if (el.type === "event") {
     return Number.isFinite(el.date) && Math.abs(el.date - viewportYear) < 1e-6;

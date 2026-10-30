@@ -2,6 +2,7 @@ import { ArrowLeft, Plus, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ROUTE_MODES } from "../utils/mapRoutes";
+import { MAP_DATE_FILTERS, getMapDateFilter } from "../utils/mapMarkers";
 import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
@@ -42,6 +43,11 @@ export default function SettingsModal({
 }) {
   const { t } = useTranslation("settings");
   // Listed statically so i18next-parser sees every marker key.
+  const dateFilterLabels = useMemo(() => ({
+    all: t("maps.dateFilter.all", "All elements"),
+    active: t("maps.dateFilter.active", "Active at the date"),
+    upTo: t("maps.dateFilter.upTo", "Up to the date"),
+  }), [t]);
   const routeLabels = useMemo(() => ({
     off: t("maps.routes.off", "Off"),
     span: t("maps.routes.span", "By parent span"),
@@ -114,7 +120,7 @@ export default function SettingsModal({
   const [useSpreadsheet, setUseSpreadsheet] = useState(false);
   const [useMaps, setUseMaps] = useState(false);
   const [mapTileUrl, setMapTileUrl] = useState("");
-  const [mapLimitToViewportYear, setMapLimitToViewportYear] = useState(false);
+  const [mapDateFilter, setMapDateFilter] = useState("all");
   const [mapEventMarker, setMapEventMarker] = useState(DEFAULT_EVENT_MARKER);
   const [mapSpanMarker, setMapSpanMarker] = useState(DEFAULT_SPAN_MARKER);
   const [mapEraMarker, setMapEraMarker] = useState(DEFAULT_ERA_MARKER);
@@ -122,6 +128,7 @@ export default function SettingsModal({
   const [mapHideRouteArrows, setMapHideRouteArrows] = useState(false);
   const [mapGlobe, setMapGlobe] = useState(false);
   const [mapGlobeHideFarSide, setMapGlobeHideFarSide] = useState(false);
+  const [mapGlobeHideGlow, setMapGlobeHideGlow] = useState(false);
   const [settingsSection, setSettingsSection] = useState("general");
   const [isInitialized, setIsInitialized] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -175,7 +182,8 @@ export default function SettingsModal({
     useSpreadsheet,
     useMaps,
     mapTileUrl,
-    mapLimitToViewportYear,
+    mapDateFilter: mapDateFilter === "upTo" ? "upTo" : undefined,
+    mapLimitToViewportYear: mapDateFilter === "active" || undefined,
     mapEventMarker,
     mapSpanMarker,
     mapEraMarker,
@@ -183,6 +191,7 @@ export default function SettingsModal({
     mapHideRouteArrows: mapHideRouteArrows || undefined,
     mapGlobe: mapGlobe || undefined,
     mapGlobeHideFarSide: mapGlobeHideFarSide || undefined,
+    mapGlobeHideGlow: mapGlobeHideGlow || undefined,
     __scaleKey: JSON.stringify(scaleSections),
   });
 
@@ -344,7 +353,7 @@ export default function SettingsModal({
         setUseSpreadsheet(Boolean(timelineData.file.useSpreadsheet));
         setUseMaps(Boolean(timelineData.file.useMaps));
         setMapTileUrl(timelineData.file.mapTileUrl || "");
-        setMapLimitToViewportYear(Boolean(timelineData.file.mapLimitToViewportYear));
+        setMapDateFilter(getMapDateFilter(timelineData.file));
         setMapEventMarker(timelineData.file.mapEventMarker || DEFAULT_EVENT_MARKER);
         setMapSpanMarker(timelineData.file.mapSpanMarker || DEFAULT_SPAN_MARKER);
         setMapEraMarker(timelineData.file.mapEraMarker || DEFAULT_ERA_MARKER);
@@ -352,6 +361,7 @@ export default function SettingsModal({
         setMapHideRouteArrows(timelineData.file.mapHideRouteArrows === true);
         setMapGlobe(Boolean(timelineData.file.mapGlobe));
         setMapGlobeHideFarSide(timelineData.file.mapGlobeHideFarSide === true);
+        setMapGlobeHideGlow(timelineData.file.mapGlobeHideGlow === true);
         setValidationErrors([]);
         setScaleSectionErrors([]);
         lastFilePathRef.current = currentPath;
@@ -506,7 +516,7 @@ export default function SettingsModal({
     useSpreadsheet,
     useMaps,
     mapTileUrl,
-    mapLimitToViewportYear,
+    mapDateFilter,
     mapEventMarker,
     mapSpanMarker,
     mapEraMarker,
@@ -514,6 +524,7 @@ export default function SettingsModal({
     mapHideRouteArrows,
     mapGlobe,
     mapGlobeHideFarSide,
+    mapGlobeHideGlow,
     isInitialized,
     isOpen,
   ]);
@@ -1546,20 +1557,21 @@ export default function SettingsModal({
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("maps.scrollbarDateOnly", "Scrollbar Date Only")}</div>
+                  <div className="settings-row-label">{t("maps.dateFilter.label", "Scrollbar Date")}</div>
                   <div className="settings-row-description">
-                    {t("maps.scrollbarDateOnlyDescription", "Only show map markers active at the current date shown in the scrollbar.")}
+                    {t("maps.dateFilter.description", "Which map markers to show for the date in the scrollbar.")}
                   </div>
                 </div>
                 <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={mapLimitToViewportYear}
-                      onChange={(e) => setMapLimitToViewportYear(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
+                  <select
+                    className="settings-select"
+                    value={mapDateFilter}
+                    onChange={(e) => setMapDateFilter(e.target.value)}
+                  >
+                    {MAP_DATE_FILTERS.map((value) => (
+                      <option key={value} value={value}>{dateFilterLabels[value]}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="settings-row">
@@ -1580,6 +1592,7 @@ export default function SettingsModal({
                     ))}
                   </select>
                 </div>
+              </div>
               {mapRoutes !== "off" && (
                 <div className="settings-row">
                   <div className="settings-row-left">
@@ -1600,7 +1613,6 @@ export default function SettingsModal({
                   </div>
                 </div>
               )}
-              </div>
               <div className="settings-row">
                 <div className="settings-row-left">
                   <div className="settings-row-label">{t("maps.globe.label", "Globe")}</div>
@@ -1633,6 +1645,26 @@ export default function SettingsModal({
                         type="checkbox"
                         checked={!mapGlobeHideFarSide}
                         onChange={(e) => setMapGlobeHideFarSide(!e.target.checked)}
+                      />
+                      <span className="settings-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              )}
+              {mapGlobe && (
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <div className="settings-row-label">{t("maps.globeGlow.label", "Atmosphere Glow")}</div>
+                    <div className="settings-row-description">
+                      {t("maps.globeGlow.description", "Show a glow in the theme's link color around the globe.")}
+                    </div>
+                  </div>
+                  <div className="settings-row-right">
+                    <label className="settings-toggle">
+                      <input
+                        type="checkbox"
+                        checked={!mapGlobeHideGlow}
+                        onChange={(e) => setMapGlobeHideGlow(!e.target.checked)}
                       />
                       <span className="settings-toggle-slider"></span>
                     </label>

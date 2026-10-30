@@ -1377,9 +1377,23 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* same in every theme */
+/* atmosphere follows the globe; GlobeView sets the --globe-* vars */
 .timeline-globe-view {
-  background: radial-gradient(circle at 50% 45%, #1b2233 0%, #0e121c 55%, #080a10 100%);
+  --globe-x: 50%;
+  --globe-y: 50%;
+  --globe-r: 200px;
+  background: radial-gradient(
+    circle at var(--globe-x) var(--globe-y),
+    color-mix(in srgb, var(--link-color) 55%, #0b0d12) 0,
+    color-mix(in srgb, var(--link-color) 55%, #0b0d12) calc(var(--globe-r) * 0.98),
+    color-mix(in srgb, var(--link-color) 22%, #0b0d12) calc(var(--globe-r) * 1.06),
+    #0b0d12 calc(var(--globe-r) * 1.4),
+    #06070a 100%
+  );
+}
+
+.timeline-globe-view.no-glow {
+  background: #0b0d12;
 }
 
 /* 2D | 3D map control */
