@@ -3004,6 +3004,11 @@ function App() {
                 selectedId={selectedId}
                 onSelect={handleSelect}
                 onAddEvent={handleAddEvent}
+                onAddSpan={handleAddSpan}
+                onEditElement={handleEditElement}
+                onDuplicateElement={handleDuplicateElement}
+                onConvertElement={handleConvertElement}
+                onDelete={handleRequestDelete}
                 focusYear={viewportYear}
                 leftInset={isLeftCollapsed ? COLLAPSED_WIDTH : sidebarWidth}
                 rightInset={isRightPanelVisible ? rightWidth : 0}

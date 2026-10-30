@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, Edit2, CopyPlus, ArrowLeftRight, Trash2 } from "lucide-react";
 import { fractionalYearToDate, todayFractionalYear, formatTimeOfDay, isValidTimeOfDay } from "../utils/dateUtils";
 import {
   getCalendarNames,
@@ -56,7 +56,7 @@ function MiniMonth({ year, month, monthName, dayDots, todayN, onPickMonth }) {
 }
 
 // month grid + year overview for timelines that live on real dates. dates are hard, calendars are cute
-export default function CalendarView({ timelineData, selectedId, onSelect, onAddEvent, focusYear, readOnly = false, leftInset = 0, rightInset = 0, viewSwitcher = null }) {
+export default function CalendarView({ timelineData, selectedId, onSelect, onAddEvent, onAddSpan, onEditElement, onDuplicateElement, onConvertElement, onDelete, focusYear, readOnly = false, leftInset = 0, rightInset = 0, viewSwitcher = null }) {
   const { t, i18n } = useTranslation("timeline");
   const names = useMemo(() => getCalendarNames(i18n.language || "en"), [i18n.language]);
   const untitled = t("untitledElement", "(untitled)");
@@ -164,6 +164,44 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
     onAddEvent(undefined, fraction);
   };
 
+  const [contextMenu, setContextMenu] = useState(null);
+  const contextMenuRef = useRef(null);
+  const openMenu = (e, menu) => {
+    if (readOnly) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, ...menu });
+  };
+  const runMenuAction = (action) => {
+    setContextMenu(null);
+    action();
+  };
+
+  useEffect(() => {
+    if (!contextMenu) return undefined;
+    const handleClickOutside = (e) => {
+      if (!contextMenuRef.current?.contains(e.target)) setContextMenu(null);
+    };
+    const handleKeyDown = (e) => { if (e.key === "Escape") setContextMenu(null); };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [contextMenu]);
+
+  useLayoutEffect(() => {
+    const menu = contextMenuRef.current;
+    if (!contextMenu || !menu) return;
+    const rect = menu.getBoundingClientRect();
+    const x = Math.max(8, Math.min(contextMenu.x, window.innerWidth - rect.width - 8));
+    const y = Math.max(8, Math.min(contextMenu.y, window.innerHeight - rect.height - 8));
+    if (x !== contextMenu.x || y !== contextMenu.y) setContextMenu((prev) => (prev ? { ...prev, x, y } : prev));
+  }, [contextMenu]);
+
+  const typeLabel = (type) => t(`elementTypes.${type}`, type);
+
   const title = mode === "year"
     ? formatYearLabel(cursor.year, file?.negID, file?.posID)
     : `${names.months[cursor.month - 1]} ${formatYearLabel(cursor.year, file?.negID, file?.posID)}`;
@@ -181,6 +219,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
         title={el.title}
         onClick={(e) => { e.stopPropagation(); onSelect?.(el.id); }}
         onDoubleClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => openMenu(e, { element: el })}
       >
         <span className="cal-chip-dot" />
         {Icon && <Icon size={10} className="cal-chip-icon" />}
@@ -260,6 +299,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
                         key={day.n}
                         className={`cal-day${day.inMonth ? "" : " is-outside"}${day.n === todayN ? " is-today" : ""}${outOfRange ? " is-out-of-range" : ""}`}
                         onDoubleClick={() => handleDayDoubleClick(day)}
+                        onContextMenu={(e) => { if (!outOfRange) openMenu(e, { element: null, fraction }); }}
                         title={!readOnly && onAddEvent && !outOfRange ? t("calendar.addHint", "Double-click to add an event") : undefined}
                       >
                         <span className="cal-day-number">{day.day === 1 ? `${names.monthsShort[day.month - 1]} 1` : day.day}</span>
@@ -298,6 +338,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
                         title={el.title}
                         onClick={(e) => { e.stopPropagation(); onSelect?.(el.id); }}
                         onDoubleClick={(e) => e.stopPropagation()}
+                        onContextMenu={(e) => openMenu(e, { element: el })}
                       >
                         <span className="cal-bar-title">{el.title || untitled}</span>
                       </button>
@@ -307,6 +348,53 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
               );
             })}
           </div>
+        </div>
+      )}
+
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="timeline-context-menu"
+          style={{ position: "fixed", left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {contextMenu.element ? (
+            <>
+              <button className="context-menu-item" onClick={() => runMenuAction(() => onEditElement?.(contextMenu.element.id))}>
+                <Edit2 size={16} />
+                <span>{t("contextMenu.edit", "Edit {{type}}", { type: typeLabel(contextMenu.element.type) })}</span>
+              </button>
+              <button className="context-menu-item" onClick={() => runMenuAction(() => onDuplicateElement?.(contextMenu.element.id))}>
+                <CopyPlus size={16} />
+                <span>{t("contextMenu.duplicate", "Duplicate {{type}}", { type: typeLabel(contextMenu.element.type) })}</span>
+              </button>
+              {(contextMenu.element.type === "event" || contextMenu.element.type === "span") && (
+                <button
+                  className="context-menu-item"
+                  onClick={() => runMenuAction(() => onConvertElement?.(contextMenu.element.id, contextMenu.element.type === "event" ? "span" : "event"))}
+                >
+                  <ArrowLeftRight size={16} />
+                  <span>{contextMenu.element.type === "event" ? t("contextMenu.convertToSpan", "Convert to Span") : t("contextMenu.convertToEvent", "Convert to Event")}</span>
+                </button>
+              )}
+              <div className="context-menu-separator" />
+              <button className="context-menu-item context-menu-item-danger" onClick={() => runMenuAction(() => onDelete?.(contextMenu.element.id))}>
+                <Trash2 size={16} />
+                <span>{t("contextMenu.delete", "Delete {{type}}", { type: typeLabel(contextMenu.element.type) })}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="context-menu-item" onClick={() => runMenuAction(() => onAddEvent?.(undefined, contextMenu.fraction))}>
+                <span className="cal-menu-glyph"><span className="cal-menu-glyph-event" /></span>
+                <span>{t("contextMenu.addEvent", "Add Event")}</span>
+              </button>
+              <button className="context-menu-item" onClick={() => runMenuAction(() => onAddSpan?.(undefined, contextMenu.fraction))}>
+                <span className="cal-menu-glyph"><span className="cal-menu-glyph-span" /></span>
+                <span>{t("contextMenu.addSpan", "Add Span")}</span>
+              </button>
+            </>
+          )}
         </div>
       )}
 
