@@ -217,6 +217,7 @@
     },
     "scaleSections": {
       "add": "Add Section",
+      "description": "Squish or stretch spans of time.",
       "end": "End",
       "label": "Scale Sections",
       "remove": "Remove scale section",
@@ -312,11 +313,13 @@
       "tag": "By tag"
     },
     "scrollbarDateOnly": "Scrollbar Date Only",
+    "scrollbarDateOnlyDescription": "Only show map markers active at the current date shown in the scrollbar.",
     "spanMarker": {
       "description": "Choose the marker style used for spans in map view.",
       "label": "Span Marker"
     },
-    "tileUrl": "Tile URL"
+    "tileUrl": "Tile URL",
+    "tileUrlDescription": "Custom map tile URL. Use {z}, {x}, {y} as placeholders. Leave blank to use OpenStreetMap."
   },
   "sections": {
     "advanced": "Advanced",

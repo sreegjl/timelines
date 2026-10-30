@@ -1714,11 +1714,11 @@ export default function SpreadsheetView({
               <div className="sb-new-menu sheet-export-menu">
                 <div className="sb-new-menu-section-label">{t("toolbar.export", "Export")}</div>
                 <button className="sb-new-menu-item" onClick={() => { setExportMenuOpen(false); exportCsv(); }}>
-                  Comma-separated
+                  {t("spreadsheet.exportCsv", "Comma-separated")}
                   <span className="sb-new-menu-shortcut">.csv</span>
                 </button>
                 <button className="sb-new-menu-item" onClick={() => { setExportMenuOpen(false); exportJson(); }}>
-                  Structured data
+                  {t("spreadsheet.exportJson", "Structured data")}
                   <span className="sb-new-menu-shortcut">.json</span>
                 </button>
               </div>
@@ -1737,19 +1737,19 @@ export default function SpreadsheetView({
                   {onAddEra && (
                     <button className="sb-new-menu-item" onClick={() => { setNewMenuOpen(false); setSearch(""); onAddEra(); }}>
                       <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 9, height: 9, border: "2px solid currentColor", borderRadius: 2 }} /></span>
-                      Era
+                      {t("elementTypes.era", "Era")}
                     </button>
                   )}
                   {onAddSpan && (
                     <button className="sb-new-menu-item" onClick={() => { setNewMenuOpen(false); setSearch(""); onAddSpan(); }}>
                       <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 12, height: 2, borderRadius: 1, background: "currentColor" }} /></span>
-                      Span
+                      {t("elementTypes.span", "Span")}
                     </button>
                   )}
                   {onAddEvent && (
                     <button className="sb-new-menu-item" onClick={() => { setNewMenuOpen(false); setSearch(""); onAddEvent(); }}>
                       <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor" }} /></span>
-                      Event
+                      {t("elementTypes.event", "Event")}
                     </button>
                   )}
                 </div>

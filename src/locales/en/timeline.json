@@ -287,6 +287,7 @@
     "fontSizeHint": "In pixels",
     "fontSizeLarger": "Larger",
     "fontSizeSmaller": "Smaller",
+    "maximizePanel": "Maximize panel",
     "noContiguousSpans": "No contiguous spans",
     "noMatchingSpans": "No matching spans",
     "noMatchingTimes": "No matching times",
@@ -301,8 +302,10 @@
     },
     "removeBreak": "Remove break",
     "removeProperty": "Remove property",
+    "restorePanel": "Restore panel",
     "revertInherited": "Revert to inherited",
     "searchSpan": "Search span...",
+    "switchToOverview": "Switch to overview",
     "timePlaceholder": "e.g. 3:30 PM",
     "uploadImage": "Upload image"
   },
@@ -314,9 +317,12 @@
   },
   "sidebar": {
     "applyColor": "Apply Color to Elements",
+    "collapse": "Collapse",
+    "collapseSidebar": "Collapse sidebar",
     "downloadJson": "Download .json (data only)",
     "downloadJsonHint": "Timeline data only; images and notes stay on this computer",
     "downloadPng": "Download .png",
+    "expandSidebar": "Expand sidebar",
     "exportPackage": "Export .timeline (images & notes)",
     "exportPackageHint": "One shareable file bundling the timeline with its images and notes",
     "exportVideo": "Export Video",
@@ -393,6 +399,8 @@
     "unfeature": "Remove featured link"
   },
   "spreadsheet": {
+    "exportCsv": "Comma-separated",
+    "exportJson": "Structured data",
     "fields": "Fields",
     "groupName": "Group name",
     "iconKey": "icon key",

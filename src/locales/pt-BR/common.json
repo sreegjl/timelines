@@ -1,0 +1,50 @@
+{
+  "actions": {
+    "add": "Adicionar",
+    "cancel": "Cancelar",
+    "change": "Alterar",
+    "clear": "Limpar",
+    "close": "Fechar",
+    "create": "Criar",
+    "delete": "Deletar",
+    "dismiss": "Dispensar",
+    "duplicate": "Duplicar",
+    "edit": "Editar",
+    "exit": "Sair",
+    "expand": "Expandir",
+    "moreOptions": "Mais opções",
+    "ok": "Confirmar",
+    "open": "Abrir",
+    "reload": "Recarregar",
+    "remove": "Remover",
+    "rename": "Renomear",
+    "replace": "Substituir",
+    "resetToDefault": "Restaurar padrão",
+    "save": "Salvar"
+  },
+  "errorBoundary": {
+    "crashed": "{{name}} apresentou um erro",
+    "reload": "Recarregar painel"
+  },
+  "loading": "Carregando…",
+  "panels": {
+    "calendar": "Calendário",
+    "rightPanel": "Painel direito",
+    "sidebar": "Barra lateral",
+    "spreadsheet": "Planilha",
+    "timeline": "Linha do tempo"
+  },
+  "validation": {
+    "eventDateInvalid": "A data do evento deve ser um número ou estar no formato MM/DD/YYYY.",
+    "eventOutOfBounds": "A data do evento deve estar dentro dos limites da linha do tempo.",
+    "extendFromMismatch": "A opção \"Estender a partir de\" só funciona quando o período selecionado termina exatamente no início deste período.",
+    "scaleBothRequired": "O início e o fim são obrigatórios",
+    "scaleInvalidEnd": "Data final inválida",
+    "scaleInvalidStart": "Data inicial inválida",
+    "scaleMustDiffer": "O início e o fim devem ser diferentes",
+    "scaleOutOfRange": "A escala deve estar entre 0 e 2",
+    "spanOutOfRange": "O período ou a era deve ter ao menos uma parte dentro dos limites da linha do tempo.",
+    "startAfterEnd": "O início deve ser anterior ao fim.",
+    "startEndInvalid": "O início e o fim devem ser números ou estar no formato MM/DD/YYYY."
+  }
+}

@@ -1,0 +1,486 @@
+{
+  "alreadyInLibrary": {
+    "importCopy": "Importar como cópia",
+    "message": "Este arquivo parece ser “{{title}}”, uma linha do tempo que já está na sua biblioteca. Você pode abrir a linha do tempo existente ou importar este arquivo como uma cópia separada.",
+    "openExisting": "Abrir existente",
+    "title": "Já está na biblioteca"
+  },
+  "brand": "Timelines",
+  "clearSearch": "Limpar pesquisa",
+  "confirmRestart": "É necessário reiniciar para aplicar a alteração da aceleração de hardware. Reiniciar agora?",
+  "counts": {
+    "empty": "Vazia",
+    "eras_one": "{{count}} era",
+    "eras_many": "{{count}} eras",
+    "eras_other": "{{count}} eras",
+    "events_one": "{{count}} evento",
+    "events_many": "{{count}} eventos",
+    "events_other": "{{count}} eventos",
+    "spans_one": "{{count}} período",
+    "spans_many": "{{count}} períodos",
+    "spans_other": "{{count}} períodos"
+  },
+  "deleteDialog": {
+    "alsoDeleteImages": "Excluir também as imagens desta linha do tempo",
+    "alsoDeleteNotes": "Excluir também as notas desta linha do tempo",
+    "closeAria": "Fechar janela de exclusão",
+    "title": "Excluir linha do tempo"
+  },
+  "deleteElement": {
+    "alsoDeleteImages_one": "Excluir também o arquivo de imagem",
+    "alsoDeleteImages_many": "Excluir também os arquivos de imagem",
+    "alsoDeleteImages_other": "Excluir também os arquivos de imagem",
+    "alsoDeleteNotes_one": "Excluir também o arquivo de nota vinculado",
+    "alsoDeleteNotes_many": "Excluir também os arquivos de notas vinculados",
+    "alsoDeleteNotes_other": "Excluir também os arquivos de notas vinculados",
+    "closeAria": "Fechar janela de exclusão",
+    "confirmPlural_one": "Tem certeza de que deseja excluir estes {{count}} elementos? Esta ação não pode ser desfeita.",
+    "confirmPlural_many": "Tem certeza de que deseja excluir estes {{count}} elementos? Esta ação não pode ser desfeita.",
+    "confirmPlural_other": "Tem certeza de que deseja excluir estes {{count}} elementos? Esta ação não pode ser desfeita.",
+    "confirmSingular": "Tem certeza de que deseja excluir “{{title}}”? Esta ação não pode ser desfeita.",
+    "titlePlural_one": "Excluir {{count}} elementos",
+    "titlePlural_many": "Excluir {{count}} elementos",
+    "titlePlural_other": "Excluir {{count}} elementos",
+    "titleSingular": "Excluir {{type}}"
+  },
+  "deleteFolder": {
+    "empty": " será excluída permanentemente.",
+    "withTimelines_one": " contém {{count}} linha do tempo. Esta ação não pode ser desfeita.",
+    "withTimelines_many": " contém {{count}} de linhas do tempo. Esta ação não pode ser desfeita.",
+    "withTimelines_other": " contém {{count}} linhas do tempo. Esta ação não pode ser desfeita."
+  },
+  "diskReload": {
+    "message": "A linha do tempo foi alterada no disco."
+  },
+  "dropToImport": "Solte um arquivo .timeline ou .csv para importá-lo",
+  "editedAgo": "Editado {{when}}",
+  "exportPng": {
+    "background": {
+      "default": "Padrão",
+      "description": "Escolha a cor de fundo da exportação.",
+      "label": "Fundo",
+      "secondary": "Secundária",
+      "tertiary": "Terciária",
+      "transparent": "Transparente"
+    },
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "exportingPercent": "Exportando {{percent}}%",
+    "generatingPreview": "Gerando prévia...",
+    "height": "Altura",
+    "preparing": "Preparando exportação...",
+    "previewAlt": "Prévia da exportação",
+    "previewPlaceholder": "A prévia aparecerá aqui",
+    "range": {
+      "description": "{{start}} até {{end}} (de {{min}} até {{max}})",
+      "endAria": "Ano final da exportação",
+      "label": "Limites da linha do tempo",
+      "startAria": "Ano inicial da exportação"
+    },
+    "resolution": {
+      "description": "Resoluções maiores são mais adequadas para impressão.",
+      "label": "Resolução"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "a4": "A4 300 DPI (3508 × 2480)",
+      "current": "Linha do tempo",
+      "custom": "Personalizada",
+      "hd": "1080p (1920 × 1080)",
+      "letter": "Carta 300 DPI (3300 × 2550)",
+      "poster": "Pôster 36×24\" (10800 × 7200)"
+    },
+    "scale": {
+      "description": "Espaçamento entre anos nesta exportação ({{level}}x). Sua linha do tempo não é alterada.",
+      "label": "Escala da linha do tempo"
+    },
+    "title": "Exportar PNG",
+    "titlePosition": {
+      "bottomCenter": "Embaixo, ao centro",
+      "bottomLeft": "Embaixo, à esquerda",
+      "bottomRight": "Embaixo, à direita",
+      "description": "Escolha onde posicionar o título na exportação.",
+      "label": "Posição do título",
+      "topCenter": "Em cima, ao centro",
+      "topLeft": "Em cima, à esquerda",
+      "topRight": "Em cima, à direita"
+    },
+    "titleStyle": {
+      "description": "Escolha o que aparece na marca d'água.",
+      "label": "Estilo do título",
+      "logoOnly": "Somente logotipo",
+      "titleLogo": "Título e logotipo",
+      "titleOnly": "Somente título"
+    },
+    "titleText": {
+      "description": "Texto personalizado usado apenas nesta exportação.",
+      "label": "Texto do título",
+      "placeholder": "Digite o título da exportação"
+    },
+    "watermark": {
+      "description": "Sobrepõe o título da linha do tempo à exportação.",
+      "label": "Marca d'água do título",
+      "unavailable": "Disponível para resoluções fixas de exportação."
+    },
+    "width": "Largura"
+  },
+  "exportVideo": {
+    "background": {
+      "default": "Padrão",
+      "description": "Escolha a cor de fundo da exportação.",
+      "label": "Fundo",
+      "secondary": "Secundária",
+      "tertiary": "Terciária"
+    },
+    "duration": {
+      "description": "Duração da animação de deslocamento.",
+      "label": "Duração",
+      "placeholder": "Segundos"
+    },
+    "durations": {
+      "5": "5 segundos",
+      "10": "10 segundos",
+      "15": "15 segundos",
+      "30": "30 segundos",
+      "custom": "Personalizada"
+    },
+    "errors": {
+      "unsupported": "A resolução {{width}} × {{height}} a {{fps}} fps não é compatível com o codificador de vídeo deste dispositivo. Tente um tamanho menor ou uma taxa de quadros mais baixa."
+    },
+    "export": "Exportar",
+    "exporting": "Exportando...",
+    "exportingPercent": "Exportando {{percent}}%",
+    "fps": {
+      "24": "24 fps",
+      "30": "30 fps",
+      "60": "60 fps"
+    },
+    "frameRate": {
+      "description": "Valores mais altos produzem vídeos mais fluidos.",
+      "label": "Taxa de quadros"
+    },
+    "generatingPreview": "Gerando prévia...",
+    "height": "Altura",
+    "previewAlt": "Prévia da exportação",
+    "previewPlaceholder": "A prévia aparecerá aqui",
+    "range": {
+      "description": "{{start}} até {{end}} (de {{min}} até {{max}})",
+      "endAria": "Ano final da exportação",
+      "label": "Limites da linha do tempo",
+      "startAria": "Ano inicial da exportação"
+    },
+    "resolution": {
+      "description": "Dimensões do vídeo de saída.",
+      "label": "Resolução"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "custom": "Personalizada",
+      "hd": "1080p (1920 × 1080)"
+    },
+    "title": "Exportar vídeo",
+    "titlePosition": {
+      "bottomCenter": "Embaixo, ao centro",
+      "bottomLeft": "Embaixo, à esquerda",
+      "bottomRight": "Embaixo, à direita",
+      "description": "Escolha onde posicionar o título na exportação.",
+      "label": "Posição do título",
+      "topCenter": "Em cima, ao centro",
+      "topLeft": "Em cima, à esquerda",
+      "topRight": "Em cima, à direita"
+    },
+    "titleStyle": {
+      "description": "Escolha o que aparece na marca d'água.",
+      "label": "Estilo do título",
+      "logoOnly": "Somente logotipo",
+      "titleLogo": "Título e logotipo",
+      "titleOnly": "Somente título"
+    },
+    "titleText": {
+      "description": "Texto personalizado usado apenas nesta exportação.",
+      "label": "Texto do título",
+      "placeholder": "Digite o título da exportação"
+    },
+    "watermark": {
+      "description": "Sobrepõe o título da linha do tempo ao vídeo.",
+      "label": "Marca d'água do título"
+    },
+    "width": "Largura",
+    "zoom": {
+      "fit": "Ajustar à altura completa da linha do tempo.",
+      "label": "Zoom",
+      "zoomedOut": "{{zoom}}x — zoom reduzido, com mais contexto visível."
+    }
+  },
+  "folderNamePlaceholder": "Nome da pasta",
+  "home": {
+    "empty": {
+      "description": "Crie uma nova linha do tempo ou importe um arquivo .timeline ou .csv pela barra lateral.",
+      "folder": "Esta pasta ainda não contém linhas do tempo.",
+      "guide": "É sua primeira vez aqui? Leia o guia",
+      "noSearchMatches": "Nenhuma linha do tempo corresponde a esta pesquisa.",
+      "recent": "Nada foi editado nos últimos 7 dias.",
+      "root": "Nenhuma linha do tempo encontrada na pasta principal.",
+      "title": "Nenhuma linha do tempo ainda"
+    },
+    "searchResults": "Resultados da pesquisa",
+    "total": "{{total}} no total"
+  },
+  "import": "Importar",
+  "importCsv": {
+    "columns": {
+      "csvColumn": "Coluna do CSV",
+      "description": "Escolha o que cada coluna representa. São obrigatórios um título e uma data. Linhas com data final se tornam períodos; as demais se tornam eventos.",
+      "example": "Exemplo",
+      "ignore": "Não importar",
+      "importAs": "Importar como",
+      "label": "Colunas",
+      "unnamed": "(Sem nome)"
+    },
+    "create": "Criar linha do tempo",
+    "dateFormat": {
+      "description": "Define como interpretar datas como 03/04/2024. Anos isolados e datas no formato YYYY-MM-DD são sempre reconhecidos.",
+      "dmy": "Dia / Mês / Ano",
+      "label": "Ordem da data",
+      "mdy": "Mês / Dia / Ano"
+    },
+    "empty": "Este arquivo não tem linhas para importar.",
+    "errors": {
+      "nothingToImport": "Nenhuma linha pode ser importada. Associe uma coluna ao título e outra à data."
+    },
+    "missingDate": "Escolha a coluna que contém a data ou a data inicial.",
+    "missingTitle": "Escolha a coluna que contém o título.",
+    "preview": {
+      "label": "Prévia",
+      "skipped_one": "{{count}} linha será ignorada:",
+      "skipped_many": "{{count}} de linhas serão ignoradas:",
+      "skipped_other": "{{count}} linhas serão ignoradas:",
+      "skippedRow": "Linha {{row}} ({{reason}})",
+      "summary_one": "{{count}} elemento ({{events}} eventos, {{spans}} períodos, {{eras}} eras)",
+      "summary_many": "{{count}} de elementos ({{events}} eventos, {{spans}} períodos, {{eras}} eras)",
+      "summary_other": "{{count}} elementos ({{events}} eventos, {{spans}} períodos, {{eras}} eras)"
+    },
+    "skipReason": {
+      "noDate": "Sem data reconhecível",
+      "noTitle": "Sem título"
+    },
+    "title": "Importar CSV"
+  },
+  "importHint": "Importar um arquivo .timeline, .json ou .csv para a biblioteca",
+  "library": "Biblioteca",
+  "links": {
+    "elementMissing": "Este elemento não está mais aqui",
+    "timelineMissing": "A linha do tempo vinculada não foi encontrada na sua biblioteca"
+  },
+  "loadingTimelines": "Carregando linhas do tempo...",
+  "marketplace": {
+    "bulkActions": "Ações em lote para temas",
+    "close": "Fechar loja de temas",
+    "deleteTheme": "Excluir tema",
+    "disable": "Desativar",
+    "download": "Baixar",
+    "downloadAll": "Baixar todos",
+    "downloading": "Baixando...",
+    "enable": "Ativar",
+    "enabled": "Ativado",
+    "errors": {
+      "delete": "Falha ao excluir tema.",
+      "download": "Falha ao baixar tema.",
+      "load": "Falha ao carregar os temas da loja."
+    },
+    "import": {
+      "subtitle": "Solte ou clique para adicionar um arquivo .json",
+      "title": "Importar tema"
+    },
+    "loading": "Carregando temas...",
+    "noMatches": "Nenhum tema correspondente",
+    "openFolder": "Abrir pasta de temas",
+    "origins": {
+      "all": "Todos",
+      "builtIn": "Incluído",
+      "local": "Local",
+      "marketplace": "Loja de temas"
+    },
+    "removeAll": "Remover todos",
+    "searchAria": "Pesquisar temas na loja",
+    "searchPlaceholder": "Pesquisar temas...",
+    "tabs": {
+      "installed": "Instalados",
+      "local": "Local",
+      "marketplace": "Loja de temas"
+    },
+    "title": "Loja de temas",
+    "types": {
+      "all": "Todos",
+      "dark": "Escuro",
+      "light": "Claro"
+    }
+  },
+  "menu": {
+    "moveToFolder": "Mover para pasta",
+    "openRepoSettings": "Abrir configurações do repositório",
+    "shareViewerLink": "Compartilhar link do visualizador",
+    "versionHistory": "Histórico de versões"
+  },
+  "moveTimelines": {
+    "changeTitle": "Alterar pasta de linhas do tempo?",
+    "cloudWarning": "Esta pasta parece estar sincronizada por outro serviço, como Dropbox ou iCloud. Usá-la com a sincronização Git pode criar linhas do tempo conflitantes ou duplicadas entre dispositivos. É melhor usar apenas uma das opções.",
+    "failed": "Não foi possível mover as linhas do tempo: {{error}}",
+    "from": "De: {{path}}",
+    "gitSyncHint": "Sincronização Git: as linhas do tempo deixadas na pasta antiga deixam de ser sincronizadas neste computador. Elas permanecem no repositório e nos outros dispositivos.",
+    "message_one": "Sua pasta atual contém {{count}} linha do tempo. Deseja movê-la, com suas notas e imagens, para a nova pasta?",
+    "message_many": "Sua pasta atual contém {{count}} de linhas do tempo. Deseja movê-las, com suas notas e imagens, para a nova pasta?",
+    "message_other": "Sua pasta atual contém {{count}} linhas do tempo. Deseja movê-las, com suas notas e imagens, para a nova pasta?",
+    "move": "Mover linhas do tempo",
+    "moved_one": "{{count}} linha do tempo movida",
+    "moved_many": "{{count}} de linhas do tempo movidas",
+    "moved_other": "{{count}} linhas do tempo movidas",
+    "moving": "Movendo...",
+    "nested": "A nova pasta está dentro da pasta atual ou contém a pasta atual, portanto não é possível mover as linhas do tempo para ela. Você ainda pode trocar de pasta sem movê-las.",
+    "skippedMessage_one": "{{count}} arquivo já existia na nova pasta e, por isso, permaneceu na pasta antiga:",
+    "skippedMessage_many": "{{count}} de arquivos já existiam na nova pasta e, por isso, permaneceram na pasta antiga:",
+    "skippedMessage_other": "{{count}} arquivos já existiam na nova pasta e, por isso, permaneceram na pasta antiga:",
+    "skippedTitle": "Movimentação concluída",
+    "stayHint": "Se você não movê-las, elas permanecerão na pasta antiga e não aparecerão na biblioteca até que você volte a usar essa pasta. Nenhum arquivo na nova pasta será sobrescrito.",
+    "switchFailed": "Não foi possível trocar de pasta: {{error}}",
+    "switchOnly": "Trocar sem mover",
+    "title": "Mover linhas do tempo?",
+    "to": "Para: {{path}}",
+    "useFolder": "Usar esta pasta"
+  },
+  "nav": {
+    "backup": "Backup",
+    "createFolder": "Criar pasta",
+    "folders": "Pastas",
+    "home": "Início",
+    "marketplace": "Loja de temas",
+    "noFolders": "Nenhuma pasta ainda",
+    "recent": "Recentes",
+    "settings": "Configurações"
+  },
+  "newTimeline": {
+    "end": {
+      "description": "O último ano ou data exibido na linha do tempo.",
+      "label": "Ponto final"
+    },
+    "errors": {
+      "endInvalid": "O ponto final deve ser um número ou estar no formato MM/DD/YYYY.",
+      "nameAlphanumeric": "O nome da linha do tempo deve conter pelo menos uma letra ou um número.",
+      "nameRequired": "Digite um nome para a linha do tempo.",
+      "startAfterEnd": "O ponto inicial deve ser anterior ao ponto final.",
+      "startInvalid": "O ponto inicial deve ser um número ou estar no formato MM/DD/YYYY."
+    },
+    "length": {
+      "description": "Valores maiores permitem adicionar mais eventos entre os anos.",
+      "label": "Comprimento da linha do tempo"
+    },
+    "maps": {
+      "description": "Permite adicionar coordenadas a eventos, eras e períodos para visualizá-los em um mapa.",
+      "label": "Visualização do mapa"
+    },
+    "name": {
+      "description": "Seu arquivo será salvo como: {{filename}}.timeline",
+      "label": "Nome da linha do tempo",
+      "placeholder": "Digite o nome da linha do tempo"
+    },
+    "note": "Estas opções podem ser alteradas posteriormente nas configurações da linha do tempo.",
+    "spreadsheet": {
+      "description": "Ativa uma visualização em tabela para editar vários elementos de uma vez.",
+      "label": "Visualização de planilha"
+    },
+    "start": {
+      "description": "O primeiro ano ou data exibido na linha do tempo.",
+      "label": "Ponto inicial"
+    },
+    "title": "Nova linha do tempo",
+    "wiki": {
+      "description": "Permite vincular artigos do MediaWiki aos elementos da linha do tempo.",
+      "label": "Integração com Wiki"
+    }
+  },
+  "newTimelineButton": "Nova linha do tempo",
+  "noEditsYet": "Nenhuma edição ainda",
+  "noEditsYetLower": "Nenhuma edição ainda",
+  "searchAria": "Pesquisar linhas do tempo",
+  "searchPlaceholder": "Pesquisar linhas do tempo...",
+  "skipped": {
+    "exportMessage_one": "Pacote exportado, mas {{count}} arquivo referenciado não foi encontrado e foi ignorado:",
+    "exportMessage_many": "Pacote exportado, mas {{count}} de arquivos referenciados não foram encontrados e foram ignorados:",
+    "exportMessage_other": "Pacote exportado, mas {{count}} arquivos referenciados não foram encontrados e foram ignorados:",
+    "exportTitle": "Exportação concluída",
+    "importMessage_one": "Importação concluída, mas não foi possível gravar {{count}} arquivo incluído:",
+    "importMessage_many": "Importação concluída, mas não foi possível gravar {{count}} de arquivos incluídos:",
+    "importMessage_other": "Importação concluída, mas não foi possível gravar {{count}} arquivos incluídos:",
+    "importTitle": "Importação concluída"
+  },
+  "sortBy": "Ordenar por",
+  "sortHeaders": {
+    "eras": "Eras",
+    "events": "Eventos",
+    "folder": "Localização",
+    "modified": "Modificado",
+    "name": "Nome",
+    "spans": "Períodos"
+  },
+  "sortSummary": "Ordenação: {{field}}, {{direction}}",
+  "storagePrompt": {
+    "changeLater": "Você pode alterar essa opção a qualquer momento em Configurações → Arquivos.",
+    "choose": "Escolher...",
+    "chooseDescription": "Escolha uma pasta em Documentos ou uma pasta da qual você já faz backup.",
+    "chooseTitle": "Escolher uma pasta",
+    "defaultDescription": "Os arquivos ficam na pasta de dados do aplicativo. É uma boa opção para começar a experimentar.",
+    "defaultTitle": "Usar a pasta padrão",
+    "learnMore": "Saiba mais",
+    "subtitle": "Suas linhas do tempo são salvas automaticamente como arquivos no computador. Escolha onde salvá-las.",
+    "useDefault": "Usar padrão",
+    "welcome": "Boas-vindas ao Timelines Studio"
+  },
+  "sync": {
+    "lastSynced": "Última sincronização {{when}}",
+    "notSyncedYet": "Ainda não sincronizado",
+    "syncedAgo": "Sincronizado {{when}}"
+  },
+  "time": {
+    "daysAgo_one": "Há {{count}} dia",
+    "daysAgo_many": "Há {{count}} de dias",
+    "daysAgo_other": "Há {{count}} dias",
+    "today": "Hoje",
+    "weeksAgo_one": "Há {{count}} semana",
+    "weeksAgo_many": "Há {{count}} de semanas",
+    "weeksAgo_other": "Há {{count}} semanas",
+    "yesterday": "Ontem"
+  },
+  "titleBar": {
+    "back": "Voltar",
+    "backHint": "Voltar ao local de onde você acessou o link",
+    "backTo": "Voltar para {{title}}",
+    "hidePanel": "Ocultar painel",
+    "hideSidebar": "Ocultar barra lateral",
+    "lockPanel": "Fixar painel",
+    "maximize": "Maximizar",
+    "minimize": "Minimizar",
+    "showPanel": "Mostrar painel",
+    "showSidebar": "Mostrar barra lateral",
+    "unlockPanel": "Desafixar painel"
+  },
+  "toasts": {
+    "colorApplied_one": "Cor aplicada a {{count}} elemento",
+    "colorApplied_many": "Cor aplicada a {{count}} de elementos",
+    "colorApplied_other": "Cor aplicada a {{count}} elementos",
+    "exportingPackage": "Exportando pacote...",
+    "jsonSaved": "Exportação JSON salva",
+    "packageFailed": "Falha ao exportar pacote: {{error}}",
+    "packageSaved": "Exportação do pacote salva",
+    "pngFailed": "Falha ao exportar PNG: {{error}}",
+    "pngSaved": "Exportação PNG salva",
+    "screenshotSaved": "Captura de tela salva",
+    "videoFailed": "Falha ao exportar vídeo: {{error}}",
+    "videoSaved": "Exportação de vídeo salva"
+  },
+  "view": {
+    "grid": "Grade",
+    "gridAria": "Visualização em grade",
+    "list": "Lista",
+    "listAria": "Visualização em lista"
+  }
+}

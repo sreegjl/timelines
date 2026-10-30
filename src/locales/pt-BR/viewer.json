@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "dropReadFailed": "Não foi possível ler o arquivo arrastado.",
+    "githubFailed": "Não foi possível carregar do GitHub: {{message}}",
+    "linkNotTimeline": "O link deve apontar para um arquivo .timeline.",
+    "notGithubLink": "Este link não parece apontar para um arquivo do GitHub.",
+    "readFailed": "Não foi possível ler a linha do tempo: {{message}}",
+    "unsupportedFile": "Tipo de arquivo não suportado — solte um arquivo .timeline."
+  },
+  "landing": {
+    "browse": "Procurar arquivo…",
+    "githubPlaceholder": "Cole um link do GitHub para um arquivo .timeline",
+    "load": "Carregar",
+    "or": "Ou",
+    "subtitle": "Solte um arquivo <1>.timeline</1> em qualquer lugar desta página para visualizá-lo. Nada é enviado: o arquivo permanece no navegador.",
+    "title": "Visualizador de linhas do tempo"
+  }
+}

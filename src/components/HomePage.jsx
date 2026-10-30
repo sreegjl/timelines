@@ -1342,18 +1342,18 @@ export default function HomePage({
   const activeScopeLabel = currentFolder
     ? currentFolder.split("/").pop()
     : librarySection === "recent"
-        ? "Recent"
-        : "Home";
+        ? t("app:nav.recent", "Recent")
+        : t("app:nav.home", "Home");
   const lastSyncedMs = gitSyncStatus?.repo && gitSyncStatus?.lastSyncedAt
     ? Date.parse(gitSyncStatus.lastSyncedAt)
     : NaN;
   const emptyTimelineMessage = normalizedQuery
-    ? "No timelines match this search."
+    ? t("app:home.empty.noSearchMatches", "No timelines match this search.")
     : currentFolder
-      ? "This folder does not contain any timelines yet."
+      ? t("app:home.empty.folder", "This folder does not contain any timelines yet.")
       : librarySection === "recent"
-          ? "Nothing has been edited in the last 7 days."
-          : "No root-level timelines found yet.";
+          ? t("app:home.empty.recent", "Nothing has been edited in the last 7 days.")
+          : t("app:home.empty.root", "No root-level timelines found yet.");
   const showFolderMeta = Boolean(normalizedQuery) || Boolean(currentFolder) || librarySection === "recent";
 
   const gitSyncExcluded = gitSyncStatus?.excludedPaths || [];
@@ -1819,10 +1819,10 @@ export default function HomePage({
               <div className="home-content-panel">
                 <div className="home-content-header">
                   <div>
-                    <h1 className="home-content-title">{normalizedQuery ? "Search results" : activeScopeLabel}</h1>
+                    <h1 className="home-content-title">{normalizedQuery ? t("app:home.searchResults", "Search results") : activeScopeLabel}</h1>
                   </div>
                   <div className="home-content-meta">
-                    {filteredTimelines.length} total
+                    {t("app:home.total", "{{total}} total", { total: filteredTimelines.length })}
                     {Number.isFinite(lastSyncedMs) && ` · ${t("app:sync.lastSynced", "last synced {{when}}", { when: relativeTime(lastSyncedMs, t) })}`}
                   </div>
                 </div>

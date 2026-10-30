@@ -1158,8 +1158,8 @@ export default function Sidebar({
         <button
           className="sidebar-toggle"
           onClick={onToggle}
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={isCollapsed ? "Expand" : "Collapse"}
+          aria-label={isCollapsed ? t("sidebar.expandSidebar", "Expand sidebar") : t("sidebar.collapseSidebar", "Collapse sidebar")}
+          title={isCollapsed ? t("common:actions.expand", "Expand") : t("sidebar.collapse", "Collapse")}
         >
           {isCollapsed ? (
             <PanelRight size={18} color="var(--text-primary)" strokeWidth={2} />
@@ -1328,19 +1328,19 @@ export default function Sidebar({
             </button>
             {newMenuOpen && (
               <div className="sb-new-menu">
-                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newEra) ? `New Era (${formatKeybind(keybinds.newEra)})` : "New Era"} onClick={() => { setNewMenuOpen(false); onAddEra?.(); }}>
+                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newEra) ? `${t("contextMenu.addEra", "New Era")} (${formatKeybind(keybinds.newEra)})` : `${t("contextMenu.addEra", "New Era")}`} onClick={() => { setNewMenuOpen(false); onAddEra?.(); }}>
                   <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 9, height: 9, border: "2px solid currentColor", borderRadius: 2 }} /></span>
-                  Era
+                  {t("elementTypes.era", "Era")}
                   {formatKeybind(keybinds.newEra) && <span className="sb-new-menu-shortcut">{formatKeybind(keybinds.newEra)}</span>}
                 </button>
-                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newSpan) ? `New Span (${formatKeybind(keybinds.newSpan)})` : "New Span"} onClick={() => { setNewMenuOpen(false); onAddSpan?.(); }}>
+                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newSpan) ? `${t("contextMenu.addSpan", "New Span")} (${formatKeybind(keybinds.newSpan)})` : `${t("contextMenu.addSpan", "New Span")}`} onClick={() => { setNewMenuOpen(false); onAddSpan?.(); }}>
                   <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 12, height: 2, borderRadius: 1, background: "currentColor" }} /></span>
-                  Span
+                  {t("elementTypes.span", "Span")}
                   {formatKeybind(keybinds.newSpan) && <span className="sb-new-menu-shortcut">{formatKeybind(keybinds.newSpan)}</span>}
                 </button>
-                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newEvent) ? `New Event (${formatKeybind(keybinds.newEvent)})` : "New Event"} onClick={() => { setNewMenuOpen(false); onAddEvent?.(); }}>
+                <button className="sb-new-menu-item" title={formatKeybind(keybinds.newEvent) ? `${t("contextMenu.addEvent", "New Event")} (${formatKeybind(keybinds.newEvent)})` : `${t("contextMenu.addEvent", "New Event")}` } onClick={() => { setNewMenuOpen(false); onAddEvent?.(); }}>
                   <span className="sb-new-menu-icon"><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "currentColor" }} /></span>
-                  Event
+                  {t("elementTypes.event", "Event")}
                   {formatKeybind(keybinds.newEvent) && <span className="sb-new-menu-shortcut">{formatKeybind(keybinds.newEvent)}</span>}
                 </button>
               </div>

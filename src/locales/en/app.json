@@ -208,9 +208,15 @@
   "home": {
     "empty": {
       "description": "Create a new timeline, or import a .timeline or .csv file from the sidebar.",
+      "folder": "This folder does not contain any timelines yet.",
       "guide": "New here? Read the guide",
+      "noSearchMatches": "No timelines match this search.",
+      "recent": "Nothing has been edited in the last 7 days.",
+      "root": "No root-level timelines found yet.",
       "title": "No timelines yet"
-    }
+    },
+    "searchResults": "Search results",
+    "total": "{{total}} total"
   },
   "import": "Import",
   "importCsv": {

@@ -1105,6 +1105,11 @@ export default function RightPanel({
   const isEvent = formData.type === "event";
   const isSpan = formData.type === "span";
   const isEra = formData.type === "era";
+  const typeLabels = {
+    era: t("elementTypes.era", "Era"),
+    event: t("elementTypes.event", "Event"),
+    span: t("elementTypes.span", "Span"),
+  };
   const optionalProps = [
     { key: "coordinates", icon: MapPin, group: "location", label: t("fields.coordinates", "Coordinates"), available: !!timelineData?.file?.useMaps, isSet: formData.lat != null || formData.lng != null },
     { key: "thumbnail", icon: ImageIcon, group: "appearance", label: t("fields.thumbnail", "Thumbnail"), available: isEvent, isSet: !!formData.thumbnail },
@@ -1198,14 +1203,16 @@ export default function RightPanel({
         </div>
       )}
       <div className="right-panel-header">
-        <span className="rp-type-label">{formData.type.charAt(0).toUpperCase() + formData.type.slice(1)}</span>
+        <span className="rp-type-label">
+          {typeLabels[formData.type] ?? (formData.type.charAt(0).toUpperCase() + formData.type.slice(1))}
+        </span>
         <div className="right-panel-actions">
           {!readOnly && (
             <button
               className="close-button"
               type="button"
               onClick={toggleEditMode}
-              title={isEditMode ? "Switch to overview" : "Edit"}
+              title={isEditMode ? t("rightPanel.switchToOverview", "Switch to overview") : t("common:actions.edit", "Edit")}
             >
               {isEditMode ? <BookOpen size={18} /> : <Pencil size={18} />}
             </button>
@@ -1222,7 +1229,7 @@ export default function RightPanel({
             <button
               className="close-button"
               onClick={onToggleMaximize}
-              title={isMaximized ? "Restore panel" : "Maximize panel"}
+              title={isMaximized ? t("rightPanel.restorePanel", "Restore panel") : t("rightPanel.maximizePanel", "Maximize panel")}
             >
               {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
@@ -1828,7 +1835,7 @@ export default function RightPanel({
                         // the input is display:none until this render commits, so focus it on the next frame
                         requestAnimationFrame(() => tagInputRef.current?.focus());
                       }}>
-                        + Add tag
+                        + {t("fields.addTag", "Add tag")}
                       </button>
                     )}
                     <input
@@ -2876,7 +2883,7 @@ export default function RightPanel({
                 type="button"
                 onClick={toggleEditMode}
               >
-                <span>{isEditMode ? "Exit" : "Edit"}</span>
+                <span>{isEditMode ? t("common:actions.exit", "Exit") : t("common:actions.edit", "Edit")}</span>
                 <span className="rp-action-key">E</span>
               </button>
               <button

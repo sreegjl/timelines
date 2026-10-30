@@ -1,0 +1,461 @@
+{
+  "calendar": {
+    "addHint": "Clique duas vezes para adicionar um evento",
+    "backToMonth": "Voltar ao mês",
+    "empty": "Ainda não há elementos com data. Clique duas vezes em um dia para adicionar um evento.",
+    "month": "Mês",
+    "more": "+{{n}} a mais",
+    "nextMonth": "Próximo mês",
+    "nextYear": "Próximo ano",
+    "previousMonth": "Mês anterior",
+    "previousYear": "Ano anterior",
+    "range": "Intervalo do calendário",
+    "showYear": "Mostrar o ano inteiro",
+    "today": "Hoje",
+    "year": "Ano"
+  },
+  "colorPicker": {
+    "addFavorite": "Adicionar aos favoritos",
+    "favorites": "Favoritos",
+    "favoritesFull": "A lista de favoritos está cheia",
+    "hex": "Cor hexadecimal",
+    "hue": "Matiz",
+    "inTimeline": "Nesta linha do tempo",
+    "removeFromFavorites": "Remover dos favoritos",
+    "saturationBrightness": "Saturação e brilho",
+    "theme": "Tema"
+  },
+  "colorStatus": {
+    "custom": "Personalizada",
+    "default": "Padrão",
+    "inherited": "Herdada"
+  },
+  "columns": {
+    "approxEnd": "Fim aprox.",
+    "approxStart": "Início aprox.",
+    "borderStyle": "Estilo da borda",
+    "color": "Cor",
+    "coords": "Coordenadas",
+    "date": "Data / Início",
+    "description": "Descrição",
+    "end": "Fim",
+    "group": "Grupo",
+    "hideDetails": "Ocultar detalhes",
+    "hideYear": "Ocultar data",
+    "icon": "Ícone",
+    "lineStyle": "Estilo da linha",
+    "mergeInto": "Unir a",
+    "note": "Nota",
+    "parent": "Elemento pai",
+    "parentType": "Tipo do elemento pai",
+    "size": "Tamanho",
+    "sources": "Fontes",
+    "tags": "Etiquetas",
+    "thumbnail": "Miniatura",
+    "thumbnailStyle": "Estilo da miniatura",
+    "title": "Título",
+    "type": "Tipo",
+    "wiki": "Wiki"
+  },
+  "contextMenu": {
+    "addEra": "Adicionar era",
+    "addEvent": "Adicionar evento",
+    "addSpan": "Adicionar período",
+    "clearFocus": "Limpar foco",
+    "convertToEvent": "Converter em evento",
+    "convertToSpan": "Converter em período",
+    "delete": "Excluir {{type}}",
+    "downloadJson": "Baixar .json",
+    "duplicate": "Duplicar {{type}}",
+    "edit": "Editar {{type}}",
+    "focusHint": "Clique em um período com Shift para fazer isso sem usar o menu",
+    "focusSpan": "Focar no período e seus elementos filhos"
+  },
+  "elementTypes": {
+    "era": "Era",
+    "event": "Evento",
+    "span": "Período"
+  },
+  "exportProgress": {
+    "compositing": "Compondo imagem...",
+    "encoding": "Codificando PNG...",
+    "preparing": "Preparando exportação...",
+    "rendering": "Renderizando linha do tempo...",
+    "saved": "Salvo"
+  },
+  "fields": {
+    "addTag": "Adicionar etiqueta...",
+    "approximate": "Aproximado",
+    "approximateEnd": "Fim aproximado",
+    "approximateStart": "Início aproximado",
+    "borderStyle": "Estilo da borda",
+    "color": "Cor",
+    "colorLower": "Cor",
+    "coordinates": "Coordenadas",
+    "date": "Data",
+    "dateLower": "Data",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Descrição breve...",
+    "duration": "Duração",
+    "endDate": "Data final",
+    "extendFrom": "Estender a partir de",
+    "fontSize": "Tamanho da fonte",
+    "fuzzyEnd": "Fim impreciso",
+    "fuzzyStart": "Início impreciso",
+    "group": "Grupo",
+    "hideDate": "Ocultar data",
+    "hideDetails": "Ocultar detalhes",
+    "icon": "Ícone",
+    "labelLower": "Rótulo",
+    "lat": "Latitude",
+    "lineStyle": "Estilo da linha",
+    "lng": "Longitude",
+    "mergeInto": "Unir a",
+    "name": "Nome",
+    "parent": "Elemento pai",
+    "pickCoordinates": "Selecionar coordenadas no mapa",
+    "size": "Tamanho",
+    "sizeLower": "Tamanho",
+    "startDate": "Data inicial",
+    "tags": "Etiquetas",
+    "thumbnail": "Miniatura",
+    "time": "Hora"
+  },
+  "filters": {
+    "addDateFilter": "Adicionar filtro de data",
+    "close": "Fechar filtros",
+    "datePlaceholder": "Ano / Data",
+    "exclude": "Excluir (~)",
+    "expand": "Abrir filtros em um painel maior",
+    "hideTag": "Ocultar etiqueta",
+    "include": "Incluir (remover ~)",
+    "labels": {
+      "date": "Data",
+      "query": "Consulta",
+      "tags": "Etiquetas",
+      "tagsHint": "Clique para filtrar · Shift para consultar",
+      "type": "Tipo"
+    },
+    "noActiveFilter": "Nenhum filtro ativo",
+    "placeholder": "Filtrar elementos…",
+    "placeholderShort": "Filtrar…",
+    "remove": "Remover filtro",
+    "removeFromHistory": "Remover do histórico",
+    "removeLabel": "Remover rótulo",
+    "shownCount_one": "<0>{{count}}</0> exibido",
+    "shownCount_many": "<0>{{count}}</0> exibidos",
+    "shownCount_other": "<0>{{count}}</0> exibidos",
+    "showTag": "Mostrar etiqueta",
+    "syntax": "Sintaxe",
+    "syntaxHelp": "Ajuda sobre a sintaxe dos filtros",
+    "tagCount_one": "{{count}} etiqueta",
+    "tagCount_many": "{{count}} de etiquetas",
+    "tagCount_other": "{{count}} etiquetas",
+    "tagHint": "{{action}} · Clique com Shift para {{queryAction}} a consulta",
+    "toggleAndOr": "Alternar entre E / OU",
+    "useAsLabel": "Usar como rótulo"
+  },
+  "iconCategories": {
+    "arts": "Artes, mídia e jogos",
+    "events": "Eventos e marcos",
+    "food": "Alimentação, saúde e comércio",
+    "military": "Assuntos militares e política",
+    "nature": "Natureza e animais",
+    "people": "Pessoas e emoções",
+    "places": "Lugares",
+    "religion": "Religião e cultura",
+    "science": "Ciência, tecnologia e educação",
+    "symbols": "Símbolos",
+    "time": "Tempo",
+    "tools": "Ferramentas e comunicação",
+    "transport": "Transporte"
+  },
+  "iconPicker": {
+    "add": "Adicionar ícone",
+    "current": "Ícone: {{name}}",
+    "noMatches": "Nenhum ícone correspondente",
+    "none": "Sem ícone",
+    "search": "Pesquisar ícones..."
+  },
+  "lineStyles": {
+    "dashed": "Tracejada",
+    "dotted": "Pontilhada",
+    "none": "Nenhuma",
+    "solid": "Contínua"
+  },
+  "links": {
+    "add": "Adicionar conexão",
+    "elementField": "Elemento",
+    "goTo": "Ir para {{label}}",
+    "label": "Conexões",
+    "loading": "Carregando…",
+    "missingHint": "Esta linha do tempo não está mais na sua biblioteca",
+    "missingTimeline": "Linha do tempo não encontrada",
+    "pickElement": "Escolha um elemento…",
+    "pickTimeline": "Escolha uma linha do tempo…",
+    "remove": "Remover conexão com {{label}}",
+    "thisTimeline": "Esta linha do tempo",
+    "timelineField": "Linha do tempo",
+    "wholeTimeline": "Linha do tempo inteira"
+  },
+  "map": {
+    "autoRotate": "",
+    "globeUnavailable": "",
+    "mode": ""
+  },
+  "mapPick": {
+    "escToCancel": "Esc para cancelar"
+  },
+  "noteEditor": {
+    "bold": "Negrito",
+    "confirmDelete": "Excluir esta nota? Esta ação não pode ser desfeita.",
+    "delete": "Excluir nota",
+    "embed": "Incorporar imagem ou vídeo",
+    "heading1": "Título 1",
+    "heading2": "Título 2",
+    "heading3": "Título 3",
+    "highlight": "Realçar",
+    "insertLocalImage": "Inserir imagem local",
+    "italic": "Itálico",
+    "label": "Nota",
+    "link": "Link",
+    "loading": "Carregando nota...",
+    "mode": {
+      "label": "Modo do editor",
+      "live": "Visual",
+      "liveHint": "A formatação é exibida como será apresentada; o Markdown aparece no trecho em edição",
+      "source": "Código-fonte",
+      "sourceHint": "Markdown sem formatação visual"
+    },
+    "placeholder": "Escreva sua nota...",
+    "strikethrough": "Tachado",
+    "underline": "Sublinhado",
+    "unlink": "Desvincular nota",
+    "wordCount_one": "{{count}} palavra",
+    "wordCount_many": "{{count}} de palavras",
+    "wordCount_other": "{{count}} palavras"
+  },
+  "noteFile": {
+    "errors": {
+      "exists": "Já existe uma nota com esse nome.",
+      "failed": "Não foi possível renomear.",
+      "invalidName": "Esse nome não pode ser usado para um arquivo.",
+      "locked": "Esta nota não pode ser renomeada aqui.",
+      "noTimeline": "Nenhuma linha do tempo aberta."
+    },
+    "newName": "Novo nome do arquivo de nota",
+    "rename": "Renomear arquivo de nota",
+    "save": "Salvar nome"
+  },
+  "openSource": "Abrir fonte",
+  "options": {
+    "inherit": "Herdar"
+  },
+  "playback": {
+    "direction": "Direção",
+    "faster": "Mais rápido",
+    "forward": "Avançar",
+    "loop": "Repetir",
+    "options": "Opções de reprodução",
+    "playReverse": "Reproduzir em sentido inverso",
+    "reverse": "Inverter",
+    "slower": "Mais devagar",
+    "speed": "Velocidade",
+    "switchDirection": "Alternar direção"
+  },
+  "rightPanel": {
+    "addProperty": "Adicionar propriedade",
+    "approxToggleHint": "Adiciona o prefixo “{{marker}}” à data exibida",
+    "attach": {
+      "note": "Nota",
+      "noteHint": "Escreva uma nota em Markdown ou vincule uma existente",
+      "sourceHint": "Cite um livro, artigo ou link",
+      "sources": "Fontes",
+      "wiki": "Wiki"
+    },
+    "branchFrom": "Criar ramificação a partir de",
+    "closePanel": "Fechar painel",
+    "dateOptions": {
+      "aria": "Abrir opções de data",
+      "title": "Escolha uma data ou insira uma data dinâmica"
+    },
+    "dropImage": "Solte uma imagem ou clique para enviar",
+    "dropToSetThumbnail": "Solte para definir a miniatura",
+    "dynamicDates": {
+      "thisMonth": "Este mês",
+      "thisYear": "Este ano",
+      "today": "Hoje"
+    },
+    "extendFrom": "Estender a partir de",
+    "fontSizeHint": "Em pixels",
+    "fontSizeLarger": "Maior",
+    "fontSizeSmaller": "Menor",
+    "maximizePanel": "Maximizar painel",
+    "noContiguousSpans": "Nenhum período contíguo",
+    "noMatchingSpans": "Nenhum período correspondente",
+    "noMatchingTimes": "Nenhum horário correspondente",
+    "noSelection": "Nenhuma seleção",
+    "pasteImageUrl": "Cole a URL da imagem",
+    "propertyGroups": {
+      "appearance": "Aparência",
+      "connections": "Relacionados",
+      "date": "Data",
+      "location": "Localização",
+      "visibility": "Visibilidade"
+    },
+    "removeBreak": "Remover quebra",
+    "removeProperty": "Remover propriedade",
+    "restorePanel": "Restaurar painel",
+    "revertInherited": "Restaurar valor herdado",
+    "searchSpan": "Pesquisar período...",
+    "switchToOverview": "Alternar para visão geral",
+    "timePlaceholder": "Por exemplo, 3:30 PM",
+    "uploadImage": "Enviar imagem"
+  },
+  "search": {
+    "hitCount": "{{n}} ocorrências",
+    "inNotes": "Nas notas",
+    "noResults": "Nenhum resultado para “{{query}}”",
+    "placeholderWithNotes": "Pesquisar períodos, eventos, eras e notas…"
+  },
+  "sidebar": {
+    "applyColor": "Aplicar cor aos elementos",
+    "collapse": "Recolher",
+    "collapseSidebar": "Recolher barra lateral",
+    "downloadJson": "Baixar .json (somente dados)",
+    "downloadJsonHint": "Apenas os dados da linha do tempo; imagens e notas permanecem neste computador",
+    "downloadPng": "Baixar .png",
+    "expandSidebar": "Expandir barra lateral",
+    "exportPackage": "Exportar .timeline (imagens e notas)",
+    "exportPackageHint": "Um único arquivo compartilhável que reúne a linha do tempo, suas imagens e notas",
+    "exportVideo": "Exportar vídeo",
+    "groups": {
+      "add": "Adicionar grupo",
+      "all": "Todos os grupos",
+      "color": "Cor do grupo",
+      "noMatches": "Nenhum grupo correspondente",
+      "none": "Nenhum grupo encontrado"
+    },
+    "newTimeline": "Nova linha do tempo",
+    "noTimelines": "Nenhuma linha do tempo encontrada",
+    "openTimeline": "Abrir linha do tempo",
+    "other": "Outros",
+    "search": {
+      "elements": "Pesquisar períodos, eventos e eras...",
+      "groups": "Pesquisar grupos...",
+      "tags": "Pesquisar etiquetas..."
+    },
+    "sections": {
+      "eras": "Eras",
+      "events": "Eventos",
+      "spans": "Períodos"
+    },
+    "sort": {
+      "ascending": "Crescente",
+      "date": "Data",
+      "descending": "Decrescente",
+      "elements": "Elementos",
+      "groupBy": "Agrupar por",
+      "groupDefault": "Padrão",
+      "groupEras": "Eras",
+      "groupSpans": "Períodos",
+      "label": "Ordenar",
+      "name": "Nome",
+      "nestSubEras": "Aninhar suberas",
+      "sortBy": "Ordenar por"
+    },
+    "tabs": {
+      "groups": "Grupos",
+      "groupsAria": "Aba de grupos",
+      "tags": "Etiquetas",
+      "tagsAria": "Aba de etiquetas",
+      "timeline": "Linha do tempo",
+      "timelineAria": "Aba da linha do tempo"
+    },
+    "tags": {
+      "all": "Todas",
+      "allTags": "Todas as etiquetas",
+      "noMatches": "Nenhuma etiqueta correspondente",
+      "none": "Nenhuma etiqueta encontrada",
+      "setColor": "Definir cor da etiqueta",
+      "showAll": "Mostrar todas"
+    },
+    "timelineDivider": "Linha do tempo"
+  },
+  "sizes": {
+    "extraThick": "Muito espessa",
+    "normal": "Normal",
+    "thick": "Espessa",
+    "thin": "Fina"
+  },
+  "sources": {
+    "add": "Adicionar fonte",
+    "feature": "Definir como link em destaque",
+    "fields": {
+      "description": "Descrição (opcional)",
+      "descriptionPlaceholder": "Autor, ano, notas…",
+      "title": "Título",
+      "titlePlaceholder": "Título da fonte",
+      "url": "URL (opcional)"
+    },
+    "heading": "Fontes",
+    "unfeature": "Remover link em destaque"
+  },
+  "spreadsheet": {
+    "exportCsv": "Separado por vírgulas",
+    "exportJson": "Dados estruturados",
+    "fields": "Campos",
+    "groupName": "Nome do grupo",
+    "iconKey": "Identificador do ícone",
+    "imageUrl": "Cole a URL ou o caminho da imagem",
+    "noteFilename": "filename.md",
+    "searchExisting": "Pesquisar existentes…"
+  },
+  "thumbnailFit": {
+    "fill": "Preencher",
+    "fit": "Ajustar",
+    "label": "Ajuste da miniatura"
+  },
+  "thumbnailStyles": {
+    "banner": "Faixa superior",
+    "circleFill": "Círculo preenchido",
+    "squareFill": "Quadrado preenchido",
+    "strip": "Faixa à esquerda"
+  },
+  "toolbar": {
+    "backToFiles": "Voltar aos arquivos",
+    "calendarView": "Visualização do calendário",
+    "export": "Exportar",
+    "filter": "Filtrar",
+    "flatMap": "",
+    "globe": "",
+    "mapView": "Ver mapa",
+    "new": "Novo",
+    "searchPlaceholder": "Pesquisar…",
+    "settings": "Configurações",
+    "spreadsheetView": "Ver planilha",
+    "timelineSettings": "Configurações da linha do tempo",
+    "timelineView": "Ver linha do tempo",
+    "zoomIn": "Ampliar",
+    "zoomInTooltip": "Ampliar (+)",
+    "zoomOut": "Reduzir",
+    "zoomOutTooltip": "Reduzir (-)"
+  },
+  "untitledElement": "(Sem título)",
+  "wiki": {
+    "add": {
+      "subtitle": "Vincule um artigo ou seção do MediaWiki"
+    },
+    "errors": {
+      "enterValidUrl": "Digite uma URL válida do MediaWiki (por exemplo, https://en.wikipedia.org/wiki/Ancient_Greece)",
+      "invalidUrl": "URL da Wiki inválida"
+    },
+    "heading": "Wiki",
+    "loading": "Carregando artigo da Wiki...",
+    "openArticle": "Abrir artigo",
+    "openInBrowser": "Abrir no navegador",
+    "reload": "Recarregar artigo",
+    "urlLabel": "URL",
+    "urlPlaceholder": "https://en.wikipedia.org/wiki/… ou …/wiki/Page#Section"
+  }
+}

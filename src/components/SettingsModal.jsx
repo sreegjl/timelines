@@ -857,9 +857,7 @@ export default function SettingsModal({
           <div className="settings-row settings-row-scale-sections">
             <div className="settings-row-left">
               <div className="settings-row-label">{t("general.scaleSections.label", "Scale Sections")}</div>
-              <div className="settings-row-description">
-                Squish or stretch spans of time.
-              </div>
+              <div className="settings-row-description">{t("general.scaleSections.description", "Squish or stretch spans of time.")}</div>
             </div>
             <div className="settings-row-right settings-scale-sections-container">
               {scaleSections.map((section, index) => (
@@ -1528,7 +1526,7 @@ export default function SettingsModal({
                 <div className="settings-row-left">
                   <div className="settings-row-label">{t("maps.tileUrl", "Tile URL")}</div>
                   <div className="settings-row-description">
-                    Custom map tile URL. Use {"{z}"}, {"{x}"}, {"{y}"} as placeholders. Leave blank to use OpenStreetMap.
+                    {t("maps.tileUrlDescription", "Custom map tile URL. Use {z}, {x}, {y} as placeholders. Leave blank to use OpenStreetMap.")}
                   </div>
                 </div>
                 <div className="settings-row-right">
@@ -1545,7 +1543,7 @@ export default function SettingsModal({
                 <div className="settings-row-left">
                   <div className="settings-row-label">{t("maps.scrollbarDateOnly", "Scrollbar Date Only")}</div>
                   <div className="settings-row-description">
-                    Only show map markers active at the current date shown in the scrollbar.
+                    {t("maps.scrollbarDateOnlyDescription", "Only show map markers active at the current date shown in the scrollbar.")}
                   </div>
                 </div>
                 <div className="settings-row-right">

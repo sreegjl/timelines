@@ -1,0 +1,407 @@
+{
+  "advanced": {
+    "autoHideEmptyGroups": {
+      "description": "Oculta da linha do tempo os grupos sem eventos ou períodos, para que não ocupem espaço com uma faixa vazia.",
+      "label": "Ocultar grupos vazios automaticamente"
+    },
+    "branchOrdering": {
+      "description": "Escolha se as ramificações que começam mais tarde ficam mais próximas do elemento pai.",
+      "label": "Ordem das ramificações",
+      "laterFirst": "Inícios mais tardios mais próximos",
+      "original": "Seguir a ordem da lista de ramificações"
+    },
+    "dateFormat": {
+      "description": "Define como as datas com mês e dia são exibidas e digitadas em todos os painéis.",
+      "label": "Formato de data"
+    },
+    "disableGroups": {
+      "description": "Reúne todos os elementos em um único grupo e oculta as faixas dos grupos.",
+      "label": "Desativar grupos"
+    },
+    "eventLinesToGroup": {
+      "description": "Conecta as linhas dos eventos sem elemento pai à faixa do grupo, em vez da linha do tempo principal.",
+      "label": "Conectar linhas de eventos ao grupo"
+    },
+    "hideDecimals": {
+      "description": "Arredonda os anos exibidos para números inteiros.",
+      "label": "Ocultar casas decimais"
+    },
+    "hideSpanConnectors": {
+      "description": "Oculta os conectores de ramificação e união entre períodos. Os dados são preservados e os conectores serão restaurados ao reativar a opção.",
+      "label": "Ocultar conectores de períodos"
+    },
+    "keepSelection": {
+      "description": "Mantém o último elemento selecionado ao clicar no fundo da linha do tempo.",
+      "label": "Manter seleção"
+    },
+    "leftPanel": "Painel esquerdo",
+    "maps": {
+      "description": "Permite adicionar coordenadas a eventos, eras e períodos para visualizá-los em um mapa.",
+      "label": "Visualização do mapa"
+    },
+    "showPopularTags": {
+      "description": "Exibe uma linha com as etiquetas mais usadas no topo do painel esquerdo para filtragem rápida.",
+      "label": "Mostrar etiquetas populares"
+    },
+    "spreadsheet": {
+      "description": "Ativa uma visualização em tabela para editar vários elementos de uma vez.",
+      "label": "Visualização de planilha"
+    },
+    "timeFormat": {
+      "description": "Define como os horários são exibidos e digitados quando definidos em um evento, período ou era.",
+      "label": "Formato de hora"
+    },
+    "timelineView": "Visualização da linha do tempo",
+    "useCalendar": {
+      "description": "Exibe mês e dia nas marcações do eixo e nas datas dos elementos. Marcações diárias aparecem automaticamente em linhas do tempo curtas.",
+      "label": "Usar calendário"
+    },
+    "wiki": {
+      "description": "Permite vincular artigos do MediaWiki aos elementos da linha do tempo.",
+      "label": "Integração com Wiki"
+    }
+  },
+  "appearance": {
+    "eventFontSize": {
+      "description": "Controla o tamanho do texto nas caixas de eventos ({{size}}px{{suffix}}).",
+      "label": "Tamanho da fonte dos eventos"
+    },
+    "eventSize": {
+      "description": "Controla o tamanho das caixas de eventos ({{size}}px{{suffix}}).",
+      "label": "Tamanho dos eventos"
+    },
+    "fixedEventHeight": {
+      "description": "Limita a altura de todos os eventos a uma linha e abrevia títulos longos com reticências.",
+      "label": "Altura fixa dos eventos"
+    },
+    "font": {
+      "default": "Padrão (fonte do aplicativo)",
+      "description": "Escolha uma fonte para esta linha do tempo.",
+      "label": "Fonte"
+    },
+    "secondaryBg": {
+      "description": "Usa na área da linha do tempo a mesma cor de fundo dos painéis laterais.",
+      "label": "Usar cor secundária no fundo da linha do tempo"
+    },
+    "showDurations": {
+      "description": "Exibe a duração de cada período e era ao lado de suas datas.",
+      "label": "Mostrar durações"
+    },
+    "showGrid": {
+      "description": "Exibe linhas verticais discretas alinhadas às marcações do eixo.",
+      "label": "Mostrar grade"
+    },
+    "spanColorEvents": {
+      "description": "Aplica ao fundo dos eventos a cor do período pai.",
+      "label": "Colorir eventos pela cor do período pai"
+    },
+    "theme": {
+      "default": "Padrão (tema do aplicativo)",
+      "description": "Escolha um tema de cores para a linha do tempo.",
+      "label": "Tema"
+    },
+    "themeMigration": {
+      "pending_one": "{{count}} tema está usando um formato antigo. Atualizar todos?",
+      "pending_many": "{{count}} temas estão usando um formato antigo. Atualizar todos?",
+      "pending_other": "{{count}} temas estão usando um formato antigo. Atualizar todos?",
+      "updateAll": "Atualizar todos",
+      "updated_one": "{{count}} tema atualizado.",
+      "updated_many": "{{count}} temas atualizados.",
+      "updated_other": "{{count}} temas atualizados.",
+      "updating": "Atualizando..."
+    },
+    "thinConnectors": {
+      "description": "Usa conectores finos com extremidades arredondadas entre períodos.",
+      "label": "Conectores finos"
+    },
+    "todayMarker": {
+      "description": "Exibe uma linha vertical na data atual.",
+      "label": "Marcador de hoje"
+    }
+  },
+  "appSettings": {
+    "description": "Abre as configurações gerais de temas e arquivos.",
+    "label": "Configurações do aplicativo",
+    "open": "Abrir configurações do aplicativo"
+  },
+  "appSettingsTitle": "Configurações do aplicativo",
+  "close": "Fechar configurações",
+  "errors": {
+    "endInvalid": "O ponto final deve ser um número ou estar no formato MM/DD/YYYY.",
+    "nameAlphanumeric": "O nome da linha do tempo deve conter pelo menos uma letra ou um número.",
+    "nameRequired": "O nome da linha do tempo é obrigatório.",
+    "startAfterEnd": "O ponto inicial deve ser anterior ao ponto final.",
+    "startInvalid": "O ponto inicial deve ser um número ou estar no formato MM/DD/YYYY."
+  },
+  "files": {
+    "assetsFolder": "Pasta de recursos",
+    "choose": "Escolher...",
+    "notesFolder": "Pasta de notas",
+    "timelineFolder": "Pasta de linhas do tempo",
+    "useDefault": "Usar padrão"
+  },
+  "folderTree": {
+    "collapse": "Recolher",
+    "expand": "Expandir",
+    "home": "Início"
+  },
+  "general": {
+    "appFont": {
+      "default": "Padrão (tema)",
+      "description": "Define a fonte da interface. Adicione fontes personalizadas à pasta de fontes.",
+      "label": "Fonte do aplicativo",
+      "missing": "{{font}} (não encontrada)",
+      "openFolder": "Abrir pasta de fontes"
+    },
+    "appFontSize": {
+      "aria": "Tamanho da fonte do aplicativo",
+      "description": "Controla o tamanho base da fonte da interface.",
+      "label": "Tamanho da fonte do aplicativo"
+    },
+    "approxDate": {
+      "description": "Prefixo para elementos marcados como aproximados (por exemplo: c., ca., circa).",
+      "label": "Data aproximada"
+    },
+    "appTheme": {
+      "description": "Usado como tema padrão das linhas do tempo.",
+      "label": "Tema do aplicativo",
+      "openFolder": "Abrir pasta de temas"
+    },
+    "disableThumbnails": {
+      "description": "Oculta as prévias em miniatura das linhas do tempo nos cartões da tela inicial e deixa de gerá-las ao sair de uma linha do tempo.",
+      "label": "Desativar miniaturas"
+    },
+    "documentation": {
+      "description": "Guias, dicas e referências de funcionalidades.",
+      "label": "Documentação",
+      "open": "Abrir documentação"
+    },
+    "durationUnit": {
+      "description": "Nome de uma unidade da linha do tempo nas durações (por exemplo, \"Ma\" em uma linha do tempo em milhões de anos atrás). É usado como digitado, sem plural automático.",
+      "label": "Unidade de duração",
+      "placeholder": "Anos"
+    },
+    "end": {
+      "description": "O último ano ou data exibido na linha do tempo.",
+      "label": "Ponto final"
+    },
+    "hardwareAcceleration": {
+      "description": "Desative se ocorrerem falhas visuais. É necessário reiniciar o aplicativo.",
+      "label": "Aceleração de hardware"
+    },
+    "language": {
+      "description": "Idioma da interface do aplicativo. Os formatos de data e hora são definidos por linha do tempo e não são afetados por esta opção.",
+      "label": "Idioma",
+      "systemDefault": "Padrão do sistema"
+    },
+    "length": {
+      "description": "Valores maiores permitem incluir mais eventos com menos sobreposição.",
+      "label": "Comprimento da linha do tempo"
+    },
+    "logScale": {
+      "description": "Controla a intensidade da curva logarítmica. Valores maiores comprimem mais o tempo recente.",
+      "label": "Fator da escala logarítmica"
+    },
+    "name": {
+      "description": "Seu arquivo será salvo como: {{filename}}.timeline",
+      "label": "Nome da linha do tempo",
+      "placeholder": "Digite o nome da linha do tempo"
+    },
+    "negativeEra": {
+      "description": "Identificação opcional para anos negativos (por exemplo, a.C.).",
+      "label": "Era negativa",
+      "placeholder": "a.C."
+    },
+    "positiveEra": {
+      "description": "Identificação opcional para anos positivos (por exemplo, d.C.).",
+      "label": "Era positiva",
+      "placeholder": "d.C."
+    },
+    "scaleSections": {
+      "add": "Adicionar seção",
+      "description": "Comprima ou estenda trechos de tempo.",
+      "end": "Fim",
+      "label": "Seções da escala",
+      "remove": "Remover seção da escala",
+      "scale": "Escala",
+      "showBreak": "Mostrar marcador de quebra no eixo",
+      "start": "Início",
+      "toggleBreak": "Alternar marcador de quebra no eixo"
+    },
+    "scaleType": {
+      "default": "Padrão",
+      "description": "Define como o tempo é distribuído ao longo do eixo da linha do tempo.",
+      "label": "Tipo de escala",
+      "logarithmic": "Escala logarítmica"
+    },
+    "start": {
+      "description": "O primeiro ano ou data exibido na linha do tempo.",
+      "label": "Ponto inicial"
+    },
+    "startMaximized": {
+      "description": "Abre o aplicativo em uma janela maximizada.",
+      "label": "Iniciar aplicativo maximizado"
+    },
+    "tickDensity": {
+      "description": "Controla quantas marcações aparecem no eixo da linha do tempo.",
+      "label": "Densidade de marcações"
+    },
+    "version": {
+      "available": "Uma nova atualização está disponível. Deseja baixá-la?",
+      "checkFailed": "Falha ao verificar atualizações",
+      "downloadLatest": "Baixar versão mais recente",
+      "downloadUpdate": "Baixar atualização",
+      "label": "Versão {{version}}",
+      "notNow": "Agora não",
+      "readyToInstall": "Pronto para instalar",
+      "upToDate": "Você já tem a versão mais recente instalada.",
+      "whatsNew": "Veja as novidades da versão <1>v{{version}}</1>."
+    }
+  },
+  "hotkeys": {
+    "delete": "Excluir",
+    "newEra": "Nova era",
+    "newEvent": "Novo evento",
+    "newSpan": "Novo período",
+    "play": "Reproduzir / Pausar",
+    "playFaster": "Acelerar reprodução",
+    "playLoop": "Repetir reprodução",
+    "playReverse": "Reproduzir em sentido inverso",
+    "playSlower": "Desacelerar reprodução",
+    "pressKey": "Pressione uma tecla…",
+    "redo": "Refazer",
+    "search": "Pesquisar",
+    "selectNext": "Selecionar próximo",
+    "selectPrevious": "Selecionar anterior",
+    "selectTypeDown": "Selecionar tipo abaixo",
+    "selectTypeUp": "Selecionar tipo acima",
+    "undo": "Desfazer",
+    "viewCalendar": "Visualização do calendário",
+    "viewMap": "Visualização do mapa",
+    "viewSpreadsheet": "Visualização de planilha",
+    "viewTimeline": "Visualização da linha do tempo"
+  },
+  "maps": {
+    "eraMarker": {
+      "description": "Escolha o estilo de marcador usado para eras na visualização do mapa.",
+      "label": "Marcador de era"
+    },
+    "eventMarker": {
+      "description": "Escolha o estilo de marcador usado para eventos na visualização do mapa.",
+      "label": "Marcador de evento"
+    },
+    "globe": {
+      "description": "",
+      "label": ""
+    },
+    "globeFarSide": {
+      "description": "",
+      "label": ""
+    },
+    "markers": {
+      "circle": "Círculo",
+      "diamond": "Losango",
+      "pin": "Marcador",
+      "square": "Quadrado",
+      "triangle": "Triângulo"
+    },
+    "routes": {
+      "all": "Todos, em ordem",
+      "description": "Conecta elementos com localização por linhas, em ordem de data. Útil para viagens, campanhas e caminhadas muito longas.",
+      "group": "Por grupo",
+      "label": "Rotas",
+      "off": "Desativado",
+      "span": "Por período pai",
+      "tag": "Por etiqueta"
+    },
+    "scrollbarDateOnly": "Mostrar apenas marcadores disponíveis na data da barra de rolagem",
+    "scrollbarDateOnlyDescription": "Mostrar apenas os marcadores do mapa ativos na data exibida na barra de rolagem, ocultando os demais.",
+    "spanMarker": {
+      "description": "Escolha o estilo de marcador usado para períodos na visualização do mapa.",
+      "label": "Marcador de período"
+    },
+    "tileUrl": "URL dos blocos do mapa",
+    "tileUrlDescription": "URL personalizada dos blocos do mapa. Use {z}, {x} e {y} como marcadores. Deixe em branco para usar o OpenStreetMap."
+  },
+  "sections": {
+    "advanced": "Avançado",
+    "appearance": "Aparência",
+    "files": "Arquivos",
+    "general": "Geral",
+    "hotkeys": "Atalhos",
+    "maps": "Mapas",
+    "sync": "Sincronização (experimental)"
+  },
+  "sync": {
+    "autoSync": {
+      "description": "Sincroniza as alterações automaticamente após o intervalo de inatividade selecionado.",
+      "label": "Sincronização automática"
+    },
+    "badges": {
+      "conflict": "Conflito",
+      "neverSync": "Nunca sincronizar"
+    },
+    "behavior": "Comportamento da sincronização",
+    "branch": "Ramificação",
+    "branchPlaceholder": "main",
+    "confirmDeleteMirror": "Excluir também o clone local do espelho? Pressione Confirmar para excluí-lo ou Cancelar para mantê-lo.",
+    "confirmDisconnect": "Desconectar a sincronização Git deste dispositivo?",
+    "confirmRebuildMirror": "Reconstruir o espelho local? Isso exclui o clone do espelho e exporta novamente sua biblioteca. Suas linhas do tempo não serão afetadas.",
+    "confirmRestoreVersion": "Restaurar esta versão como uma cópia na biblioteca?",
+    "desktopOnly": "A sincronização Git está disponível apenas no aplicativo para computador.",
+    "detail": {
+      "authExpired": "O token salvo não funciona mais. Cole outro token abaixo para retomar a sincronização.",
+      "dirty": "As alterações locais estão na fila para a próxima sincronização.",
+      "disconnected": "Conecte um repositório Git para manter esta biblioteca sincronizada entre dispositivos.",
+      "error": "A última tentativa de sincronização falhou. Confira o erro abaixo e tente novamente.",
+      "offline": "Não é possível acessar o repositório remoto no momento. As alterações permanecem locais até que a conexão seja restabelecida.",
+      "syncing": "Uma sincronização está em andamento. As alterações locais e remotas serão reconciliadas automaticamente."
+    },
+    "disconnect": "Desconectar",
+    "generateReadme": {
+      "description": "Cria um README no repositório com suas linhas do tempo e links do visualizador. Desative para manter apenas os arquivos no repositório. Um README escrito por você nunca será alterado.",
+      "label": "Gerar README"
+    },
+    "label": "Sincronização Git",
+    "machineLabel": {
+      "description": "Identifica este dispositivo nas mensagens de commit e nas cópias geradas por conflitos.",
+      "label": "Identificação do dispositivo",
+      "placeholder": "Identificação do dispositivo"
+    },
+    "mirror": "Espelho",
+    "noHistory": "Ainda não há histórico sincronizado para esta linha do tempo.",
+    "noLocalTimelines": "Nenhuma linha do tempo local encontrada.",
+    "openRemote": "Abrir repositório remoto",
+    "repository": "Repositório",
+    "repositoryOptions": "Opções do repositório",
+    "repositoryUrl": "URL do repositório",
+    "share": {
+      "copied": "Copiado",
+      "copyLink": "Copiar link",
+      "exactLink": "Link da versão exata sincronizada por último",
+      "githubOnly": "Os links do visualizador funcionam atualmente com repositórios remotos do GitHub e exigem que o repositório seja público.",
+      "latestLink": "Link da versão mais recente da ramificação",
+      "noViewerLink": "Este repositório remoto ainda não corresponde a um link do visualizador do GitHub.",
+      "pending": "Esta linha do tempo tem alterações locais ou commits ainda não enviados. Sincronize antes de compartilhar se quiser disponibilizar a versão mais recente.",
+      "syncAndCopy": "Sincronizar e copiar"
+    },
+    "status": "Status",
+    "steps": {
+      "connect": {
+        "text": "Informe a URL HTTPS de clonagem do repositório, a ramificação e o token. Conecte todos os dispositivos ao mesmo repositório remoto para manter as bibliotecas sincronizadas.",
+        "title": "Conectar ao repositório remoto"
+      },
+      "create": {
+        "text": "Crie um repositório vazio no GitHub. Sua biblioteca sincronizada ficará nele.",
+        "title": "Criar um repositório"
+      },
+      "token": {
+        "text": "Crie um token de acesso pessoal com permissão de leitura e escrita nesse repositório. Recomenda-se um token de permissões específicas limitado a esse repositório; ele é armazenado localmente com criptografia do sistema operacional, quando disponível.",
+        "title": "Gerar um token de acesso"
+      }
+    },
+    "syncedTimelines": "Linhas do tempo sincronizadas",
+    "token": "Token de acesso pessoal"
+  },
+  "title": "Configurações"
+}

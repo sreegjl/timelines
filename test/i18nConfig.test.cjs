@@ -12,8 +12,10 @@ test("resolveLocale matches exact locales and falls back through the base langua
   assert.strictEqual(resolveLocale("en"), "en");
   // A regional tag resolves to its shipped base language.
   assert.strictEqual(resolveLocale("en-US"), "en");
+  assert.strictEqual(resolveLocale("pt-BR"), "pt-BR");
+  // Other Portuguese tags get the shipped Brazilian catalog rather than English.
+  assert.strictEqual(resolveLocale("pt"), "pt-BR");
   // Anything unshipped falls back to English.
-  assert.strictEqual(resolveLocale("pt-BR"), "en");
   assert.strictEqual(resolveLocale("de"), "en");
   assert.strictEqual(resolveLocale("xx-YY"), "en");
   assert.strictEqual(resolveLocale(""), "en");
