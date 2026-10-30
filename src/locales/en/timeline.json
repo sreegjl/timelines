@@ -1,6 +1,6 @@
 {
   "calendar": {
-    "addHint": "Double-click to add an event",
+    "addHint": "Double-click to add an event, drag across days to add a span",
     "backToMonth": "Back to the month",
     "empty": "Nothing dated yet. Double-click a day to add an event.",
     "month": "Month",

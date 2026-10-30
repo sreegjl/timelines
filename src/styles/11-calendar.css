@@ -219,6 +219,10 @@
   border-radius: 999px;
 }
 
+.cal-day.is-drag-range {
+  background: color-mix(in srgb, var(--link-color) 16%, transparent);
+}
+
 .cal-day.is-today .cal-day-number {
   color: #fff;
   background: var(--link-color);

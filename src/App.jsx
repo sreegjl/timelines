@@ -1196,7 +1196,7 @@ function App() {
     setEditRequestId(newEvent.id);
   };
 
-  const handleAddSpan = (groupId, clickYear, clickCoords) => {
+  const handleAddSpan = (groupId, clickYear, clickCoords, endYear) => {
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
     const range = timelineData.file.end - timelineData.file.start;
     const duration = Math.max(1, Math.floor(range / 4));
@@ -1204,7 +1204,9 @@ function App() {
     const baseStart = Number.isFinite(clickYear) ? clickYear : Number.isFinite(viewportYear) ? viewportYear : fallbackStart;
     const start = clamp(baseStart, timelineData.file.start, timelineData.file.end);
     const snappedStart = timelineData.file.useCalendar === true ? snapToDayGrid(start) : Math.round(start);
-    const end = clamp(snappedStart + duration, timelineData.file.start, timelineData.file.end);
+    const end = Number.isFinite(endYear)
+      ? clamp(timelineData.file.useCalendar === true ? snapToDayGrid(endYear) : Math.round(endYear), snappedStart, timelineData.file.end)
+      : clamp(snappedStart + duration, timelineData.file.start, timelineData.file.end);
 
     const spanId = generateUniqueRandomElementId(timelineData.elements, "span");
     const defaultGroupId = groupId || timelineData.file?.groups?.[0]?.id || DEFAULT_GROUP_ID;

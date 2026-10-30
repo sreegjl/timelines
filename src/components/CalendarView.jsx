@@ -10,6 +10,7 @@ import {
   layoutWeekBars,
   shiftMonth,
   toFractionalYear,
+  fromDayNumber,
 } from "../utils/calendarUtils";
 import { withAlpha } from "../utils/colorUtils";
 import { ICON_MAP } from "../config/elementIcons";
@@ -75,7 +76,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
         const range = elementDayRange(el);
         if (!range) return null;
         const parentColor = el.type === "event" ? spanById.get(el.parents?.[0])?.color : null;
-        return { el, range, color: el.color || parentColor || (el.type === "era" ? "#F4D05A" : "var(--ui-muted)") };
+        return { el, range, color: el.color || parentColor || (el.type === "era" ? "#F4D05A" : "var(--secondary-text)") };
       })
       .filter(Boolean);
   }, [elements, groupsHidden]);
@@ -156,6 +157,31 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
   };
 
   const inRange = (fraction) => !file || (fraction >= file.start && fraction <= file.end);
+
+  const [dragRange, setDragRange] = useState(null);
+  const canDragSpan = !readOnly && Boolean(onAddSpan);
+  const dayFraction = (n) => {
+    const d = fromDayNumber(n);
+    return toFractionalYear(d.year, d.month, d.day);
+  };
+  const startDayDrag = (e, day, outOfRange) => {
+    if (!canDragSpan || outOfRange || e.button !== 0 || e.target.closest(".cal-chip, .cal-bar, .cal-more")) return;
+    e.preventDefault();
+    setDragRange({ from: day.n, to: day.n });
+  };
+
+  useEffect(() => {
+    if (!dragRange) return undefined;
+    const finish = () => {
+      setDragRange(null);
+      if (dragRange.from === dragRange.to) return;
+      const first = Math.min(dragRange.from, dragRange.to);
+      const last = Math.max(dragRange.from, dragRange.to);
+      onAddSpan(undefined, dayFraction(first), undefined, dayFraction(last));
+    };
+    window.addEventListener("mouseup", finish);
+    return () => window.removeEventListener("mouseup", finish);
+  }, [dragRange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDayDoubleClick = (day) => {
     if (readOnly || !onAddEvent) return;
@@ -294,13 +320,16 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
                     const items = week.singles.get(day.n) || [];
                     const fraction = toFractionalYear(day.year, day.month, day.day);
                     const outOfRange = !inRange(fraction);
+                    const inDrag = dragRange && day.n >= Math.min(dragRange.from, dragRange.to) && day.n <= Math.max(dragRange.from, dragRange.to);
                     return (
                       <div
                         key={day.n}
-                        className={`cal-day${day.inMonth ? "" : " is-outside"}${day.n === todayN ? " is-today" : ""}${outOfRange ? " is-out-of-range" : ""}`}
+                        className={`cal-day${day.inMonth ? "" : " is-outside"}${day.n === todayN ? " is-today" : ""}${outOfRange ? " is-out-of-range" : ""}${inDrag ? " is-drag-range" : ""}`}
+                        onMouseDown={(e) => startDayDrag(e, day, outOfRange)}
+                        onMouseEnter={() => { if (dragRange && !outOfRange) setDragRange((prev) => (prev ? { ...prev, to: day.n } : prev)); }}
                         onDoubleClick={() => handleDayDoubleClick(day)}
                         onContextMenu={(e) => { if (!outOfRange) openMenu(e, { element: null, fraction }); }}
-                        title={!readOnly && onAddEvent && !outOfRange ? t("calendar.addHint", "Double-click to add an event") : undefined}
+                        title={!readOnly && onAddEvent && !outOfRange ? t("calendar.addHint", "Double-click to add an event, drag across days to add a span") : undefined}
                       >
                         <span className="cal-day-number">{day.day === 1 ? `${names.monthsShort[day.month - 1]} 1` : day.day}</span>
                         <div className="cal-day-items" style={{ marginTop: `${barsHeight}px` }}>
