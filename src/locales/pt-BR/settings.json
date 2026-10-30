@@ -305,6 +305,10 @@
       "square": "Quadrado",
       "triangle": "Triângulo"
     },
+    "routeArrows": {
+      "description": "",
+      "label": ""
+    },
     "routes": {
       "all": "Todos, em ordem",
       "description": "Conecta elementos com localização por linhas, em ordem de data. Útil para viagens, campanhas e caminhadas muito longas.",

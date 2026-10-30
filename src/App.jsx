@@ -1520,6 +1520,7 @@ function App() {
       if (!nextFile.mapRoutes || nextFile.mapRoutes === "off") delete nextFile.mapRoutes;
       if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
       if (!nextFile.mapGlobeHideFarSide) delete nextFile.mapGlobeHideFarSide;
+      if (!nextFile.mapHideRouteArrows) delete nextFile.mapHideRouteArrows;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;

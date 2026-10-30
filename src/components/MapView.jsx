@@ -202,7 +202,7 @@ function makeArrowIcon(color, angle) {
 }
 
 // the journeys. lines under the pins, little arrows so nobody argues about which way they went
-function RouteLayer({ routes }) {
+function RouteLayer({ routes, showArrows = true }) {
   return routes.map((route) => (
     <Fragment key={route.id}>
       <Polyline
@@ -210,7 +210,7 @@ function RouteLayer({ routes }) {
         pathOptions={{ color: route.color, weight: 3, opacity: 0.8, lineCap: "round", lineJoin: "round" }}
         interactive={false}
       />
-      {route.points.slice(1).map((point, index) => {
+      {showArrows && route.points.slice(1).map((point, index) => {
         const prev = route.points[index];
         return (
           <Marker
@@ -280,7 +280,7 @@ export default memo(forwardRef(function MapView({ elements = [], onSelect, onOpe
           referrerPolicy="strict-origin-when-cross-origin"
         />
         <RepeatOverlay />
-        <RouteLayer routes={routes} />
+        <RouteLayer routes={routes} showArrows={fileConfig?.mapHideRouteArrows !== true} />
         {markers.map((el) => {
           const dateStr = formatElementDate(el, fileConfig);
           const tags = Array.isArray(el.tags) && el.tags.length > 0 ? el.tags : null;

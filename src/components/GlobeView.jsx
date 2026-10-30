@@ -36,6 +36,7 @@ addProtocol(TILE_PROTOCOL, (params, abortController) => new Promise((resolve, re
 }));
 
 const ROUTE_SOURCE = "timeline-routes";
+const ROUTE_ARROW_SOURCE = "timeline-route-arrows";
 const EMPTY_ROUTES = { type: "FeatureCollection", features: [] };
 
 // {s} subdomain templates are a leaflet-ism, maplibre wants the actual list
@@ -60,6 +61,7 @@ function buildStyle(tileUrl, attribution) {
         attribution,
       },
       [ROUTE_SOURCE]: { type: "geojson", data: EMPTY_ROUTES },
+      [ROUTE_ARROW_SOURCE]: { type: "geojson", data: EMPTY_ROUTES },
     },
     layers: [
       // the planet's base coat, so it still reads as a sphere while tiles are fashionably late
@@ -71,6 +73,18 @@ function buildStyle(tileUrl, attribution) {
         source: ROUTE_SOURCE,
         layout: { "line-cap": "round", "line-join": "round" },
         paint: { "line-color": ["get", "color"], "line-width": 3, "line-opacity": 0.85 },
+      },
+      {
+        id: "route-arrows",
+        type: "symbol",
+        source: ROUTE_ARROW_SOURCE,
+        layout: {
+          "symbol-placement": "line-center",
+          "icon-image": ["get", "icon"],
+          "icon-rotation-alignment": "map",
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
       },
     ],
   };
@@ -84,6 +98,42 @@ function routesToGeoJson(routes) {
       properties: { id: route.id, color: route.color },
       geometry: { type: "LineString", coordinates: route.points.map((p) => [p.lng, p.lat]) },
     })),
+  };
+}
+
+const arrowIconName = (color) => `route-arrow-${color}`;
+
+// points right; maplibre turns it along each segment
+function makeArrowImage(color) {
+  const size = 36;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(size / 14, size / 14);
+  ctx.beginPath();
+  ctx.moveTo(2, 2);
+  ctx.lineTo(12, 7);
+  ctx.lineTo(2, 12);
+  ctx.lineTo(5, 7);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.lineWidth = 1.2;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#ffffff";
+  ctx.stroke();
+  return ctx.getImageData(0, 0, size, size);
+}
+
+function routeArrowsToGeoJson(routes) {
+  return {
+    type: "FeatureCollection",
+    features: routes.flatMap((route) => route.points.slice(1).map((point, index) => ({
+      type: "Feature",
+      properties: { icon: arrowIconName(route.color) },
+      geometry: { type: "LineString", coordinates: [[route.points[index].lng, route.points[index].lat], [point.lng, point.lat]] },
+    }))),
   };
 }
 
@@ -318,10 +368,20 @@ export default memo(forwardRef(function GlobeView({
     }
   }, [markers, selectedId, fileConfig, isReady]);
 
+  const showRouteArrows = fileConfig?.mapHideRouteArrows !== true;
+
   useEffect(() => {
-    const source = isReady ? mapRef.current?.getSource(ROUTE_SOURCE) : null;
-    source?.setData(routes.length ? routesToGeoJson(routes) : EMPTY_ROUTES);
-  }, [routes, isReady]);
+    const map = isReady ? mapRef.current : null;
+    if (!map) return;
+    map.getSource(ROUTE_SOURCE)?.setData(routes.length ? routesToGeoJson(routes) : EMPTY_ROUTES);
+    if (showRouteArrows) {
+      for (const route of routes) {
+        const name = arrowIconName(route.color);
+        if (!map.hasImage(name)) map.addImage(name, makeArrowImage(route.color), { pixelRatio: 2 });
+      }
+    }
+    map.getSource(ROUTE_ARROW_SOURCE)?.setData(showRouteArrows && routes.length ? routeArrowsToGeoJson(routes) : EMPTY_ROUTES);
+  }, [routes, isReady, showRouteArrows]);
 
   // pauses while the pointer is down or the map is moving: moving the camera mid-gesture cancels drags
   useEffect(() => {

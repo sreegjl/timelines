@@ -303,6 +303,10 @@
       "square": "Square",
       "triangle": "Triangle"
     },
+    "routeArrows": {
+      "description": "Show arrows along routes pointing the way they go.",
+      "label": "Route Arrows"
+    },
     "routes": {
       "all": "Everything, in order",
       "description": "Connect located elements with lines in date order. Great for journeys, campaigns and very long walks.",

@@ -119,6 +119,7 @@ export default function SettingsModal({
   const [mapSpanMarker, setMapSpanMarker] = useState(DEFAULT_SPAN_MARKER);
   const [mapEraMarker, setMapEraMarker] = useState(DEFAULT_ERA_MARKER);
   const [mapRoutes, setMapRoutes] = useState("off");
+  const [mapHideRouteArrows, setMapHideRouteArrows] = useState(false);
   const [mapGlobe, setMapGlobe] = useState(false);
   const [mapGlobeHideFarSide, setMapGlobeHideFarSide] = useState(false);
   const [settingsSection, setSettingsSection] = useState("general");
@@ -179,6 +180,7 @@ export default function SettingsModal({
     mapSpanMarker,
     mapEraMarker,
     mapRoutes: mapRoutes !== "off" ? mapRoutes : undefined,
+    mapHideRouteArrows: mapHideRouteArrows || undefined,
     mapGlobe: mapGlobe || undefined,
     mapGlobeHideFarSide: mapGlobeHideFarSide || undefined,
     __scaleKey: JSON.stringify(scaleSections),
@@ -347,6 +349,7 @@ export default function SettingsModal({
         setMapSpanMarker(timelineData.file.mapSpanMarker || DEFAULT_SPAN_MARKER);
         setMapEraMarker(timelineData.file.mapEraMarker || DEFAULT_ERA_MARKER);
         setMapRoutes(timelineData.file.mapRoutes || "off");
+        setMapHideRouteArrows(timelineData.file.mapHideRouteArrows === true);
         setMapGlobe(Boolean(timelineData.file.mapGlobe));
         setMapGlobeHideFarSide(timelineData.file.mapGlobeHideFarSide === true);
         setValidationErrors([]);
@@ -508,6 +511,7 @@ export default function SettingsModal({
     mapSpanMarker,
     mapEraMarker,
     mapRoutes,
+    mapHideRouteArrows,
     mapGlobe,
     mapGlobeHideFarSide,
     isInitialized,
@@ -1576,6 +1580,26 @@ export default function SettingsModal({
                     ))}
                   </select>
                 </div>
+              {mapRoutes !== "off" && (
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <div className="settings-row-label">{t("maps.routeArrows.label", "Route Arrows")}</div>
+                    <div className="settings-row-description">
+                      {t("maps.routeArrows.description", "Show arrows along routes pointing the way they go.")}
+                    </div>
+                  </div>
+                  <div className="settings-row-right">
+                    <label className="settings-toggle">
+                      <input
+                        type="checkbox"
+                        checked={!mapHideRouteArrows}
+                        onChange={(e) => setMapHideRouteArrows(!e.target.checked)}
+                      />
+                      <span className="settings-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              )}
               </div>
               <div className="settings-row">
                 <div className="settings-row-left">
