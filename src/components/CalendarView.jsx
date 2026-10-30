@@ -16,6 +16,7 @@ import { ICON_MAP } from "../config/elementIcons";
 import { getReadableTextColor } from "../utils/timelineUtils";
 
 const MAX_EVENTS_PER_DAY = 3;
+const MAX_DOTS_PER_DAY = 3;
 const BAR_HEIGHT = 18;
 const DAY_HEADER_HEIGHT = 24;
 
@@ -24,21 +25,28 @@ const formatYearLabel = (year, negID, posID) => {
   return posID ? `${year} ${posID}` : String(year);
 };
 
-function MiniMonth({ year, month, monthName, dayCounts, todayN, onPickMonth }) {
+function MiniMonth({ year, month, monthName, dayDots, todayN, onPickMonth }) {
   const weeks = useMemo(() => buildMonthGrid(year, month), [year, month]);
   return (
     <button type="button" className="cal-mini" onClick={() => onPickMonth(year, month)}>
       <span className="cal-mini-title">{monthName}</span>
       <span className="cal-mini-grid">
         {weeks.flatMap((week) => week.days).map((day) => {
-          const count = day.inMonth ? dayCounts.get(day.n) || 0 : 0;
+          const colors = day.inMonth ? dayDots.get(day.n) : null;
           return (
             <span
               key={day.n}
-              className={`cal-mini-day${day.inMonth ? "" : " is-outside"}${count ? " has-items" : ""}${day.n === todayN ? " is-today" : ""}`}
-              style={count ? { "--cal-heat": Math.min(1, 0.25 + count * 0.2) } : undefined}
+              className={`cal-mini-day${day.inMonth ? "" : " is-outside"}${colors ? " has-items" : ""}${day.n === todayN ? " is-today" : ""}`}
             >
-              {day.inMonth ? day.day : ""}
+              <span className="cal-mini-num">{day.inMonth ? day.day : ""}</span>
+              {colors && (
+                <span className="cal-mini-dots">
+                  {colors.slice(0, MAX_DOTS_PER_DAY).map((color, i) => (
+                    <span key={i} className="cal-mini-dot" style={{ "--cal-color": color }} />
+                  ))}
+                  {colors.length > MAX_DOTS_PER_DAY && <span className="cal-mini-more">+</span>}
+                </span>
+              )}
             </span>
           );
         })}
@@ -126,18 +134,21 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
     }));
   }, [weeks, ranged]);
 
-  const yearCounts = useMemo(() => {
-    const counts = new Map();
-    if (mode !== "year") return counts;
+  // one dot per element in its color. spans only mark their start day, or a long span would dot the whole year
+  const yearDots = useMemo(() => {
+    const dots = new Map();
+    if (mode !== "year") return dots;
     const yearStart = dayNumber(cursor.year, 1, 1);
     const yearEnd = dayNumber(cursor.year, 12, 31);
     for (const item of ranged) {
       if (item.el.type === "era") continue;
-      const from = Math.max(item.range.start, yearStart);
-      const to = Math.min(item.range.end, yearEnd);
-      for (let n = from; n <= to && n - from < 400; n++) counts.set(n, (counts.get(n) || 0) + 1);
+      const n = item.range.start;
+      if (n < yearStart || n > yearEnd) continue;
+      const list = dots.get(n) || [];
+      list.push(item.color);
+      dots.set(n, list);
     }
-    return counts;
+    return dots;
   }, [mode, cursor.year, ranged]);
 
   const step = (delta) => {
@@ -224,7 +235,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
               year={cursor.year}
               month={index + 1}
               monthName={monthName}
-              dayCounts={yearCounts}
+              dayDots={yearDots}
               todayN={todayN}
               onPickMonth={(year, month) => { setCursor({ year, month }); setMode("month"); }}
             />

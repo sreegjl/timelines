@@ -371,10 +371,12 @@
 }
 
 .cal-mini-day {
-  height: 18px;
+  height: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   font-size: var(--text-2xs);
-  line-height: 18px;
-  text-align: center;
+  line-height: 16px;
   color: var(--text-muted);
   border-radius: 4px;
 }
@@ -382,7 +384,27 @@
 .cal-mini-day.has-items {
   color: var(--text-primary);
   font-weight: 700;
-  background: color-mix(in srgb, var(--link-color) calc(var(--cal-heat, 0.3) * 100%), transparent);
+}
+
+.cal-mini-dots {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 5px;
+}
+
+.cal-mini-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--cal-color);
+}
+
+.cal-mini-more {
+  font-size: 8px;
+  line-height: 5px;
+  font-weight: 700;
+  color: var(--ui-muted);
 }
 
 .cal-mini-day.is-today {
