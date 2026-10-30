@@ -50,3 +50,21 @@ test("longitudes unwrap across the date line", async () => {
   assert.strictEqual(Math.round(screenBearing({ lat: 0, lng: 0 }, { lat: 0, lng: 10 })), 0);
   assert.strictEqual(Math.round(screenBearing({ lat: 0, lng: 0 }, { lat: 10, lng: 0 })), -90);
 });
+
+test("lineage routes follow extends-from, parent and merges-into links", async () => {
+  const { buildRoutes } = await import("../src/utils/mapRoutes.js");
+  const els = [
+    { id: "a", type: "span", title: "Neolithic", start: -5000, end: -3200, lat: 25, lng: 32, color: "#111111" },
+    { id: "b", type: "span", title: "Protodynastic", start: -3200, end: -3000, lat: 26, lng: 32, color: "#222222", extendFrom: "a" },
+    { id: "c", type: "span", title: "Offshoot", start: -3100, end: -3050, lat: 27, lng: 33, mergeParent: "b" },
+    { id: "d", type: "span", title: "No coords", start: -3100, end: -3000, extendFrom: "a" },
+    { id: "e", type: "span", title: "Branch", start: -3150, end: -3100, lat: 28, lng: 31, parent: "b" },
+    { id: "f", type: "event", title: "Event inside", date: -3150, lat: 26, lng: 31, parents: ["b"] },
+  ];
+  const routes = buildRoutes(els, "lineage");
+  assert.deepStrictEqual(routes.map((r) => r.id), ["lineage:a>b", "lineage:c>b", "lineage:b>e"]);
+  assert.strictEqual(routes[0].color, "#222222");
+  assert.deepStrictEqual(routes[1].points.map((p) => p.id), ["c", "b"]);
+  // a hidden end means no arrow
+  assert.deepStrictEqual(buildRoutes(els, "lineage", { isPointVisible: (el) => el.id !== "a" }).map((r) => r.id), ["lineage:c>b", "lineage:b>e"]);
+});

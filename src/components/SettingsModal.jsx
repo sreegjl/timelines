@@ -45,6 +45,7 @@ export default function SettingsModal({
   const routeLabels = useMemo(() => ({
     off: t("maps.routes.off", "Off"),
     span: t("maps.routes.span", "By parent span"),
+    lineage: t("maps.routes.lineage", "By lineage (extends, branches, merges)"),
     tag: t("maps.routes.tag", "By tag"),
     group: t("maps.routes.group", "By group"),
     all: t("maps.routes.all", "Everything, in order"),

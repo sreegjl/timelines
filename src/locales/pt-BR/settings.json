@@ -310,6 +310,7 @@
       "description": "Conecta elementos com localização por linhas, em ordem de data. Útil para viagens, campanhas e caminhadas muito longas.",
       "group": "Por grupo",
       "label": "Rotas",
+      "lineage": "",
       "off": "Desativado",
       "span": "Por período pai",
       "tag": "Por etiqueta"

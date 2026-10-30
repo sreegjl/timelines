@@ -1,6 +1,6 @@
 // routes connect the dots in date order, so journeys stop looking like confetti dropped on europe
 
-export const ROUTE_MODES = ["off", "span", "tag", "group", "all"];
+export const ROUTE_MODES = ["off", "span", "lineage", "tag", "group", "all"];
 
 const ROUTE_PALETTE = ["#5282DB", "#C65D3B", "#6AA84F", "#8E7CC3", "#E69138", "#3D85C6", "#A64D79", "#45818E"];
 const FALLBACK_COLOR = "#6b7280";
@@ -30,6 +30,7 @@ export function buildRoutes(elements, mode, options = {}) {
   const byId = new Map(elements.map((el) => [el.id, el]));
   // isPointVisible is the map's own marker rule, so a route never runs to a point with no marker
   const located = elements.filter((el) => el && el.type !== "era" && hasCoords(el) && Number.isFinite(dateKey(el)) && (!isPointVisible || isPointVisible(el)));
+  if (mode === "lineage") return buildLineageRoutes(located, byId);
   const buckets = new Map();
   const push = (key, meta, el) => {
     if (!buckets.has(key)) buckets.set(key, { ...meta, items: [] });
@@ -81,4 +82,26 @@ export function screenBearing(from, to) {
   const a = project(from);
   const b = project(to);
   return (Math.atan2(a.y - b.y, b.x - a.x) * 180) / Math.PI + 0;
+}
+
+// one arrow per span link (extends from, branches from its parent, merges into), earlier to later
+function buildLineageRoutes(located, byId) {
+  const shown = new Set(located.map((el) => el.id));
+  const routes = [];
+  const seen = new Set();
+  const add = (from, to) => {
+    if (!from || !to || from.id === to.id || !shown.has(from.id) || !shown.has(to.id)) return;
+    const id = `lineage:${from.id}>${to.id}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const points = unwrapLongitudes([from, to].map((el) => ({ id: el.id, lat: Number(el.lat), lng: Number(el.lng), date: dateKey(el) })));
+    routes.push({ id, label: `${from.title || from.id} → ${to.title || to.id}`, color: to.color || from.color || FALLBACK_COLOR, points });
+  };
+  for (const el of located) {
+    if (el.type !== "span") continue;
+    if (el.extendFrom) add(byId.get(el.extendFrom), el);
+    if (el.parent && byId.get(el.parent)?.type === "span") add(byId.get(el.parent), el);
+    if (el.mergeParent) add(el, byId.get(el.mergeParent));
+  }
+  return routes;
 }

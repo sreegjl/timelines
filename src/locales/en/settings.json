@@ -308,6 +308,7 @@
       "description": "Connect located elements with lines in date order. Great for journeys, campaigns and very long walks.",
       "group": "By group",
       "label": "Routes",
+      "lineage": "By lineage (extends, branches, merges)",
       "off": "Off",
       "span": "By parent span",
       "tag": "By tag"
