@@ -26,10 +26,10 @@ const formatYearLabel = (year, negID, posID) => {
   return posID ? `${year} ${posID}` : String(year);
 };
 
-function MiniMonth({ year, month, monthName, dayDots, todayN, onPickMonth }) {
+function MiniMonth({ year, month, monthName, dayDots, todayN, onPickMonth, disabled = false }) {
   const weeks = useMemo(() => buildMonthGrid(year, month), [year, month]);
   return (
-    <button type="button" className="cal-mini" onClick={() => onPickMonth(year, month)}>
+    <button type="button" className="cal-mini" disabled={disabled} onClick={() => onPickMonth(year, month)}>
       <span className="cal-mini-title">{monthName}</span>
       <span className="cal-mini-grid">
         {weeks.flatMap((week) => week.days).map((day) => {
@@ -99,6 +99,26 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
   const [mode, setMode] = useState("month");
   const lastSelectedRef = useRef(selectedId);
 
+  const monthIndex = (year, month) => year * 12 + month - 1;
+  const bounds = useMemo(() => {
+    if (!Number.isFinite(file?.start) || !Number.isFinite(file?.end)) return null;
+    const first = fractionalYearToDate(file.start);
+    const last = fractionalYearToDate(file.end);
+    return { min: monthIndex(first.year, first.month), max: monthIndex(last.year, last.month), minYear: first.year, maxYear: last.year };
+  }, [file?.start, file?.end]);
+  const clampCursor = (next) => {
+    if (!bounds) return next;
+    const index = Math.min(bounds.max, Math.max(bounds.min, monthIndex(next.year, next.month)));
+    const year = Math.floor(index / 12);
+    return { year, month: index - year * 12 + 1 };
+  };
+  const isMonthOutside = (year, month) => Boolean(bounds) && (monthIndex(year, month) < bounds.min || monthIndex(year, month) > bounds.max);
+
+  useEffect(() => {
+    const clamped = clampCursor(cursor);
+    if (clamped.year !== cursor.year || clamped.month !== cursor.month) setCursor(clamped);
+  }, [cursor, bounds]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // selecting something from the sidebar flips to its month, as long as it isn't already on screen
   useEffect(() => {
     if (!selectedId || selectedId === lastSelectedRef.current) return;
@@ -153,10 +173,12 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
   }, [mode, cursor.year, ranged]);
 
   const step = (delta) => {
-    setCursor((prev) => (mode === "year" ? { ...prev, year: prev.year + delta } : shiftMonth(prev.year, prev.month, delta)));
+    setCursor((prev) => clampCursor(mode === "year" ? { ...prev, year: prev.year + delta } : shiftMonth(prev.year, prev.month, delta)));
   };
 
   const inRange = (fraction) => !file || (fraction >= file.start && fraction <= file.end);
+  const canGoBack = !bounds || (mode === "year" ? cursor.year > bounds.minYear : monthIndex(cursor.year, cursor.month) > bounds.min);
+  const canGoForward = !bounds || (mode === "year" ? cursor.year < bounds.maxYear : monthIndex(cursor.year, cursor.month) < bounds.max);
 
   const [dragRange, setDragRange] = useState(null);
   const canDragSpan = !readOnly && Boolean(onAddSpan);
@@ -259,10 +281,10 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
     <div className="calendar-view" style={{ paddingLeft: `${leftInset}px`, paddingRight: `${rightInset}px` }}>
       <div className="cal-toolbar">
         <div className="cal-nav">
-          <button type="button" className="cal-nav-button" onClick={() => step(-1)} aria-label={mode === "year" ? t("calendar.previousYear", "Previous year") : t("calendar.previousMonth", "Previous month")}>
+          <button type="button" className="cal-nav-button" disabled={!canGoBack} onClick={() => step(-1)} aria-label={mode === "year" ? t("calendar.previousYear", "Previous year") : t("calendar.previousMonth", "Previous month")}>
             <ChevronLeft size={16} />
           </button>
-          <button type="button" className="cal-nav-button" onClick={() => step(1)} aria-label={mode === "year" ? t("calendar.nextYear", "Next year") : t("calendar.nextMonth", "Next month")}>
+          <button type="button" className="cal-nav-button" disabled={!canGoForward} onClick={() => step(1)} aria-label={mode === "year" ? t("calendar.nextYear", "Next year") : t("calendar.nextMonth", "Next month")}>
             <ChevronRight size={16} />
           </button>
           <button
@@ -302,6 +324,7 @@ export default function CalendarView({ timelineData, selectedId, onSelect, onAdd
               monthName={monthName}
               dayDots={yearDots}
               todayN={todayN}
+              disabled={isMonthOutside(cursor.year, index + 1)}
               onPickMonth={(year, month) => { setCursor({ year, month }); setMode("month"); }}
             />
           ))}
