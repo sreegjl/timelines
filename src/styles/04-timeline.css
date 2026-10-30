@@ -1334,6 +1334,10 @@
   height: 100%;
 }
 
+.timeline-globe-view .globe-container.is-sliding canvas {
+  cursor: move;
+}
+
 .timeline-globe-view.is-picking .globe-container canvas {
   cursor: crosshair;
 }

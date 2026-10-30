@@ -243,6 +243,7 @@ export default memo(forwardRef(function GlobeView({
         attributionControl: { compact: true },
         dragRotate: false,
         pitchWithRotate: false,
+        boxZoom: false,
       });
     } catch (error) {
       console.warn("Globe view unavailable:", error);
@@ -290,9 +291,39 @@ export default memo(forwardRef(function GlobeView({
     };
     container.addEventListener("wheel", handleWheel, { passive: false, capture: true });
 
+    // shift + drag slides the globe via uneven padding; captured so maplibre's drag never starts
+    let slide = null;
+    const handleSlideStart = (e) => {
+      if (!e.shiftKey || e.button !== 0 || e.target.closest(".maplibregl-marker, .maplibregl-ctrl")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const { left, right, top, bottom } = map.getPadding();
+      slide = { x: e.clientX, y: e.clientY, offsetX: (left - right) / 2, offsetY: (top - bottom) / 2 };
+      container.classList.add("is-sliding");
+    };
+    const handleSlideMove = (e) => {
+      if (!slide) return;
+      const maxX = container.clientWidth * 0.4;
+      const maxY = container.clientHeight * 0.4;
+      const x = Math.max(-maxX, Math.min(maxX, slide.offsetX + e.clientX - slide.x));
+      const y = Math.max(-maxY, Math.min(maxY, slide.offsetY + e.clientY - slide.y));
+      map.setPadding({ left: Math.max(0, 2 * x), right: Math.max(0, -2 * x), top: Math.max(0, 2 * y), bottom: Math.max(0, -2 * y) });
+    };
+    const handleSlideEnd = () => {
+      if (!slide) return;
+      slide = null;
+      container.classList.remove("is-sliding");
+    };
+    container.addEventListener("mousedown", handleSlideStart, true);
+    window.addEventListener("mousemove", handleSlideMove);
+    window.addEventListener("mouseup", handleSlideEnd);
+
     const markerStore = markersRef.current;
     return () => {
       container.removeEventListener("wheel", handleWheel, true);
+      container.removeEventListener("mousedown", handleSlideStart, true);
+      window.removeEventListener("mousemove", handleSlideMove);
+      window.removeEventListener("mouseup", handleSlideEnd);
       markerStore.forEach(({ marker }) => marker.remove());
       markerStore.clear();
       popupRef.current?.remove();
