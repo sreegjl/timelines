@@ -77,17 +77,17 @@ export function buildTimelineFromRows(rows, mapping, { dateFormat } = {}) {
     const line = index + 2; // header is line 1
     const title = cell(row, "title").trim();
     if (!title) { skipped.push({ row: line, reason: "noTitle" }); return; }
-    const startInput = parseTimelineInput(cell(row, "date"), dateFormat);
+    const startInput = parseTimelineInput(cell(row, "date"), dateFormat, false);
     if (startInput.value === null) { skipped.push({ row: line, reason: "noDate" }); return; }
-    const endInput = parseTimelineInput(cell(row, "end"), dateFormat);
+    const endInput = parseTimelineInput(cell(row, "end"), dateFormat, false);
 
     // A row with a usable end date is a span; everything else is an event
     const type = endInput.value !== null && endInput.value > startInput.value ? "span" : "event";
 
     let el = newElementBase(type, generateUniqueRandomElementId(elements, type));
     el.title = title;
-    el = applyFieldValue(el, "date", cell(row, "date"), { dateFormat }) ?? el;
-    if (type === "span") el = applyFieldValue(el, "end", cell(row, "end"), { dateFormat }) ?? el;
+    el = applyFieldValue(el, "date", cell(row, "date"), { dateFormat, noYearZero: false }) ?? el;
+    if (type === "span") el = applyFieldValue(el, "end", cell(row, "end"), { dateFormat, noYearZero: false }) ?? el;
     if (startInput.precision === "month" || startInput.precision === "day") useCalendar = true;
     if (type === "span" && (endInput.precision === "month" || endInput.precision === "day")) useCalendar = true;
 

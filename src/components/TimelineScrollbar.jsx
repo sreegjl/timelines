@@ -53,7 +53,7 @@ export default function TimelineScrollbar({
 
     const resolveDate = (value, label) => {
       if (!label || typeof label !== "string") return adjustDate(value, label);
-      const parsed = parseTimelineInput(label);
+      const parsed = parseTimelineInput(label, undefined, false);
       if (Number.isFinite(parsed.value)) return adjustDate(parsed.value, label);
       return adjustDate(value, label);
     };
@@ -83,7 +83,7 @@ export default function TimelineScrollbar({
     const parseScaleValue = (value) => {
       if (typeof value === "number") return value;
       if (typeof value === "string") {
-        const parsed = parseTimelineInput(value);
+        const parsed = parseTimelineInput(value, undefined, false);
         return Number.isFinite(parsed.value) ? parsed.value : null;
       }
       return null;

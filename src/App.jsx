@@ -41,7 +41,8 @@ import { loadThemeConfig } from "./utils/themeLoader";
 import { countOldFormatThemes, isOldFormatTheme, migrateThemeColors } from "./utils/themeMigration";
 import { getAppSettings, saveAppSettings } from "./utils/appSettings";
 import { cloneDefaultKeybinds, loadKeybinds, matchesKeybind } from "./utils/keybinds";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fractionalYearToDate, setActiveDateFormat, getActiveDateFormat, setActiveTimeFormat, getActiveTimeFormat, normalizeLegacyDateLabel } from "./utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, daysInMonth, fractionalYearToDate, setActiveDateFormat, getActiveDateFormat, setActiveTimeFormat, getActiveTimeFormat, setActiveNoYearZero, getActiveNoYearZero, normalizeLegacyDateLabel } from "./utils/dateUtils";
+import { migrateElementYears, migrateFileYears } from "./utils/yearNumbering";
 import { parseFilterQuery } from "./utils/filterUtils";
 import useEscapeKey from "./hooks/useEscapeKey";
 import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
@@ -266,6 +267,8 @@ function App() {
   if (getActiveDateFormat() !== fileDateFormat) setActiveDateFormat(fileDateFormat);
   const fileTimeFormat = timelineData?.file?.timeFormat || (fileDateFormat === "ISO" ? "24" : "12");
   if (getActiveTimeFormat() !== fileTimeFormat) setActiveTimeFormat(fileTimeFormat);
+  const fileNoYearZero = timelineData?.file?.noYearZero === true;
+  if (getActiveNoYearZero() !== fileNoYearZero) setActiveNoYearZero(fileNoYearZero);
   const [currentTimelineId, setCurrentTimelineId] = useState(null);
   const currentTimelineIdRef = useRef(null);
   const [isNewTimelineModalOpen, setIsNewTimelineModalOpen] = useState(false);
@@ -1449,6 +1452,7 @@ function App() {
     const { title, start, end } = patch;
     if ("dateFormat" in patch) setActiveDateFormat(patch.dateFormat || "MDY");
     if ("timeFormat" in patch) setActiveTimeFormat(patch.timeFormat || "12");
+    if ("noYearZero" in patch) setActiveNoYearZero(patch.noYearZero === true);
     const parsedStart = parseTimelineInput(start);
     const parsedEnd = parseTimelineInput(end);
     setTimelineData((prevData) => {
@@ -1457,10 +1461,13 @@ function App() {
         ? generateIdFromTitle(title, "timeline").replace(/^timeline-/, "")
         : oldTimelineId;
       const effUseCalendar = ("useCalendar" in patch ? patch.useCalendar : prevData.file?.useCalendar) === true;
-      const startValue = parsedStart.value ?? prevData.file.start;
-      const endValue = parsedEnd.value ?? prevData.file.end;
+      // Patched years are already in the new numbering; everything else stored moves to keep its label
+      const flipsNumbering = "noYearZero" in patch && (patch.noYearZero === true) !== (prevData.file?.noYearZero === true);
+      const baseFile = flipsNumbering ? migrateFileYears(prevData.file, patch.noYearZero === true) : prevData.file;
+      const startValue = parsedStart.value ?? baseFile.start;
+      const endValue = parsedEnd.value ?? baseFile.end;
       const nextFile = {
-        ...prevData.file,
+        ...baseFile,
         ...patch,
         id: `${nextTimelineId}-timeline`,
         start:
@@ -1525,12 +1532,16 @@ function App() {
       if (!nextFile.mapHideRouteArrows) delete nextFile.mapHideRouteArrows;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;
+      if (!nextFile.noYearZero) delete nextFile.noYearZero;
       if (!nextFile.font || String(nextFile.font).toLowerCase() === "default") delete nextFile.font;
 
       const updatedData = {
         ...prevData,
         file: nextFile,
       };
+      if (flipsNumbering && Array.isArray(prevData.elements)) {
+        updatedData.elements = prevData.elements.map((el) => migrateElementYears(el, patch.noYearZero === true));
+      }
 
       // The physical file lives at currentTimelineId, which carries the folder; file.id never does
       const oldPathId = currentTimelineIdRef.current || oldTimelineId;

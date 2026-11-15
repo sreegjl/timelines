@@ -17,7 +17,7 @@ import {
 } from "../utils/timelineUtils";
 import { getEventFontVars, getSpanFontSize, resolveElementFontSize } from "../utils/elementFont";
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration, axisToDisplayYear } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair, ArrowLeftRight, Repeat, SlidersHorizontal, RotateCw } from "lucide-react";
@@ -741,7 +741,7 @@ const TimelineView = forwardRef(function TimelineView({
       if (!label || typeof label !== "string") {
         return adjustDate(value, label);
       }
-      const parsed = parseTimelineInput(label);
+      const parsed = parseTimelineInput(label, undefined, false);
       if (Number.isFinite(parsed.value)) {
         return adjustDate(parsed.value, label);
       }
@@ -829,7 +829,7 @@ const TimelineView = forwardRef(function TimelineView({
     const parseScaleValue = (value) => {
       if (typeof value === "number") return value;
       if (typeof value === "string") {
-        const parsed = parseTimelineInput(value);
+        const parsed = parseTimelineInput(value, undefined, false);
         return Number.isFinite(parsed.value) ? parsed.value : null;
       }
       return null;
@@ -1496,6 +1496,10 @@ const TimelineView = forwardRef(function TimelineView({
       nextTicks.push({ ...tick, value: normalizedValue });
     };
 
+    // Round tick labels are picked in displayed years; the missing year 0 lands on 1 CE
+    const noYearZero = file?.noYearZero === true;
+    const tickValueForYear = (year) => (!noYearZero ? year : year < 0 ? year + 1 : Math.max(year, 1));
+
     if (file?.scaleType === "logarithmic") {
       const lf = Math.max(1, Number(file?.logScaleFactor) || 10);
       const ls = maxYear - minYear;
@@ -1507,12 +1511,12 @@ const TimelineView = forwardRef(function TimelineView({
       const compFineStep = targetYearTickPx / Math.max(PX_PER_YEAR * safeScale, 1e-9) / 10;
       for (let compPos = minYear; compPos <= maxYear + epsilon; compPos += compFineStep) {
         const clampedComp = Math.min(compPos, maxYear);
-        const realYear = logDecompress(clampedComp);
+        const realYear = axisToDisplayYear(logDecompress(clampedComp), noYearZero);
         const absYear = Math.max(Math.abs(realYear), 1);
         const magnitude = Math.floor(Math.log10(absYear));
         const roundTo = Math.pow(10, Math.max(0, magnitude - 2));
         const niceTick = Math.round(realYear / roundTo) * roundTo;
-        pushTick({ value: niceTick });
+        pushTick({ value: tickValueForYear(niceTick) });
       }
       nextTicks.sort((a, b) => a.value - b.value);
       return nextTicks;
@@ -1562,8 +1566,11 @@ const TimelineView = forwardRef(function TimelineView({
 
       let step = pickStep(targetYearTickPx / Math.max(localScreenPxPerYear, 0.000001));
       if (Math.max(Math.abs(minYear), Math.abs(maxYear)) >= 100) step = Math.max(1, step);
-      const startTick = Math.ceil(segment.start / step) * step;
-      for (let y = startTick; y <= segment.end + epsilon; y += step) {
+      const firstYear = axisToDisplayYear(segment.start, noYearZero);
+      const lastYear = axisToDisplayYear(segment.end, noYearZero);
+      const startTick = Math.ceil(firstYear / step) * step;
+      for (let year = startTick; year <= lastYear + epsilon; year += step) {
+        const y = tickValueForYear(year);
         if (y < segment.start - epsilon || y > segment.end + epsilon) continue;
         pushTick({ value: y });
       }
@@ -1707,6 +1714,7 @@ const TimelineView = forwardRef(function TimelineView({
     file?.hideDecimals,
     file?.negID,
     file?.posID,
+    file?.noYearZero,
     file?.approxID,
     file?.showDurations,
   ]);

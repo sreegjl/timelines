@@ -10,7 +10,7 @@ import { loadThemeConfig } from "../utils/themeLoader";
 import { isZipBuffer, readPackage } from "../utils/packageReader";
 import { setViewerPackage, getPackageNote, resolvePackageAssetSrc } from "../utils/viewerPackageStore";
 import { ensureUniqueElementIds } from "../utils/idUtils";
-import { setActiveDateFormat, getActiveDateFormat, normalizeLegacyDateLabel } from "../utils/dateUtils";
+import { setActiveDateFormat, getActiveDateFormat, setActiveNoYearZero, getActiveNoYearZero, normalizeLegacyDateLabel } from "../utils/dateUtils";
 import { parseFilterQuery } from "../utils/filterUtils";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -224,6 +224,8 @@ export default function ViewerApp() {
   // Sync the date-format lens with the loaded timeline before children render.
   const viewerDateFormat = timelineData?.file?.dateFormat || "MDY";
   if (getActiveDateFormat() !== viewerDateFormat) setActiveDateFormat(viewerDateFormat);
+  const viewerNoYearZero = timelineData?.file?.noYearZero === true;
+  if (getActiveNoYearZero() !== viewerNoYearZero) setActiveNoYearZero(viewerNoYearZero);
   const [loadError, setLoadError] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [ghInput, setGhInput] = useState("");

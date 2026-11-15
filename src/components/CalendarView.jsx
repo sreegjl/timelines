@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, CalendarDays, Edit2, CopyPlus, ArrowLeftRight, Trash2 } from "lucide-react";
-import { fractionalYearToDate, todayFractionalYear, formatTimeOfDay, isValidTimeOfDay } from "../utils/dateUtils";
+import { fractionalYearToDate, todayFractionalYear, formatTimeOfDay, isValidTimeOfDay, axisToDisplayYear } from "../utils/dateUtils";
 import {
   getCalendarNames,
   buildMonthGrid,
@@ -21,7 +21,8 @@ const MAX_DOTS_PER_DAY = 3;
 const BAR_HEIGHT = 18;
 const DAY_HEADER_HEIGHT = 24;
 
-const formatYearLabel = (year, negID, posID) => {
+const formatYearLabel = (axisYear, negID, posID) => {
+  const year = axisToDisplayYear(axisYear);
   if (year < 0) return `${Math.abs(year)} ${negID || "BCE"}`;
   return posID ? `${year} ${posID}` : String(year);
 };

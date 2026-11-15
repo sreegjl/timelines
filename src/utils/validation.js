@@ -1,4 +1,4 @@
-import { parseTimelineInput, snapToMonthGrid, isValidTimeOfDay } from "./dateUtils.js";
+import { parseTimelineInput, snapToMonthGrid, isValidTimeOfDay, formatYearForInput } from "./dateUtils.js";
 
 // --- ID / tag / filename validators ---
 
@@ -66,7 +66,7 @@ export const sanitizeTitle = (value) =>
 
 // --- Scale section helpers (SettingsModal) ---
 
-export const loadScaleSections = (stored = [], legacyBreaks = []) => {
+export const loadScaleSections = (stored = [], legacyBreaks = [], noYearZero = false) => {
   const source =
     Array.isArray(stored) && stored.length > 0
       ? stored
@@ -75,22 +75,22 @@ export const loadScaleSections = (stored = [], legacyBreaks = []) => {
         : [];
   if (source.length === 0) return [];
   return source.map((item) => ({
-    start: String(item?.start ?? ""),
-    end: String(item?.end ?? ""),
+    start: Number.isFinite(item?.start) ? formatYearForInput(item.start, noYearZero) : String(item?.start ?? ""),
+    end: Number.isFinite(item?.end) ? formatYearForInput(item.end, noYearZero) : String(item?.end ?? ""),
     scale: String(item?.scale ?? "0"),
     showBreak: item?.showBreak !== false,
   }));
 };
 
-export const validateScaleSection = (item) => {
+export const validateScaleSection = (item, noYearZero) => {
   const startRaw = item?.start?.trim() || "";
   const endRaw = item?.end?.trim() || "";
   const scaleRaw = item?.scale?.trim() || "";
   if (!startRaw && !endRaw && !scaleRaw) return null;
   if (!startRaw || !endRaw) return "scaleBothRequired";
 
-  const parsedStart = parseTimelineInput(startRaw);
-  const parsedEnd = parseTimelineInput(endRaw);
+  const parsedStart = parseTimelineInput(startRaw, undefined, noYearZero);
+  const parsedEnd = parseTimelineInput(endRaw, undefined, noYearZero);
   if (!Number.isFinite(parsedStart.value)) return "scaleInvalidStart";
   if (!Number.isFinite(parsedEnd.value)) return "scaleInvalidEnd";
   if (parsedStart.value === parsedEnd.value) return "scaleMustDiffer";
@@ -103,7 +103,7 @@ export const validateScaleSection = (item) => {
 // --- Span/element helpers (RightPanel) ---
 
 export const getSpanNumericEnd = (span) => {
-  const parsed = parseTimelineInput(span.endLabel ?? span.end);
+  const parsed = parseTimelineInput(span.endLabel ?? span.end, undefined, false);
   return parsed.value ?? span.end;
 };
 

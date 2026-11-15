@@ -210,6 +210,10 @@
       "label": "Negative Era",
       "placeholder": "e.g., BCE"
     },
+    "noYearZero": {
+      "description": "Count years historically, with 1 BCE followed directly by 1 CE, so durations across the boundary are correct. Existing dates keep their labels; anything at year 0 moves to 1 BCE.",
+      "label": "No Year Zero"
+    },
     "positiveEra": {
       "description": "Optional label for positive years (e.g., CE).",
       "label": "Positive Era",

@@ -6,7 +6,7 @@ import {
   Eye, EyeOff, Tag, Check, FileText, ImageIcon,
   Search, Plus, ArrowLeft, Download,
 } from "lucide-react";
-import { parseTimelineInput, formatDateForInput } from "../utils/dateUtils";
+import { parseTimelineInput, formatDateForInput, formatYearForInput } from "../utils/dateUtils";
 import { formatYear } from "../utils/timelineUtils";
 import { parseFilterQuery, matchesFilter, buildFilterContext } from "../utils/filterUtils";
 import { applyFieldValue } from "../utils/elementFields";
@@ -114,7 +114,7 @@ export default function SpreadsheetView({
   const [thumbPanelUrl, setThumbPanelUrl] = useState("");
 
   const file = timelineData?.file ?? {};
-  const { useCalendar, useMaps, useWiki, negID, posID, hideDecimals } = file;
+  const { useCalendar, useMaps, useWiki, negID, posID, hideDecimals, noYearZero } = file;
   const elements = timelineData?.elements ?? [];
 
   const displayName = useMemo(() => {
@@ -183,7 +183,9 @@ export default function SpreadsheetView({
 
   const fmtDate = useCallback(
     (yr) => formatYear(yr, negID ?? null, posID ?? null, useCalendar, hideDecimals),
-    [negID, posID, useCalendar, hideDecimals]
+    // formatYear reads noYearZero from the active setting, so lint can't see it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [negID, posID, useCalendar, hideDecimals, noYearZero]
   );
 
   const getDateDisplay = useCallback((el) =>
@@ -539,8 +541,8 @@ export default function SpreadsheetView({
     if      (field === "title")  val = el.title ?? "";
     else if (field === "description") { if (el.type !== "span") return; val = el.description ?? ""; }
     else if (field === "parent") val = getParentTitle(el);
-    else if (field === "date")   val = String(el.type === "event" ? (el.date ?? "") : (el.start ?? ""));
-    else if (field === "end")    { if (el.type === "event") return; val = String(el.end ?? ""); }
+    else if (field === "date")   val = formatYearForInput(el.type === "event" ? el.date : el.start);
+    else if (field === "end")    { if (el.type === "event") return; val = formatYearForInput(el.end); }
     else if (field === "group")    { if (el.type === "era") return; val = groupById[el.groupId] ?? ""; }
     else if (field === "mergeInto") { if (el.type !== "span") return; val = getMergeIntoTitle(el); }
     else if (field === "tags")   val = (el.tags ?? []).join(", ");
@@ -594,8 +596,8 @@ export default function SpreadsheetView({
     }
   };
 
-  const spanStart = (span) => { const p = parseTimelineInput(span.startLabel ?? span.start); return p.value ?? span.start; };
-  const spanEnd   = (span) => { const p = parseTimelineInput(span.endLabel   ?? span.end);   return p.value ?? span.end;   };
+  const spanStart = (span) => { const p = parseTimelineInput(span.startLabel ?? span.start, undefined, false); return p.value ?? span.start; };
+  const spanEnd   = (span) => { const p = parseTimelineInput(span.endLabel   ?? span.end, undefined, false);   return p.value ?? span.end;   };
 
   const handleParentChange = (e) => {
     const val = e.target.value;

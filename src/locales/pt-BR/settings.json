@@ -212,6 +212,10 @@
       "label": "Era negativa",
       "placeholder": "a.C."
     },
+    "noYearZero": {
+      "description": "",
+      "label": ""
+    },
     "positiveEra": {
       "description": "Identificação opcional para anos positivos (por exemplo, d.C.).",
       "label": "Era positiva",

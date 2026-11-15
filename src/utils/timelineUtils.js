@@ -1,4 +1,4 @@
-import { daysInMonth, displayDateLabel, getActiveDateFormat, formatCalendarDate } from "./dateUtils";
+import { daysInMonth, displayDateLabel, getActiveDateFormat, formatCalendarDate, axisToDisplayYear } from "./dateUtils";
 import i18n from "../i18n";
 import { resolveElementFontSize, scaleEventHeight } from "./elementFont";
 
@@ -42,7 +42,8 @@ export function formatApproxRange(el, startText, endText, approxID, separator = 
   return `${left}${separator}${right}`;
 }
 
-export function formatYear(year, negID, posID, useCalendar = false, hideDecimals = false) {
+export function formatYear(axisYear, negID, posID, useCalendar = false, hideDecimals = false) {
+  const year = axisToDisplayYear(axisYear);
   if (year < 0) {
     const abs = hideDecimals ? Math.round(Math.abs(year)) : Math.abs(year);
     return negID ? `${abs} ${negID}` : `${-abs}`;

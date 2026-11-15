@@ -9,7 +9,7 @@ import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
-import { parseTimelineInput, fractionalYearToDate, displayDateTimeLabel, formatDateForInput, formatCalendarDate, formatDuration, formatTimeOfDay, isValidTimeOfDay, resolveLabeledDate } from "../utils/dateUtils";
+import { parseTimelineInput, fractionalYearToDate, displayDateTimeLabel, formatDateForInput, formatCalendarDate, formatDuration, formatTimeOfDay, isValidTimeOfDay, resolveLabeledDate, formatYearForInput } from "../utils/dateUtils";
 
 const DYNAMIC_DATE_OPTIONS = [
   { label: "Today", value: "current" },
@@ -442,6 +442,7 @@ export default function RightPanel({
     stripEditableEraSuffix,
     timelineData?.file?.negID,
     timelineData?.file?.posID,
+    timelineData?.file?.noYearZero,
     timelineData?.file?.useCalendar,
     timelineData?.file?.hideDecimals,
   ]);
@@ -616,12 +617,12 @@ export default function RightPanel({
   };
 
   const getSpanNumericStart = (span) => {
-    const parsed = parseTimelineInput(span.startLabel ?? span.start);
+    const parsed = parseTimelineInput(span.startLabel ?? span.start, undefined, false);
     return parsed.value ?? span.start;
   };
 
   const getSpanNumericEnd = (span) => {
-    const parsed = parseTimelineInput(span.endLabel ?? span.end);
+    const parsed = parseTimelineInput(span.endLabel ?? span.end, undefined, false);
     return parsed.value ?? span.end;
   };
 
@@ -1001,6 +1002,7 @@ export default function RightPanel({
   ), [
     timelineData?.file?.negID,
     timelineData?.file?.posID,
+    timelineData?.file?.noYearZero,
     timelineData?.file?.useCalendar,
     timelineData?.file?.hideDecimals,
   ]);
@@ -2575,7 +2577,7 @@ export default function RightPanel({
                               <input
                                 type="text"
                                 inputMode="numeric"
-                                value={brk.yearInput ?? String(brk.year ?? "")}
+                                value={brk.yearInput ?? formatYearForInput(brk.year)}
                                 onChange={(e) => {
                                   const nextBreaks = [...formData.breaks];
                                   nextBreaks[idx] = { ...nextBreaks[idx], yearInput: e.target.value };

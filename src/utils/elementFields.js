@@ -4,9 +4,9 @@ import { ICON_MAP } from "../config/elementIcons.js";
 
 // Applies a spreadsheet-style text value to one field of an element. Shared by
 // spreadsheet editing/paste and CSV import so both read cells the same way.
-// ctx: { elements, groups, dateFormat? } — elements/groups resolve titles to ids.
+// ctx: { elements, groups, dateFormat?, noYearZero? } — elements/groups resolve titles to ids.
 // Returns the updated element, or null if the value doesn't apply or nothing changed.
-export function applyFieldValue(el, field, val, { elements = [], groups = [], dateFormat } = {}) {
+export function applyFieldValue(el, field, val, { elements = [], groups = [], dateFormat, noYearZero } = {}) {
   const updated = { ...el };
   if (field === "title") {
     const t = val.trim(); if (t) updated.title = t; else return null;
@@ -14,12 +14,12 @@ export function applyFieldValue(el, field, val, { elements = [], groups = [], da
     if (el.type !== "span") return null;
     const v = val.trim(); if (v) updated.description = v; else delete updated.description;
   } else if (field === "date") {
-    const p = parseTimelineInput(val, dateFormat); if (p.value === null) return null;
+    const p = parseTimelineInput(val, dateFormat, noYearZero); if (p.value === null) return null;
     if (el.type === "event") { updated.date = p.value; if (p.label) updated.dateLabel = p.label; else delete updated.dateLabel; }
     else { updated.start = p.value; if (p.label) updated.startLabel = p.label; else delete updated.startLabel; }
   } else if (field === "end") {
     if (el.type === "event") return null;
-    const p = parseTimelineInput(val, dateFormat); if (p.value === null) return null;
+    const p = parseTimelineInput(val, dateFormat, noYearZero); if (p.value === null) return null;
     if (Number.isFinite(el.start) && p.value <= el.start) return null;
     updated.end = p.value; if (p.label) updated.endLabel = p.label; else delete updated.endLabel;
   } else if (field === "tags") {

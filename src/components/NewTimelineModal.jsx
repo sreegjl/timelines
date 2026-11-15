@@ -67,8 +67,8 @@ export default function NewTimelineModal({ isOpen, onClose, onCreate }) {
       errors.push(t("newTimeline.errors.nameAlphanumeric", "Timeline name must contain at least one letter or number."));
     }
 
-    const parsedStart = parseTimelineInput(start);
-    const parsedEnd = parseTimelineInput(end);
+    const parsedStart = parseTimelineInput(start, undefined, false);
+    const parsedEnd = parseTimelineInput(end, undefined, false);
     const startValue = parsedStart.value;
     const endValue = parsedEnd.value;
 

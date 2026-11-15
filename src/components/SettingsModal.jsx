@@ -3,9 +3,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ROUTE_MODES } from "../utils/mapRoutes";
 import { MAP_DATE_FILTERS, getMapDateFilter } from "../utils/mapMarkers";
-import { parseTimelineInput, snapToMonthGrid, formatDateForInput } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, formatDateForInput, formatYearForInput } from "../utils/dateUtils";
 import { DETAIL_MIN, DETAIL_MID, DETAIL_MAX, TICK_DENSITY_MIN, TICK_DENSITY_MID, TICK_DENSITY_MAX, clamp, detailToSlider, sliderToDetail, tickDensityToSlider, sliderToTickDensity } from "../utils/sliderUtils";
 import { sanitizeTitle, loadScaleSections, validateScaleSection } from "../utils/validation";
+import { migrateYearValue } from "../utils/yearNumbering";
 import { validationMessage } from "../i18n/validationMessages";
 import { themeOptionLabel } from "../utils/themeLoader";
 import { DEFAULT_APPROX_LABEL } from "../utils/timelineUtils";
@@ -95,6 +96,7 @@ export default function SettingsModal({
   const [logScaleFactor, setLogScaleFactor] = useState(10);
   const [negID, setNegID] = useState("");
   const [posID, setPosID] = useState("");
+  const [noYearZero, setNoYearZero] = useState(false);
   const [approxID, setApproxID] = useState("");
   const [durationUnit, setDurationUnit] = useState("");
   const [branchOrdering, setBranchOrdering] = useState("later-first");
@@ -149,6 +151,7 @@ export default function SettingsModal({
     tickDensity: Number(tickDensity) !== 1 ? Number(tickDensity) : undefined,
     negID,
     posID,
+    noYearZero: noYearZero || undefined,
     approxID,
     durationUnit,
     theme,
@@ -200,7 +203,7 @@ export default function SettingsModal({
     const out = [];
     const errors = [];
     editable.forEach((item, index) => {
-      const error = validateScaleSection(item);
+      const error = validateScaleSection(item, noYearZero);
       errors[index] = error;
 
       if (error) return;
@@ -208,8 +211,8 @@ export default function SettingsModal({
       const endRaw = item?.end?.trim() || "";
       if (!startRaw || !endRaw) return;
 
-      const parsedStart = parseTimelineInput(startRaw);
-      const parsedEnd = parseTimelineInput(endRaw);
+      const parsedStart = parseTimelineInput(startRaw, undefined, noYearZero);
+      const parsedEnd = parseTimelineInput(endRaw, undefined, noYearZero);
 
       const startVal = parsedStart.value;
       const endVal = parsedEnd.value;
@@ -242,12 +245,24 @@ export default function SettingsModal({
     setScaleSectionErrors((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Mirrors the stored migration so each field keeps its text; only year 0 becomes 1 BCE
+  const handleNoYearZeroChange = (next) => {
+    const retype = (text) => {
+      const parsed = parseTimelineInput(text, undefined, noYearZero);
+      return parsed.label || !Number.isFinite(parsed.value) ? text : formatYearForInput(migrateYearValue(parsed.value, next), next);
+    };
+    setStart(retype(start));
+    setEnd(retype(end));
+    setScaleSections(scaleSections.map((s) => ({ ...s, start: retype(s.start), end: retype(s.end) })));
+    setNoYearZero(next);
+  };
+
   const updateScaleSection = (index, field, value) => {
     const next = scaleSections.map((s, i) => (i === index ? { ...s, [field]: value } : s));
     setScaleSections(next);
     setScaleSectionErrors((prev) => {
       const nextErrors = [...prev];
-      nextErrors[index] = validateScaleSection(next[index]);
+      nextErrors[index] = validateScaleSection(next[index], noYearZero);
       return nextErrors;
     });
   };
@@ -302,8 +317,9 @@ export default function SettingsModal({
       } else {
         setTitle(timelineData.file.title || "");
         setCommittedTitle(timelineData.file.title || "");
-        setStart(formatDateForInput(timelineData.file.startLabel) || String(timelineData.file.start ?? ""));
-        setEnd(formatDateForInput(timelineData.file.endLabel) || String(timelineData.file.end ?? ""));
+        const fileNoYearZero = timelineData.file.noYearZero === true;
+        setStart(formatDateForInput(timelineData.file.startLabel) || formatYearForInput(timelineData.file.start, fileNoYearZero));
+        setEnd(formatDateForInput(timelineData.file.endLabel) || formatYearForInput(timelineData.file.end, fileNoYearZero));
         const rawDetail = Number(timelineData.file.detailLevel);
         const nextDetailLevel = Number.isFinite(rawDetail) ? rawDetail : 1;
         const clampedDetail = clamp(nextDetailLevel, DETAIL_MIN, DETAIL_MAX);
@@ -320,11 +336,12 @@ export default function SettingsModal({
         setUseCalendar(Boolean(timelineData.file.useCalendar ?? timelineData.file.useDays ?? timelineData.file.useMonths));
         setDateFormat(timelineData.file.dateFormat || "MDY");
         setTimeFormat(timelineData.file.timeFormat || (timelineData.file.dateFormat === "ISO" ? "24" : "12"));
-        setScaleSections(loadScaleSections(timelineData.file.scaleSections, timelineData.file.breaks));
+        setScaleSections(loadScaleSections(timelineData.file.scaleSections, timelineData.file.breaks, fileNoYearZero));
         setScaleType(timelineData.file.scaleType || "default");
         setLogScaleFactor(Number.isFinite(Number(timelineData.file.logScaleFactor)) && Number(timelineData.file.logScaleFactor) >= 1 ? Number(timelineData.file.logScaleFactor) : 10);
         setNegID(timelineData.file.negID || "");
         setPosID(timelineData.file.posID || "");
+        setNoYearZero(fileNoYearZero);
         setApproxID(timelineData.file.approxID || "");
         setDurationUnit(timelineData.file.durationUnit || "");
         setBranchOrdering(timelineData.file.branchOrdering || "later-first");
@@ -406,8 +423,8 @@ export default function SettingsModal({
 
     // Set new timeout to save after 300ms of no changes
     saveTimeoutRef.current = setTimeout(() => {
-      const parsedStart = parseTimelineInput(start);
-      const parsedEnd = parseTimelineInput(end);
+      const parsedStart = parseTimelineInput(start, undefined, noYearZero);
+      const parsedEnd = parseTimelineInput(end, undefined, noYearZero);
       const errors = [];
 
       if (!title.trim()) {
@@ -482,6 +499,7 @@ export default function SettingsModal({
     tickDensity,
     negID,
     posID,
+    noYearZero,
     approxID,
     durationUnit,
     theme,
@@ -977,6 +995,24 @@ export default function SettingsModal({
                     placeholder={t("general.positiveEra.placeholder", "e.g., CE")}
                     maxLength={10}
                   />
+                </div>
+              </div>
+
+              {/* No Year Zero */}
+              <div className="settings-row no-border-bottom">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.noYearZero.label", "No Year Zero")}</div>
+                  <div className="settings-row-description">{t("general.noYearZero.description", "Count years historically, with 1 BCE followed directly by 1 CE, so durations across the boundary are correct. Existing dates keep their labels; anything at year 0 moves to 1 BCE.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={noYearZero}
+                      onChange={(e) => handleNoYearZeroChange(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
                 </div>
               </div>
 

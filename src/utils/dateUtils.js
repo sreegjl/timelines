@@ -36,7 +36,25 @@ export const setActiveTimeFormat = (fmt) => {
 };
 export const getActiveTimeFormat = () => activeTimeFormat;
 
-export const isValidTimeOfDay = (time) => typeof time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+// Stored values stay on the continuous axis, which has a year 0. Historical numbering
+// has none (1 BCE is followed by 1 CE), so only typed and displayed years shift by one.
+let activeNoYearZero = false;
+export const setActiveNoYearZero = (on) => {
+  activeNoYearZero = on === true;
+};
+export const getActiveNoYearZero = () => activeNoYearZero;
+
+const cleanYear = (n) => Math.round(n * 1e9) / 1e9;
+export const axisToDisplayYear = (value, noYearZero = activeNoYearZero) =>
+  noYearZero && value < 1 ? cleanYear(value - 1) : value;
+export const displayToAxisYear = (year, noYearZero = activeNoYearZero) => {
+  if (!noYearZero || year >= 1) return year;
+  return year < 0 ? cleanYear(year + 1) : NaN;
+};
+export const formatYearForInput = (value, noYearZero = activeNoYearZero) =>
+  Number.isFinite(value) ? String(axisToDisplayYear(value, noYearZero)) : "";
+
+export const isValidTimeOfDay =(time) => typeof time === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
 
 export const formatTimeOfDay = (time, fmt = activeTimeFormat) => {
   if (!isValidTimeOfDay(time)) return null;
@@ -171,8 +189,9 @@ export const normalizeLegacyDateLabel = (label) => {
   return cal ? cal.label : label;
 };
 
-// fmt overrides the active slash order, e.g. when importing files written elsewhere
-export const parseTimelineInput = (value, fmt = activeDateFormat) => {
+// fmt overrides the active slash order, e.g. when importing files written elsewhere.
+// Typed numbers are historical years under noYearZero; raw numbers are already axis values.
+export const parseTimelineInput = (value, fmt = activeDateFormat, noYearZero = activeNoYearZero) => {
   if (value === null || value === undefined) {
     return { value: null, label: null, precision: null };
   }
@@ -194,7 +213,7 @@ export const parseTimelineInput = (value, fmt = activeDateFormat) => {
     return { value: cal.value, label: cal.label, precision: cal.precision };
   }
 
-  const num = Number(raw);
+  const num = displayToAxisYear(Number(raw), noYearZero);
   return Number.isFinite(num)
     ? { value: num, label: null, precision: precisionFromValue(num) }
     : { value: null, label: null, precision: null };
@@ -203,7 +222,7 @@ export const parseTimelineInput = (value, fmt = activeDateFormat) => {
 // Dynamic labels re-resolve; the stored number is from the last save
 export const resolveLabeledDate = (value, label) => {
   if (typeof label === "string" && label.trim()) {
-    const parsed = parseTimelineInput(label);
+    const parsed = parseTimelineInput(label, undefined, false);
     if (Number.isFinite(parsed.value)) return parsed.value;
   }
   return value;

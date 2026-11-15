@@ -172,3 +172,25 @@ test("resolveLabeledDate re-resolves dynamic labels instead of the stale stored 
   assert.strictEqual(resolveLabeledDate(-323, undefined), -323);
   assert.strictEqual(resolveLabeledDate(-323, ""), -323);
 });
+
+test("noYearZero: typed historical years map onto the axis without a year 0", async () => {
+  const { parseTimelineInput, axisToDisplayYear, formatYearForInput } = await load();
+  assert.strictEqual(parseTimelineInput("-3", undefined, true).value, -2);
+  assert.strictEqual(parseTimelineInput("-1", undefined, true).value, 0);
+  assert.strictEqual(parseTimelineInput("3", undefined, true).value, 3);
+  assert.strictEqual(parseTimelineInput("0", undefined, true).value, null);
+  // stored numbers are axis values already
+  assert.strictEqual(parseTimelineInput(-3, undefined, true).value, -3);
+  assert.strictEqual(axisToDisplayYear(0, true), -1);
+  assert.strictEqual(axisToDisplayYear(1, true), 1);
+  assert.strictEqual(formatYearForInput(-2, true), "-3");
+  assert.strictEqual(formatYearForInput(-2, false), "-2");
+});
+
+test("noYearZero: 3 BCE to 3 CE lasts 5 years (issue #80)", async () => {
+  const { parseTimelineInput, formatDuration } = await load();
+  const start = parseTimelineInput("-3", undefined, true).value;
+  const end = parseTimelineInput("3", undefined, true).value;
+  assert.strictEqual(formatDuration(start, end), "5 yrs");
+  assert.strictEqual(formatDuration(-3, 3), "6 yrs");
+});
