@@ -265,11 +265,9 @@ const chipsFromQuery = (query, nextId) => {
   }
   return chips;
 };
+// maplibre is heavy, so it only loads once someone opens the map
 const MapView = lazy(() => import("./MapView"));
-// flat map and globe handle their own pointer input
-const MAP_SURFACE_SELECTOR = ".leaflet-container, .maplibregl-map";
-// the globe drags maplibre along, so it only gets loaded when someone actually asks for a planet
-const GlobeView = lazy(() => import("./GlobeView"));
+const MAP_SURFACE_SELECTOR = ".maplibregl-map";
 import "../styles/04-timeline.css";
 import "../styles/07-modals-menus.css";
 
@@ -602,11 +600,10 @@ const TimelineView = forwardRef(function TimelineView({
     else setInternalShowMap(value);
   }, [isViewControlled, onSetViewMode, showMap]);
   const [localGlobe, setLocalGlobe] = useState(null);
-  const [globeFailed, setGlobeFailed] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const [globeAutoRotate, setGlobeAutoRotate] = useState(false);
-  const isGlobe = (localGlobe ?? timelineData?.file?.mapGlobe === true) && !globeFailed;
+  const isGlobe = localGlobe ?? timelineData?.file?.mapGlobe === true;
   const setGlobeMode = (on) => {
-    setGlobeFailed(false);
     if (onPatchFile && !readOnly) {
       setLocalGlobe(null);
       onPatchFile({ mapGlobe: on || undefined });
@@ -4963,30 +4960,9 @@ const TimelineView = forwardRef(function TimelineView({
         </div>
       )}
 
-      {showMap && isGlobe && (
-        <Suspense fallback={<div className="timeline-map-placeholder" />}>
-          <GlobeView
-            ref={mapViewRef}
-            elements={mapElements}
-            onSelect={onSelect}
-            onOpenContextMenu={handleMapContextMenu}
-            onAltWheelPan={stablePanTimelineFromWheel}
-            onCtrlWheelZoom={stableZoomTimelineFromWheel}
-            viewportYear={deferredMapViewportYear}
-            selectedId={selectedId}
-            fileConfig={file}
-            pickMode={!!coordPickRequest?.id}
-            onPickCoordinate={onCoordinatePicked}
-            onUnavailable={() => {
-              setGlobeFailed(true);
-              onNotify?.(t("map.globeUnavailable", "Globe needs WebGL, showing the flat map instead"), "error", 3500);
-            }}
-            autoRotate={globeAutoRotate}
-          />
-        </Suspense>
-      )}
+      {showMap && mapFailed && <div className="timeline-map-placeholder" />}
 
-      {showMap && !isGlobe && (
+      {showMap && !mapFailed && (
         <Suspense fallback={<div className="timeline-map-placeholder" />}>
           <MapView
             ref={mapViewRef}
@@ -5000,6 +4976,12 @@ const TimelineView = forwardRef(function TimelineView({
             fileConfig={file}
             pickMode={!!coordPickRequest?.id}
             onPickCoordinate={onCoordinatePicked}
+            onUnavailable={() => {
+              setMapFailed(true);
+              onNotify?.(t("map.unavailable", "The map needs WebGL, which isn't available here"), "error", 3500);
+            }}
+            autoRotate={globeAutoRotate}
+            globe={isGlobe}
           />
         </Suspense>
       )}

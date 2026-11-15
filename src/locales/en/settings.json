@@ -311,6 +311,10 @@
       "description": "Show a glow in the theme's link color around the globe.",
       "label": "Atmosphere Glow"
     },
+    "globeStars": {
+      "description": "Show a dark starfield behind the globe instead of the theme background.",
+      "label": "Starry Background"
+    },
     "markers": {
       "circle": "Circle",
       "diamond": "Diamond",

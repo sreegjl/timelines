@@ -130,6 +130,7 @@ export default function SettingsModal({
   const [mapHideRouteArrows, setMapHideRouteArrows] = useState(false);
   const [mapGlobeHideFarSide, setMapGlobeHideFarSide] = useState(false);
   const [mapGlobeHideGlow, setMapGlobeHideGlow] = useState(false);
+  const [mapGlobeStars, setMapGlobeStars] = useState(false);
   const [settingsSection, setSettingsSection] = useState("general");
   const [isInitialized, setIsInitialized] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -193,6 +194,7 @@ export default function SettingsModal({
     mapHideRouteArrows: mapHideRouteArrows || undefined,
     mapGlobeHideFarSide: mapGlobeHideFarSide || undefined,
     mapGlobeHideGlow: mapGlobeHideGlow || undefined,
+    mapGlobeStars: mapGlobeStars || undefined,
     __scaleKey: JSON.stringify(scaleSections),
   });
 
@@ -376,6 +378,7 @@ export default function SettingsModal({
         setMapHideRouteArrows(timelineData.file.mapHideRouteArrows === true);
         setMapGlobeHideFarSide(timelineData.file.mapGlobeHideFarSide === true);
         setMapGlobeHideGlow(timelineData.file.mapGlobeHideGlow === true);
+        setMapGlobeStars(timelineData.file.mapGlobeStars === true);
         setValidationErrors([]);
         setScaleSectionErrors([]);
         lastFilePathRef.current = currentPath;
@@ -539,6 +542,7 @@ export default function SettingsModal({
     mapHideRouteArrows,
     mapGlobeHideFarSide,
     mapGlobeHideGlow,
+    mapGlobeStars,
     isInitialized,
     isOpen,
   ]);
@@ -1751,6 +1755,24 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={!mapGlobeHideGlow}
                       onChange={(e) => setMapGlobeHideGlow(!e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("maps.globeStars.label", "Starry Background")}</div>
+                  <div className="settings-row-description">
+                    {t("maps.globeStars.description", "Show a dark starfield behind the globe instead of the theme background.")}
+                  </div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={mapGlobeStars}
+                      onChange={(e) => setMapGlobeStars(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>

@@ -200,7 +200,7 @@
   },
   "map": {
     "autoRotate": "",
-    "globeUnavailable": "",
+    "unavailable": "",
     "mode": ""
   },
   "mapPick": {

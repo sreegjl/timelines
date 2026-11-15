@@ -198,7 +198,7 @@
   },
   "map": {
     "autoRotate": "Auto-rotate",
-    "globeUnavailable": "Globe needs WebGL, showing the flat map instead",
+    "unavailable": "The map needs WebGL, which isn't available here",
     "mode": "Map style"
   },
   "mapPick": {

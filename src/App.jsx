@@ -1529,6 +1529,7 @@ function App() {
       if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
       if (!nextFile.mapGlobeHideFarSide) delete nextFile.mapGlobeHideFarSide;
       if (!nextFile.mapGlobeHideGlow) delete nextFile.mapGlobeHideGlow;
+      if (!nextFile.mapGlobeStars) delete nextFile.mapGlobeStars;
       if (!nextFile.mapHideRouteArrows) delete nextFile.mapHideRouteArrows;
       if (!nextFile.approxID) delete nextFile.approxID;
       if (!nextFile.durationUnit) delete nextFile.durationUnit;

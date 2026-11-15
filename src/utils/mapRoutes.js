@@ -71,19 +71,6 @@ export function buildRoutes(elements, mode, options = {}) {
   return routes;
 }
 
-// bearing in web mercator space, which is what the map actually draws. degrees, 0 = east, clockwise
-export function screenBearing(from, to) {
-  const project = (p) => {
-    const x = (p.lng * Math.PI) / 180;
-    const lat = Math.max(-85.0511, Math.min(85.0511, p.lat));
-    const y = Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
-    return { x, y };
-  };
-  const a = project(from);
-  const b = project(to);
-  return (Math.atan2(a.y - b.y, b.x - a.x) * 180) / Math.PI + 0;
-}
-
 // one arrow per span link (extends from, branches from its parent, merges into), earlier to later
 function buildLineageRoutes(located, byId) {
   const shown = new Set(located.map((el) => el.id));

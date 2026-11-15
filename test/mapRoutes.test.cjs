@@ -44,11 +44,9 @@ test("routes only join points the map is showing", async () => {
 });
 
 test("longitudes unwrap across the date line", async () => {
-  const { unwrapLongitudes, screenBearing } = await import("../src/utils/mapRoutes.js");
+  const { unwrapLongitudes } = await import("../src/utils/mapRoutes.js");
   const pts = unwrapLongitudes([{ lat: 0, lng: 170 }, { lat: 0, lng: -170 }, { lat: 0, lng: -160 }]);
   assert.deepStrictEqual(pts.map((p) => p.lng), [170, 190, 200]);
-  assert.strictEqual(Math.round(screenBearing({ lat: 0, lng: 0 }, { lat: 0, lng: 10 })), 0);
-  assert.strictEqual(Math.round(screenBearing({ lat: 0, lng: 0 }, { lat: 10, lng: 0 })), -90);
 });
 
 test("lineage routes follow extends-from, parent and merges-into links", async () => {

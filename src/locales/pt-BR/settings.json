@@ -313,6 +313,10 @@
       "description": "",
       "label": ""
     },
+    "globeStars": {
+      "description": "",
+      "label": ""
+    },
     "markers": {
       "circle": "Círculo",
       "diamond": "Losango",
