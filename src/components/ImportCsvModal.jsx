@@ -149,7 +149,7 @@ export default function ImportCsvModal({ text, fileName, onClose, onCreate }) {
               <div className="settings-row">
                 <div className="settings-row-left">
                   <div className="settings-row-label">{t("newTimeline.spreadsheet.label", "Spreadsheet View")}</div>
-                  <div className="settings-row-description">{t("newTimeline.spreadsheet.description", "Enable a table view for bulk editing elements.")}</div>
+                  <div className="settings-row-description">{t("newTimeline.spreadsheet.description", "Enable a spreadsheet view for bulk editing elements.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">

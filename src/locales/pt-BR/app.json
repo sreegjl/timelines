@@ -385,7 +385,7 @@
     },
     "note": "Estas opções podem ser alteradas posteriormente nas configurações da linha do tempo.",
     "spreadsheet": {
-      "description": "Ativa uma visualização em tabela para editar vários elementos de uma vez.",
+      "description": "Ativa uma visualização de planilha para editar vários elementos de uma vez.",
       "label": "Visualização de planilha"
     },
     "start": {

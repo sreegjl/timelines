@@ -372,7 +372,7 @@
     },
     "note": "These options can be changed later in timeline settings.",
     "spreadsheet": {
-      "description": "Enable a table view for bulk editing elements.",
+      "description": "Enable a spreadsheet view for bulk editing elements.",
       "label": "Spreadsheet View"
     },
     "start": {

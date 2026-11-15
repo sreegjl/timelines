@@ -128,7 +128,6 @@ export default function SettingsModal({
   const [mapEraMarker, setMapEraMarker] = useState(DEFAULT_ERA_MARKER);
   const [mapRoutes, setMapRoutes] = useState("off");
   const [mapHideRouteArrows, setMapHideRouteArrows] = useState(false);
-  const [mapGlobe, setMapGlobe] = useState(false);
   const [mapGlobeHideFarSide, setMapGlobeHideFarSide] = useState(false);
   const [mapGlobeHideGlow, setMapGlobeHideGlow] = useState(false);
   const [settingsSection, setSettingsSection] = useState("general");
@@ -192,7 +191,6 @@ export default function SettingsModal({
     mapEraMarker,
     mapRoutes: mapRoutes !== "off" ? mapRoutes : undefined,
     mapHideRouteArrows: mapHideRouteArrows || undefined,
-    mapGlobe: mapGlobe || undefined,
     mapGlobeHideFarSide: mapGlobeHideFarSide || undefined,
     mapGlobeHideGlow: mapGlobeHideGlow || undefined,
     __scaleKey: JSON.stringify(scaleSections),
@@ -376,7 +374,6 @@ export default function SettingsModal({
         setMapEraMarker(timelineData.file.mapEraMarker || DEFAULT_ERA_MARKER);
         setMapRoutes(timelineData.file.mapRoutes || "off");
         setMapHideRouteArrows(timelineData.file.mapHideRouteArrows === true);
-        setMapGlobe(Boolean(timelineData.file.mapGlobe));
         setMapGlobeHideFarSide(timelineData.file.mapGlobeHideFarSide === true);
         setMapGlobeHideGlow(timelineData.file.mapGlobeHideGlow === true);
         setValidationErrors([]);
@@ -540,7 +537,6 @@ export default function SettingsModal({
     mapEraMarker,
     mapRoutes,
     mapHideRouteArrows,
-    mapGlobe,
     mapGlobeHideFarSide,
     mapGlobeHideGlow,
     isInitialized,
@@ -629,6 +625,13 @@ export default function SettingsModal({
               onClick={() => setSettingsSection("appearance")}
             >
               {t("sections.appearance", "Appearance")}
+            </button>
+            <button
+              type="button"
+              className={`settings-sidebar-item${settingsSection === "dates" ? " is-active" : ""}`}
+              onClick={() => setSettingsSection("dates")}
+            >
+              {t("sections.dates", "Dates")}
             </button>
             <button
               type="button"
@@ -962,96 +965,6 @@ export default function SettingsModal({
           </div>
           )}
 
-              {/* Negative Era */}
-              <div className="settings-row no-border-bottom">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("general.negativeEra.label", "Negative Era")}</div>
-                  <div className="settings-row-description">{t("general.negativeEra.description", "Optional label for negative years (e.g., BCE).")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <input
-                    type="text"
-                    className="settings-input settings-input-small"
-                    value={negID}
-                    onChange={(e) => setNegID(e.target.value)}
-                    placeholder={t("general.negativeEra.placeholder", "e.g., BCE")}
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-
-              {/* Positive Era */}
-              <div className="settings-row no-border-bottom">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("general.positiveEra.label", "Positive Era")}</div>
-                  <div className="settings-row-description">{t("general.positiveEra.description", "Optional label for positive years (e.g., CE).")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <input
-                    type="text"
-                    className="settings-input settings-input-small"
-                    value={posID}
-                    onChange={(e) => setPosID(e.target.value)}
-                    placeholder={t("general.positiveEra.placeholder", "e.g., CE")}
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-
-              {/* No Year Zero */}
-              <div className="settings-row no-border-bottom">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("general.noYearZero.label", "No Year Zero")}</div>
-                  <div className="settings-row-description">{t("general.noYearZero.description", "Count years historically, with 1 BCE followed directly by 1 CE, so durations across the boundary are correct. Existing dates keep their labels; anything at year 0 moves to 1 BCE.")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={noYearZero}
-                      onChange={(e) => handleNoYearZeroChange(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Approximate Date */}
-              <div className="settings-row no-border-bottom">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("general.approxDate.label", "Approximate Date")}</div>
-                  <div className="settings-row-description">{t("general.approxDate.description", "Prefix for elements marked approximate (e.g., c., ca., circa).")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <input
-                    type="text"
-                    className="settings-input settings-input-small"
-                    value={approxID}
-                    onChange={(e) => setApproxID(e.target.value)}
-                    placeholder={DEFAULT_APPROX_LABEL}
-                    maxLength={10}
-                  />
-                </div>
-              </div>
-
-              {/* Duration Unit */}
-              <div className="settings-row">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("general.durationUnit.label", "Duration Unit")}</div>
-                  <div className="settings-row-description">{t("general.durationUnit.description", "What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <input
-                    type="text"
-                    className="settings-input settings-input-small"
-                    value={durationUnit}
-                    onChange={(e) => setDurationUnit(e.target.value)}
-                    placeholder={t("general.durationUnit.placeholder", "yrs")}
-                    maxLength={12}
-                  />
-                </div>
-              </div>
-
             </>
           )}
 
@@ -1258,6 +1171,24 @@ export default function SettingsModal({
                 </div>
               </div>
 
+              {/* Hide Span Connectors */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("advanced.hideSpanConnectors.label", "Hide Span Connectors")}</div>
+                  <div className="settings-row-description">{t("advanced.hideSpanConnectors.description", "Hide branch and merge connectors between spans. Data is preserved — re-enabling this will restore them.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={hideSpanConnectors}
+                      onChange={(e) => setHideSpanConnectors(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
               {/* Span Color Events */}
               <div className="settings-row">
                 <div className="settings-row-left">
@@ -1279,7 +1210,7 @@ export default function SettingsModal({
               {/* Secondary Background */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("appearance.secondaryBg.label", "Use Secondary Color for Timeline Background")}</div>
+                  <div className="settings-row-label">{t("appearance.secondaryBg.label", "Secondary Timeline Background")}</div>
                   <div className="settings-row-description">{t("appearance.secondaryBg.description", "Use the same background color as the side panels for the timeline area.")}</div>
                 </div>
                 <div className="settings-row-right">
@@ -1296,23 +1227,161 @@ export default function SettingsModal({
             </>
           )}
 
-          {settingsSection === "advanced" && (
+          {settingsSection === "dates" && (
             <>
-              {/* Wiki Integration */}
+              {/* Date Format */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.wiki.label", "Wiki Integration")}</div>
-                  <div className="settings-row-description">{t("advanced.wiki.description", "Enable attaching MediaWiki articles to timeline elements.")}</div>
+                  <div className="settings-row-label">{t("advanced.dateFormat.label", "Date Format")}</div>
+                  <div className="settings-row-description">{t("advanced.dateFormat.description", "How month and day dates are shown and typed across all panels, when Calendar View is on.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <select
+                    className="settings-select"
+                    value={dateFormat}
+                    onChange={(e) => setDateFormat(e.target.value)}
+                  >
+                    <option value="MDY">MM/DD/YYYY</option>
+                    <option value="DMY">DD/MM/YYYY</option>
+                    <option value="ISO">YYYY-MM-DD</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Time Format */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("advanced.timeFormat.label", "Time Format")}</div>
+                  <div className="settings-row-description">{t("advanced.timeFormat.description", "How a time of day is shown and typed, when one is set on an event, span, or era.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <select
+                    className="settings-select"
+                    value={timeFormat}
+                    onChange={(e) => setTimeFormat(e.target.value)}
+                  >
+                    <option value="12">1:30 PM</option>
+                    <option value="24">13:30</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Hide Decimals */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("advanced.hideDecimals.label", "Hide Decimals")}</div>
+                  <div className="settings-row-description">{t("advanced.hideDecimals.description", "Round displayed years to whole numbers.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
                     <input
                       type="checkbox"
-                      checked={useWiki}
-                      onChange={(e) => setUseWikipedia(e.target.checked)}
+                      checked={hideDecimals}
+                      onChange={(e) => setHideDecimals(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
+                </div>
+              </div>
+
+              {/* Negative Era */}
+              <div className="settings-row no-border-bottom">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.negativeEra.label", "Negative Era")}</div>
+                  <div className="settings-row-description">{t("general.negativeEra.description", "Optional label for negative years (e.g., BCE).")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={negID}
+                    onChange={(e) => setNegID(e.target.value)}
+                    placeholder={t("general.negativeEra.placeholder", "e.g., BCE")}
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {/* Positive Era */}
+              <div className="settings-row no-border-bottom">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.positiveEra.label", "Positive Era")}</div>
+                  <div className="settings-row-description">{t("general.positiveEra.description", "Optional label for positive years (e.g., CE).")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={posID}
+                    onChange={(e) => setPosID(e.target.value)}
+                    placeholder={t("general.positiveEra.placeholder", "e.g., CE")}
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {/* No Year Zero */}
+              <div className="settings-row no-border-bottom">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.noYearZero.label", "No Year Zero")}</div>
+                  <div className="settings-row-description">{t("general.noYearZero.description", "Count years historically, with 1 BCE followed directly by 1 CE, so durations across the boundary are correct. Existing dates keep their labels; anything at year 0 moves to 1 BCE.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={noYearZero}
+                      onChange={(e) => handleNoYearZeroChange(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Approximate Date */}
+              <div className="settings-row no-border-bottom">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.approxDate.label", "Approximate Date")}</div>
+                  <div className="settings-row-description">{t("general.approxDate.description", "Prefix for elements marked approximate (e.g., c., ca., circa).")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={approxID}
+                    onChange={(e) => setApproxID(e.target.value)}
+                    placeholder={DEFAULT_APPROX_LABEL}
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+
+              {/* Duration Unit */}
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("general.durationUnit.label", "Duration Unit")}</div>
+                  <div className="settings-row-description">{t("general.durationUnit.description", "What one unit on the timeline is called in durations (e.g., Ma on an MYA timeline). Used as typed, so no plural is added.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <input
+                    type="text"
+                    className="settings-input settings-input-small"
+                    value={durationUnit}
+                    onChange={(e) => setDurationUnit(e.target.value)}
+                    placeholder={t("general.durationUnit.placeholder", "yrs")}
+                    maxLength={12}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {settingsSection === "advanced" && (
+            <>
+              {/* — Views — */}
+              <div className="settings-row settings-row-section">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("advanced.views", "Views")}</div>
                 </div>
               </div>
 
@@ -1320,7 +1389,7 @@ export default function SettingsModal({
               <div className="settings-row">
                 <div className="settings-row-left">
                   <div className="settings-row-label">{t("advanced.spreadsheet.label", "Spreadsheet View")}</div>
-                  <div className="settings-row-description">{t("advanced.spreadsheet.description", "Enable a table view for bulk editing elements.")}</div>
+                  <div className="settings-row-description">{t("advanced.spreadsheet.description", "Enable a spreadsheet view for bulk editing elements.")}</div>
                 </div>
                 <div className="settings-row-right">
                   <label className="settings-toggle">
@@ -1355,40 +1424,39 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* Date Format */}
+              {/* Calendar View */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.dateFormat.label", "Date Format")}</div>
-                  <div className="settings-row-description">{t("advanced.dateFormat.description", "How month and day dates are shown and typed across all panels.")}</div>
+                  <div className="settings-row-label">{t("advanced.useCalendar.label", "Calendar View")}</div>
+                  <div className="settings-row-description">{t("advanced.useCalendar.description", "Enable month and day dates on ticks and elements, and view them on a calendar.")}</div>
                 </div>
                 <div className="settings-row-right">
-                  <select
-                    className="settings-select"
-                    value={dateFormat}
-                    onChange={(e) => setDateFormat(e.target.value)}
-                  >
-                    <option value="MDY">MM/DD/YYYY</option>
-                    <option value="DMY">DD/MM/YYYY</option>
-                    <option value="ISO">YYYY-MM-DD</option>
-                  </select>
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={useCalendar}
+                      onChange={(e) => setUseCalendar(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
                 </div>
               </div>
 
-              {/* Time Format */}
+              {/* Wiki Integration */}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.timeFormat.label", "Time Format")}</div>
-                  <div className="settings-row-description">{t("advanced.timeFormat.description", "How a time of day is shown and typed, when one is set on an event, span, or era.")}</div>
+                  <div className="settings-row-label">{t("advanced.wiki.label", "Wiki Integration")}</div>
+                  <div className="settings-row-description">{t("advanced.wiki.description", "Enable attaching MediaWiki articles to timeline elements.")}</div>
                 </div>
                 <div className="settings-row-right">
-                  <select
-                    className="settings-select"
-                    value={timeFormat}
-                    onChange={(e) => setTimeFormat(e.target.value)}
-                  >
-                    <option value="12">1:30 PM</option>
-                    <option value="24">13:30</option>
-                  </select>
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={useWiki}
+                      onChange={(e) => setUseWikipedia(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
                 </div>
               </div>
 
@@ -1417,42 +1485,6 @@ export default function SettingsModal({
                 </div>
               </div>
 
-              {/* Hide Span Connectors */}
-              <div className="settings-row">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.hideSpanConnectors.label", "Hide Span Connectors")}</div>
-                  <div className="settings-row-description">{t("advanced.hideSpanConnectors.description", "Hide branch and merge connectors between spans. Data is preserved — re-enabling this will restore them.")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={hideSpanConnectors}
-                      onChange={(e) => setHideSpanConnectors(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Use Calendar */}
-              <div className="settings-row">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.useCalendar.label", "Use Calendar")}</div>
-                  <div className="settings-row-description">{t("advanced.useCalendar.description", "Show month and day labels on ticks and element dates. Day-level ticks appear automatically on short timelines.")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={useCalendar}
-                      onChange={(e) => setUseCalendar(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
               {/* Event Line Anchoring */}
               <div className="settings-row">
                 <div className="settings-row-left">
@@ -1465,24 +1497,6 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={eventLinesToGroupBottom}
                       onChange={(e) => setEventLinesToGroupBottom(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Hide Decimals */}
-              <div className="settings-row">
-                <div className="settings-row-left">
-                  <div className="settings-row-label">{t("advanced.hideDecimals.label", "Hide Decimals")}</div>
-                  <div className="settings-row-description">{t("advanced.hideDecimals.description", "Round displayed years to whole numbers.")}</div>
-                </div>
-                <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={hideDecimals}
-                      onChange={(e) => setHideDecimals(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
@@ -1651,64 +1665,6 @@ export default function SettingsModal({
               )}
               <div className="settings-row">
                 <div className="settings-row-left">
-                  <div className="settings-row-label">{t("maps.globe.label", "Globe")}</div>
-                  <div className="settings-row-description">
-                    {t("maps.globe.description", "Show the map as a 3D globe instead of a flat map. Needs WebGL.")}
-                  </div>
-                </div>
-                <div className="settings-row-right">
-                  <label className="settings-toggle">
-                    <input
-                      type="checkbox"
-                      checked={mapGlobe}
-                      onChange={(e) => setMapGlobe(e.target.checked)}
-                    />
-                    <span className="settings-toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-              {mapGlobe && (
-                <div className="settings-row">
-                  <div className="settings-row-left">
-                    <div className="settings-row-label">{t("maps.globeFarSide.label", "Show Markers on the Far Side")}</div>
-                    <div className="settings-row-description">
-                      {t("maps.globeFarSide.description", "Show markers on the other side of the globe faintly through it. Turn off to hide them.")}
-                    </div>
-                  </div>
-                  <div className="settings-row-right">
-                    <label className="settings-toggle">
-                      <input
-                        type="checkbox"
-                        checked={!mapGlobeHideFarSide}
-                        onChange={(e) => setMapGlobeHideFarSide(!e.target.checked)}
-                      />
-                      <span className="settings-toggle-slider"></span>
-                    </label>
-                  </div>
-                </div>
-              )}
-              {mapGlobe && (
-                <div className="settings-row">
-                  <div className="settings-row-left">
-                    <div className="settings-row-label">{t("maps.globeGlow.label", "Atmosphere Glow")}</div>
-                    <div className="settings-row-description">
-                      {t("maps.globeGlow.description", "Show a glow in the theme's link color around the globe.")}
-                    </div>
-                  </div>
-                  <div className="settings-row-right">
-                    <label className="settings-toggle">
-                      <input
-                        type="checkbox"
-                        checked={!mapGlobeHideGlow}
-                        onChange={(e) => setMapGlobeHideGlow(!e.target.checked)}
-                      />
-                      <span className="settings-toggle-slider"></span>
-                    </label>
-                  </div>
-                </div>
-              )}
-              <div className="settings-row">
-                <div className="settings-row-left">
                   <div className="settings-row-label">{t("maps.eventMarker.label", "Event Marker")}</div>
                   <div className="settings-row-description">{t("maps.eventMarker.description", "Choose the marker style used for events in map view.")}</div>
                 </div>
@@ -1756,6 +1712,48 @@ export default function SettingsModal({
                       <option key={option.value} value={option.value}>{markerLabels[option.value] || option.label}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+              {/* — Globe — */}
+              <div className="settings-row settings-row-section">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("maps.globe.label", "Globe")}</div>
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("maps.globeFarSide.label", "Show Markers on the Far Side")}</div>
+                  <div className="settings-row-description">
+                    {t("maps.globeFarSide.description", "Show markers on the other side of the globe faintly through it. Turn off to hide them.")}
+                  </div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={!mapGlobeHideFarSide}
+                      onChange={(e) => setMapGlobeHideFarSide(!e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("maps.globeGlow.label", "Atmosphere Glow")}</div>
+                  <div className="settings-row-description">
+                    {t("maps.globeGlow.description", "Show a glow in the theme's link color around the globe.")}
+                  </div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={!mapGlobeHideGlow}
+                      onChange={(e) => setMapGlobeHideGlow(!e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
                 </div>
               </div>
             </>

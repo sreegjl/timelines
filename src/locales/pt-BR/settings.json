@@ -11,7 +11,7 @@
       "original": "Seguir a ordem da lista de ramificações"
     },
     "dateFormat": {
-      "description": "Define como as datas com mês e dia são exibidas e digitadas em todos os painéis.",
+      "description": "Define como as datas com mês e dia são exibidas e digitadas em todos os painéis, quando a visualização do calendário está ativada.",
       "label": "Formato de data"
     },
     "disableGroups": {
@@ -44,7 +44,7 @@
       "label": "Mostrar etiquetas populares"
     },
     "spreadsheet": {
-      "description": "Ativa uma visualização em tabela para editar vários elementos de uma vez.",
+      "description": "Ativa uma visualização de planilha para editar vários elementos de uma vez.",
       "label": "Visualização de planilha"
     },
     "timeFormat": {
@@ -53,9 +53,10 @@
     },
     "timelineView": "Visualização da linha do tempo",
     "useCalendar": {
-      "description": "Exibe mês e dia nas marcações do eixo e nas datas dos elementos. Marcações diárias aparecem automaticamente em linhas do tempo curtas.",
-      "label": "Usar calendário"
+      "description": "Ativa datas com mês e dia nas marcações e nos elementos, e permite vê-las em um calendário.",
+      "label": "Visualização do calendário"
     },
+    "views": "Visualizações",
     "wiki": {
       "description": "Permite vincular artigos do MediaWiki aos elementos da linha do tempo.",
       "label": "Integração com Wiki"
@@ -81,7 +82,7 @@
     },
     "secondaryBg": {
       "description": "Usa na área da linha do tempo a mesma cor de fundo dos painéis laterais.",
-      "label": "Usar cor secundária no fundo da linha do tempo"
+      "label": "Fundo secundário da linha do tempo"
     },
     "showDurations": {
       "description": "Exibe a duração de cada período e era ao lado de suas datas.",
@@ -302,7 +303,6 @@
       "label": "Marcador de evento"
     },
     "globe": {
-      "description": "",
       "label": ""
     },
     "globeFarSide": {
@@ -344,6 +344,7 @@
   "sections": {
     "advanced": "Avançado",
     "appearance": "Aparência",
+    "dates": "Datas",
     "files": "Arquivos",
     "general": "Geral",
     "hotkeys": "Atalhos",

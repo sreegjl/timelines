@@ -19,7 +19,7 @@ export const DEFAULT_KEYBINDS = {
   playLoop: { label: "Loop Playback", keys: ["L"] },
   viewTimeline: { label: "Timeline View", keys: ["Alt", "1"] },
   viewMap: { label: "Map View", keys: ["Alt", "2"] },
-  viewSpreadsheet: { label: "Table View", keys: ["Alt", "3"] },
+  viewSpreadsheet: { label: "Spreadsheet View", keys: ["Alt", "3"] },
   viewCalendar: { label: "Calendar View", keys: ["Alt", "4"] },
 };
 

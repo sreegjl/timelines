@@ -11,7 +11,7 @@
       "original": "Follow branch list order"
     },
     "dateFormat": {
-      "description": "How month and day dates are shown and typed across all panels.",
+      "description": "How month and day dates are shown and typed across all panels, when Calendar View is on.",
       "label": "Date Format"
     },
     "disableGroups": {
@@ -44,7 +44,7 @@
       "label": "Show Popular Tags"
     },
     "spreadsheet": {
-      "description": "Enable a table view for bulk editing elements.",
+      "description": "Enable a spreadsheet view for bulk editing elements.",
       "label": "Spreadsheet View"
     },
     "timeFormat": {
@@ -53,9 +53,10 @@
     },
     "timelineView": "Timeline View",
     "useCalendar": {
-      "description": "Show month and day labels on ticks and element dates. Day-level ticks appear automatically on short timelines.",
-      "label": "Use Calendar"
+      "description": "Enable month and day dates on ticks and elements, and view them on a calendar.",
+      "label": "Calendar View"
     },
+    "views": "Views",
     "wiki": {
       "description": "Enable attaching MediaWiki articles to timeline elements.",
       "label": "Wiki Integration"
@@ -81,7 +82,7 @@
     },
     "secondaryBg": {
       "description": "Use the same background color as the side panels for the timeline area.",
-      "label": "Use Secondary Color for Timeline Background"
+      "label": "Secondary Timeline Background"
     },
     "showDurations": {
       "description": "Display how long each span and era lasts beside its date range.",
@@ -280,7 +281,7 @@
     "undo": "Undo",
     "viewCalendar": "Calendar View",
     "viewMap": "Map View",
-    "viewSpreadsheet": "Table View",
+    "viewSpreadsheet": "Spreadsheet View",
     "viewTimeline": "Timeline View"
   },
   "maps": {
@@ -300,7 +301,6 @@
       "label": "Event Marker"
     },
     "globe": {
-      "description": "Show the map as a 3D globe instead of a flat map. Needs WebGL.",
       "label": "Globe"
     },
     "globeFarSide": {
@@ -342,6 +342,7 @@
   "sections": {
     "advanced": "Advanced",
     "appearance": "Appearance",
+    "dates": "Dates",
     "files": "Files",
     "general": "General",
     "hotkeys": "Hotkeys",

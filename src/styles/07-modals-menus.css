@@ -1662,6 +1662,11 @@
   border-top: 1px solid color-mix(in srgb, var(--accent-color), var(--text-primary) 25%);
 }
 
+.settings-content > .settings-row-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
 .settings-row-section .settings-row-label {
   font-size: var(--text-2xs, 11px);
   font-weight: 700;
