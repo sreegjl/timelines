@@ -245,7 +245,7 @@ import { DEFAULT_KEYBINDS, cloneDefaultKeybinds, saveKeybinds } from "../utils/k
 import MarketplaceModal from "./MarketplaceModal";
 import useEscapeKey from "../hooks/useEscapeKey";
 
-const APP_VERSION = "0.8.0-alpha.1";
+const APP_VERSION = "0.9.0-alpha.1";
 const RECENT_TIMELINES_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 // Sidebar resize bounds mirror the timeline-view left panel (App.jsx)
 const HOME_SIDEBAR_MIN = 220;
