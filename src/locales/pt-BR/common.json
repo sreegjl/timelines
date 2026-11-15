@@ -29,6 +29,7 @@
   "loading": "Carregando…",
   "panels": {
     "calendar": "Calendário",
+    "map": "Mapa",
     "rightPanel": "Painel direito",
     "sidebar": "Barra lateral",
     "spreadsheet": "Planilha",

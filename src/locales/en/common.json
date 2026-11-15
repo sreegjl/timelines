@@ -29,6 +29,7 @@
   "loading": "Loading…",
   "panels": {
     "calendar": "Calendar",
+    "map": "Map",
     "rightPanel": "Right panel",
     "sidebar": "Sidebar",
     "spreadsheet": "Spreadsheet",

@@ -1,5 +1,6 @@
 import { Minus, Square, X, PanelLeft, PanelRight, Lock, LockOpen, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import ViewSwitcher from "./ViewSwitcher";
 
 export default function TopBar({
   title = "Timelines",
@@ -12,6 +13,10 @@ export default function TopBar({
   onCycleRightLock,
   backTitle = null,
   onBack,
+  views,
+  viewMode,
+  onChangeView,
+  keybinds,
 }) {
   const { t } = useTranslation("app");
   const isElectron = window.electron !== undefined;
@@ -57,6 +62,11 @@ export default function TopBar({
           {version && <span className="title-bar-version">{version}</span>}
         </span>
       </div>
+      {views?.length > 1 && (
+        <div className="title-bar-views">
+          <ViewSwitcher viewMode={viewMode} views={views} onChange={onChangeView} keybinds={keybinds} buttonClass="title-bar-view" showActiveName />
+        </div>
+      )}
       <div className="title-bar-controls">
         {/* way back after following a timeline link */}
         {onBack && (

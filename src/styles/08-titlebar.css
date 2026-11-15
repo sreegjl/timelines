@@ -108,3 +108,86 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.title-bar-title {
+  max-width: calc(50vw - 140px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* absolutely centered so it stays put no matter what's on either side */
+.title-bar-views {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.title-bar-view {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.title-bar-view:hover {
+  background: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.title-bar-view-active {
+  width: auto;
+  gap: 6px;
+  padding: 0 10px 0 8px;
+}
+
+.title-bar-view-name {
+  font-family: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.title-bar-view-active,
+.title-bar-view-active:hover {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
+
+.title-bar-view[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-color);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: inherit;
+  white-space: nowrap;
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.title-bar-view[data-tooltip]:hover::after {
+  opacity: 1;
+}

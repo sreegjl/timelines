@@ -2639,6 +2639,10 @@ function App() {
   }, [filteredElements, selectedId]);
 
   const availableViews = useMemo(() => getAvailableViews(timelineData?.file), [timelineData?.file]);
+  // the title bar owns the switcher, but it only exists in electron
+  const inViewSwitcher = isElectron
+    ? null
+    : <ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />;
 
   // a view whose setting got switched off quietly hands the stage back to the timeline
   useEffect(() => {
@@ -2870,6 +2874,10 @@ function App() {
             return isRightPanelVisible ? "open" : "closed";
           });
         } : undefined}
+        views={availableViews}
+        viewMode={viewMode}
+        onChangeView={setViewMode}
+        keybinds={keybinds}
       />
       <div className={`app-shell ${isElectron ? 'with-title-bar' : ''}`}>
       {viewMode !== "spreadsheet" && (
@@ -2983,7 +2991,7 @@ function App() {
                 leftPanelWidth={0}
                 rightPanelWidth={0}
                 isRightPanelOpen={false}
-                viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
+                viewSwitcher={inViewSwitcher}
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onBackToHome={handleBackToHome}
                 onAddEvent={handleAddEvent}
@@ -3017,7 +3025,7 @@ function App() {
                 focusYear={viewportYear}
                 leftInset={isLeftCollapsed ? COLLAPSED_WIDTH : sidebarWidth}
                 rightInset={isRightPanelVisible ? rightWidth : 0}
-                viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
+                viewSwitcher={inViewSwitcher}
               />
             </ErrorBoundary>
           ) : (
@@ -3065,7 +3073,7 @@ function App() {
               keybinds={keybinds}
               viewMode={viewMode}
               onSetViewMode={setViewMode}
-              viewSwitcher={<ViewSwitcher viewMode={viewMode} views={availableViews} onChange={setViewMode} keybinds={keybinds} />}
+              viewSwitcher={inViewSwitcher}
               onDetailLevelChange={handleDetailLevelChange}
               onPatchFile={handlePatchFile}
               onNotify={showToast}
