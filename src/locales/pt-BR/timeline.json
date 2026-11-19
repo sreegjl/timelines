@@ -200,8 +200,14 @@
   },
   "map": {
     "autoRotate": "",
-    "unavailable": "",
-    "mode": ""
+    "mode": "",
+    "routeDone": "",
+    "routeEditor": "",
+    "routeEditorHint": "",
+    "routeGhostHint": "",
+    "routeHandleHint": "",
+    "routeStraighten": "",
+    "unavailable": ""
   },
   "mapPick": {
     "escToCancel": "Esc para cancelar"

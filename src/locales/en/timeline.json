@@ -198,8 +198,14 @@
   },
   "map": {
     "autoRotate": "Auto-rotate",
-    "unavailable": "The map needs WebGL, which isn't available here",
-    "mode": "Map style"
+    "mode": "Map style",
+    "routeDone": "Done",
+    "routeEditor": "Route path",
+    "routeEditorHint": "Drag the small dots to bend this leg. Double-click a point to remove it.",
+    "routeGhostHint": "Drag to bend the route",
+    "routeHandleHint": "Drag to move, double-click to remove",
+    "routeStraighten": "Straighten",
+    "unavailable": "The map needs WebGL, which isn't available here"
   },
   "mapPick": {
     "escToCancel": "Esc to cancel"

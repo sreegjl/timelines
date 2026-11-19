@@ -48,6 +48,7 @@ import useEscapeKey from "./hooks/useEscapeKey";
 import { TimelineColorsContext, collectTimelineColors } from "./hooks/useColorPalette";
 import { findLinkTarget, normalizeListing } from "./utils/timelineLinks";
 import { useNoteContents } from "./hooks/useNoteContents";
+import { pruneLegPaths } from "./utils/mapRoutes";
 import "./styles/index.css";
 
 const DEFAULT_GROUP_ID = "g-main";
@@ -1438,6 +1439,11 @@ function App() {
         ...prevData,
         elements: cleanedElements,
       };
+      if (prevData.file?.mapLegPaths) {
+        const mapLegPaths = pruneLegPaths(prevData.file.mapLegPaths, toDelete);
+        updatedData.file = { ...prevData.file, mapLegPaths };
+        if (!mapLegPaths) delete updatedData.file.mapLegPaths;
+      }
 
       saveCurrentTimeline(updatedData).catch(console.error);
 
@@ -1597,6 +1603,7 @@ function App() {
       if (nextFile.panelTagSortField !== "name") delete nextFile.panelTagSortField;
       if (nextFile.panelTagSortOrder !== "asc") delete nextFile.panelTagSortOrder;
       if (!nextFile.mapGlobe) delete nextFile.mapGlobe;
+      if (!nextFile.mapLegPaths) delete nextFile.mapLegPaths;
       const updatedData = { ...prevData, file: nextFile };
       saveCurrentTimeline(updatedData).catch(console.error);
       return updatedData;

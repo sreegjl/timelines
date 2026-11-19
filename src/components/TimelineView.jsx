@@ -26,6 +26,7 @@ import { drawTitleWatermark, saveExportFile } from "../utils/exportUtils";
 import { DETAIL_MIN, DETAIL_MAX, clamp } from "../utils/sliderUtils";
 import { getElementNoteContent } from "../hooks/useNoteContents";
 import { matchesKeybind } from "../utils/keybinds";
+import { setLegPath } from "../utils/mapRoutes";
 
 const FILTER_HISTORY_KEY = "timelines-filter-query-history";
 const PLAYBACK_PREFS_KEY = "timelines-playback-prefs";
@@ -612,6 +613,10 @@ const TimelineView = forwardRef(function TimelineView({
     }
   };
   const mapViewRef = useRef(null);
+  const mapLegPaths = timelineData?.file?.mapLegPaths;
+  const handleUpdateLegPath = useCallback((fromId, toId, waypoints) => {
+    onPatchFile?.({ mapLegPaths: setLegPath(mapLegPaths, fromId, toId, waypoints) });
+  }, [onPatchFile, mapLegPaths]);
   const [sliderValue, setSliderValue] = useState(0);
   const [sliderYearLabel, setSliderYearLabel] = useState("");
   const [currentScale, setCurrentScale] = useState(1);
@@ -4982,6 +4987,7 @@ const TimelineView = forwardRef(function TimelineView({
             }}
             autoRotate={globeAutoRotate}
             globe={isGlobe}
+            onUpdateLegPath={onPatchFile && !readOnly ? handleUpdateLegPath : undefined}
           />
         </Suspense>
       )}
