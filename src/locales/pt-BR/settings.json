@@ -88,6 +88,10 @@
       "description": "Exibe a duração de cada período e era ao lado de suas datas.",
       "label": "Mostrar durações"
     },
+    "showElapsed": {
+      "description": "Exibe há quanto tempo cada evento aconteceu, contado a partir de hoje.",
+      "label": "Mostrar tempo decorrido"
+    },
     "showGrid": {
       "description": "Exibe linhas verticais discretas alinhadas às marcações do eixo.",
       "label": "Mostrar grade"

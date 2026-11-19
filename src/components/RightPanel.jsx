@@ -9,7 +9,7 @@ import SourcesSection from "./SourcesSection";
 import { useNoteManagement } from "../hooks/useNoteManagement";
 import IconPicker from "./IconPicker";
 import { ICON_MAP } from "../config/elementIcons";
-import { parseTimelineInput, fractionalYearToDate, displayDateTimeLabel, formatDateForInput, formatCalendarDate, formatDuration, formatTimeOfDay, isValidTimeOfDay, resolveLabeledDate, formatYearForInput } from "../utils/dateUtils";
+import { parseTimelineInput, fractionalYearToDate, displayDateTimeLabel, formatDateForInput, formatCalendarDate, formatDuration, formatTimeSince, formatTimeOfDay, isValidTimeOfDay, resolveLabeledDate, formatYearForInput } from "../utils/dateUtils";
 
 const DYNAMIC_DATE_OPTIONS = [
   { label: "Today", value: "current" },
@@ -1281,6 +1281,28 @@ export default function RightPanel({
                 </p>
               </div>
             )}
+
+            {formData.type === "event" && timelineData?.file?.showElapsed === true && (() => {
+              const since = formatTimeSince(
+                resolveLabeledDate(formData.date, formData.dateLabel),
+                timelineData?.file?.useCalendar === true,
+                timelineData?.file?.hideDecimals,
+                timelineData?.file?.durationUnit
+              );
+              if (!since) return null;
+              const text = since.isToday
+                ? t("timeSince.today", "Today")
+                : since.future
+                  ? t("timeSince.future", "in {{time}}", { time: since.time })
+                  : t("timeSince.ago", "{{time}} ago", { time: since.time });
+              return (
+                <div className="view-group">
+                  <label>{t("fields.timeSince", "Time Since")}</label>
+                  <div className="view-separator" />
+                  <p>{text}</p>
+                </div>
+              );
+            })()}
 
             {/* Duration (spans and eras, when the timeline shows durations) */}
             {formData.type !== "event" && timelineData?.file?.showDurations === true && (() => {

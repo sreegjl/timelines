@@ -119,7 +119,8 @@
     "startDate": "Start Date",
     "tags": "Tags",
     "thumbnail": "Thumbnail",
-    "time": "Time"
+    "time": "Time",
+    "timeSince": "Time Since"
   },
   "filters": {
     "addDateFilter": "Add date filter",
@@ -424,6 +425,11 @@
     "circleFill": "Circle fill",
     "squareFill": "Square fill",
     "strip": "Left strip"
+  },
+  "timeSince": {
+    "ago": "{{time}} ago",
+    "future": "in {{time}}",
+    "today": "Today"
   },
   "toolbar": {
     "backToFiles": "Back to Files",

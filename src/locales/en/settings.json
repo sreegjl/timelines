@@ -88,6 +88,10 @@
       "description": "Display how long each span and era lasts beside its date range.",
       "label": "Show Durations"
     },
+    "showElapsed": {
+      "description": "Display how long ago each event happened, counted from today.",
+      "label": "Show Time Since"
+    },
     "showGrid": {
       "description": "Display subtle vertical grid lines aligned with tick marks.",
       "label": "Show Grid"

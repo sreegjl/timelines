@@ -1514,6 +1514,7 @@ function App() {
       if (!nextFile.showGrid) delete nextFile.showGrid;
       if (!nextFile.showTodayLine) delete nextFile.showTodayLine;
       if (!nextFile.showDurations) delete nextFile.showDurations;
+      if (!nextFile.showElapsed) delete nextFile.showElapsed;
       if (!nextFile.spanColorEvents) delete nextFile.spanColorEvents;
       if (!nextFile.disableGroups) delete nextFile.disableGroups;
       if (!nextFile.panelGroupMode || nextFile.panelGroupMode === "default") delete nextFile.panelGroupMode;

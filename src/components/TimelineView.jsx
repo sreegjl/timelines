@@ -17,7 +17,7 @@ import {
 } from "../utils/timelineUtils";
 import { getEventFontVars, getSpanFontSize, resolveElementFontSize } from "../utils/elementFont";
 import { isFontReady, watchFontLoad } from "../utils/fontGate";
-import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration, axisToDisplayYear } from "../utils/dateUtils";
+import { parseTimelineInput, snapToMonthGrid, snapToDayGrid, fractionalYearToDate, daysInMonth, todayFractionalYear, displayDateTimeLabel, formatDuration, formatTimeSince, axisToDisplayYear } from "../utils/dateUtils";
 import { withAlpha, blendColors, normalizeColor } from "../utils/colorUtils";
 import { parseFilterQuery, matchesFilter, tokenizeFilterQuery, buildFilterContext, normalizeTag, quoteFilterValue } from "../utils/filterUtils";
 import { FileJson, Image, Video, Settings, Plus, Minus, CopyPlus, Trash2, Edit2, ListFilter, Play, Pause, Tag, Eye, EyeOff, Map as MapIcon, MapPin, GanttChartSquare, Table2, ExternalLink, HelpCircle, Maximize2, X, History, Crosshair, ArrowLeftRight, Repeat, SlidersHorizontal, RotateCw } from "lucide-react";
@@ -3725,6 +3725,15 @@ const TimelineView = forwardRef(function TimelineView({
   const durationOf = (el) => file?.showDurations === true
     ? formatDuration(el.start, el.end, file?.useCalendar === true, file?.hideDecimals, file?.durationUnit)
     : null;
+  const timeSinceOf = (event) => {
+    if (file?.showElapsed !== true) return null;
+    const since = formatTimeSince(event.date, file?.useCalendar === true, file?.hideDecimals, file?.durationUnit);
+    if (!since) return null;
+    if (since.isToday) return t("timeSince.today", "Today");
+    return since.future
+      ? t("timeSince.future", "in {{time}}", { time: since.time })
+      : t("timeSince.ago", "{{time}} ago", { time: since.time });
+  };
 
   // Resolve CSS variables to hex for inline styles (avoids color-mix / color() which html2canvas can't parse)
   const rootStyles = getComputedStyle(document.documentElement);
@@ -4428,7 +4437,7 @@ const TimelineView = forwardRef(function TimelineView({
                           ><ExternalLink size={11} strokeWidth={2.7} /></a>
                         )}
                         {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                          {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateTimeLabel(event.dateLabel, event.time) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}</span>}
+                          {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateTimeLabel(event.dateLabel, event.time) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}{(() => { const since = timeSinceOf(event); return since ? <span className="event-elapsed">{since}</span> : null; })()}</span>}
                           {(() => {
                             const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                               .filter((tag) => pinnedTags.includes(tag));
@@ -4757,7 +4766,7 @@ const TimelineView = forwardRef(function TimelineView({
                 <div className={event.thumbnail && event.thumbnailStyle !== "banner" ? "event-text-content" : ""}>
                 <div className="event-title">{event.icon && ICON_MAP[event.icon] && (() => { const I = ICON_MAP[event.icon]; return <I size={resolveElementFontSize(event.fontSize) ?? evFontSize} className="event-title-icon" />; })()}{event.title}</div>
                 {(event.hideYears !== true || (Array.isArray(event.tags) ? event.tags : []).some((t) => pinnedTags.includes(t))) && <div className="event-date">
-                  {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateTimeLabel(event.dateLabel, event.time) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}</span>}
+                  {event.hideYears !== true && <span className="event-year">{withApproxLabel(displayDateTimeLabel(event.dateLabel, event.time) ?? formatYear(event.date, file.negID, file.posID, file?.useCalendar === true, file.hideDecimals), file.approxID, event.approximate === true)}{(() => { const since = timeSinceOf(event); return since ? <span className="event-elapsed">{since}</span> : null; })()}</span>}
                   {(() => {
                     const visiblePinnedTags = (Array.isArray(event.tags) ? event.tags : [])
                       .filter((tag) => pinnedTags.includes(tag));

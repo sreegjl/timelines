@@ -119,7 +119,8 @@
     "startDate": "Data inicial",
     "tags": "Etiquetas",
     "thumbnail": "Miniatura",
-    "time": "Hora"
+    "time": "Hora",
+    "timeSince": "Tempo decorrido"
   },
   "filters": {
     "addDateFilter": "Adicionar filtro de data",
@@ -427,6 +428,11 @@
     "circleFill": "Círculo preenchido",
     "squareFill": "Quadrado preenchido",
     "strip": "Faixa à esquerda"
+  },
+  "timeSince": {
+    "ago": "há {{time}}",
+    "future": "em {{time}}",
+    "today": "Hoje"
   },
   "toolbar": {
     "backToFiles": "Voltar aos arquivos",

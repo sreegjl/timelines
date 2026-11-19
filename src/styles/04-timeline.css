@@ -708,6 +708,16 @@
   margin-right: auto;
 }
 
+.event-elapsed {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.event-elapsed::before {
+  content: "·";
+  margin: 0 4px;
+}
+
 .event-date:not(:has(.pinned-tags)) .event-year {
   overflow: hidden;
   text-overflow: ellipsis;

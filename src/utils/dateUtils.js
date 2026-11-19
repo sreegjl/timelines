@@ -297,6 +297,16 @@ export const formatDuration = (start, end, useCalendar = false, hideDecimals = f
   return parts.length ? parts.join(", ") : "0 days";
 };
 
+export const formatTimeSince = (date, useCalendar = false, hideDecimals = false, unit = "") => {
+  if (!Number.isFinite(date)) return null;
+  const now = todayFractionalYear();
+  const future = date > now;
+  const time = future
+    ? formatDuration(now, date, useCalendar, hideDecimals, unit)
+    : formatDuration(date, now, useCalendar, hideDecimals, unit);
+  return time ? { time, future, isToday: time === "0 days" } : null;
+};
+
 export const snapToDayGrid = (value) => {
   if (!Number.isFinite(value)) return value;
   const yearInt = Math.floor(value);

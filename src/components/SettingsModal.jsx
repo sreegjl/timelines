@@ -110,6 +110,7 @@ export default function SettingsModal({
   const [showGrid, setShowGrid] = useState(false);
   const [showTodayLine, setShowTodayLine] = useState(false);
   const [showDurations, setShowDurations] = useState(false);
+  const [showElapsed, setShowElapsed] = useState(false);
   const [spanColorEvents, setSpanColorEvents] = useState(false);
   const [disableGroups, setDisableGroups] = useState(false);
   const [panelGroupMode, setPanelGroupMode] = useState("default");
@@ -173,6 +174,7 @@ export default function SettingsModal({
     showGrid,
     showTodayLine,
     showDurations,
+    showElapsed,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -358,6 +360,7 @@ export default function SettingsModal({
         setShowGrid(Boolean(timelineData.file.showGrid));
         setShowTodayLine(Boolean(timelineData.file.showTodayLine));
         setShowDurations(Boolean(timelineData.file.showDurations));
+        setShowElapsed(Boolean(timelineData.file.showElapsed));
         setSpanColorEvents(Boolean(timelineData.file.spanColorEvents));
         setDisableGroups(Boolean(timelineData.file.disableGroups));
         setPanelGroupMode(timelineData.file.panelGroupMode || (timelineData.file.useEraGroupsInPanel ? "eras" : "default"));
@@ -522,6 +525,7 @@ export default function SettingsModal({
     showGrid,
     showTodayLine,
     showDurations,
+    showElapsed,
     spanColorEvents,
     disableGroups,
     panelGroupMode,
@@ -1095,6 +1099,23 @@ export default function SettingsModal({
                       type="checkbox"
                       checked={showDurations}
                       onChange={(e) => setShowDurations(e.target.checked)}
+                    />
+                    <span className="settings-toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-left">
+                  <div className="settings-row-label">{t("appearance.showElapsed.label", "Show Time Since")}</div>
+                  <div className="settings-row-description">{t("appearance.showElapsed.description", "Display how long ago each event happened, counted from today.")}</div>
+                </div>
+                <div className="settings-row-right">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showElapsed}
+                      onChange={(e) => setShowElapsed(e.target.checked)}
                     />
                     <span className="settings-toggle-slider"></span>
                   </label>
