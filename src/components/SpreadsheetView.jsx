@@ -27,6 +27,11 @@ const DEFAULT_WIDTHS = {
   coords: 150, wiki: 160, note: 110, sources: 110, thumbnail: 180, thumbnailStyle: 120,
 };
 
+const IS_MAC = typeof navigator !== "undefined" && /Mac/.test(navigator.platform || navigator.userAgent);
+// Ctrl+click is a right-click on macOS, so only Cmd adds cells there
+const isAddClick = (e) => (IS_MAC ? e.metaKey : e.ctrlKey);
+const isModClick = (e) => e.shiftKey || e.metaKey || e.ctrlKey;
+
 export default function SpreadsheetView({
   timelineData,
   noteContents,
@@ -61,8 +66,10 @@ export default function SpreadsheetView({
   const [editValue, setEditValue] = useState("");
   const [selectedCell, setSelectedCell] = useState(null); // { id, field } selection anchor
   const [selEnd, setSelEnd] = useState(null); // { id, field } far corner of selection
+  const [extraCells, setExtraCells] = useState([]); // [{ id, field }] added with Ctrl/Cmd+click
   const dragSelRef = useRef(false);
   const didDragRef = useRef(false);
+  const rootRef = useRef(null);
   const [sortField, setSortField] = useState("date");
   const [sortDir, setSortDir] = useState("asc");
   const [colWidths, setColWidths] = useState({});
@@ -286,15 +293,36 @@ export default function SpreadsheetView({
     return { top: Math.min(r1, r2), bottom: Math.max(r1, r2), left: Math.min(c1, c2), right: Math.max(c1, c2) };
   }, [selectedCell, selEnd, rowIndexById, colIndexByKey]);
 
-  const selectedCellSet = useMemo(() => {
-    const set = new Set();
+  const selectedCells = useMemo(() => {
+    if (!selectedCell) return [];
+    const map = new Map();
+    const add = (c) => map.set(`${c.id}|${c.field}`, c);
     if (selRect) {
       for (let r = selRect.top; r <= selRect.bottom; r++)
         for (let c = selRect.left; c <= selRect.right; c++)
-          set.add(`${sortedElements[r].id}|${visibleCols[c].key}`);
-    }
-    return set;
-  }, [selRect, sortedElements, visibleCols]);
+          add({ id: sortedElements[r].id, field: visibleCols[c].key });
+    } else add(selectedCell);
+    extraCells.forEach(add);
+    return [...map.values()]
+      .filter((c) => rowIndexById[c.id] != null && colIndexByKey[c.field] != null)
+      .sort((a, b) => rowIndexById[a.id] - rowIndexById[b.id] || colIndexByKey[a.field] - colIndexByKey[b.field]);
+  }, [selectedCell, selRect, extraCells, sortedElements, visibleCols, rowIndexById, colIndexByKey]);
+
+  const selectedCellSet = useMemo(
+    () => new Set(selectedCells.length > 1 ? selectedCells.map((c) => `${c.id}|${c.field}`) : []),
+    [selectedCells]
+  );
+
+  const groupByRow = useCallback((cells) => {
+    const out = new Map();
+    cells.forEach(({ id, field }) => {
+      const el = elements.find((x) => x.id === id);
+      if (!el) return;
+      if (!out.has(id)) out.set(id, { el, fields: [] });
+      out.get(id).fields.push(field);
+    });
+    return [...out.values()];
+  }, [elements]);
 
   // Column resize
   const startResize = (e, key) => {
@@ -360,23 +388,45 @@ export default function SpreadsheetView({
     [elements, groups]
   );
 
+  // Keep fixed-position menus inside the window (they open off-screen from the rightmost columns)
+  useLayoutEffect(() => {
+    const pad = 8;
+    rootRef.current?.querySelectorAll(".timeline-context-menu").forEach((m) => {
+      const r = m.getBoundingClientRect();
+      if (r.right > window.innerWidth - pad) m.style.left = `${Math.max(pad, window.innerWidth - pad - r.width)}px`;
+      if (r.bottom > window.innerHeight - pad) m.style.top = `${Math.max(pad, window.innerHeight - pad - r.height)}px`;
+    });
+  });
+
+  const applyAnchorToSelection = (cells) => {
+    if (!selectedCell) return;
+    const src = elements.find((x) => x.id === selectedCell.id);
+    if (!src) return;
+    const srcField = selectedCell.field;
+    const srcText = getCellDisplayValue(src, srcField) ?? "";
+    groupByRow(cells).forEach(({ el: orig, fields }) => {
+      let el = orig;
+      fields.forEach((field) => {
+        if (el.id === src.id && field === srcField) return;
+        if (field === "sources" || srcField === "sources") {
+          if (field !== srcField) return;
+          el = { ...el };
+          if (src.sources?.length) el.sources = src.sources; else delete el.sources;
+        } else {
+          const u = computeFieldUpdate(el, field, srcText);
+          if (u) el = u;
+        }
+      });
+      if (JSON.stringify(el) !== JSON.stringify(orig)) onUpdate(el);
+    });
+  };
+
   // Ctrl+C/X/V and Delete on the selected cell(s), Escape to deselect
   useEffect(() => {
     if (!selectedCell) return;
 
-    const getSelection = () => {
-      if (selRect) {
-        return {
-          rows: sortedElements.slice(selRect.top, selRect.bottom + 1),
-          fields: visibleCols.slice(selRect.left, selRect.right + 1).map((c) => c.key),
-        };
-      }
-      const el = elements.find((x) => x.id === selectedCell.id);
-      return el ? { rows: [el], fields: [selectedCell.field] } : { rows: [], fields: [] };
-    };
-
-    const clearCells = (rows, fields) => {
-      rows.forEach((orig) => {
+    const clearCells = (rowGroups) => {
+      rowGroups.forEach(({ el: orig, fields }) => {
         let el = orig;
         let changed = false;
         fields.forEach((field) => {
@@ -395,48 +445,49 @@ export default function SpreadsheetView({
       field === "sources" ? JSON.stringify(el.sources ?? []) : (getCellDisplayValue(el, field) ?? "");
 
     const handler = (e) => {
-      if (e.key === "Escape") { setSelectedCell(null); setSelEnd(null); return; }
+      if (e.key === "Escape") { setSelectedCell(null); setSelEnd(null); setExtraCells([]); return; }
       if (editCell) return;
+      const rowGroups = groupByRow(selectedCells);
       if (!readOnly && (e.key === "Delete" || e.key === "Backspace")) {
-        const { rows, fields } = getSelection();
-        if (!rows.length) return;
-        clearCells(rows, fields);
+        if (!rowGroups.length) return;
+        clearCells(rowGroups);
         e.preventDefault();
         e.stopPropagation();
         return;
       }
       if (!(e.ctrlKey || e.metaKey)) return;
-      const { rows, fields } = getSelection();
-      if (!rows.length) return;
+      if (!rowGroups.length) return;
+      const single = selectedCells.length === 1;
       const copyText = () =>
-        rows.length === 1 && fields.length === 1
-          ? cellText(rows[0], fields[0])
-          : rows.map((el) => fields.map((f) => cellText(el, f).replace(/[\t\r\n]+/g, " ")).join("\t")).join("\n");
+        single
+          ? cellText(rowGroups[0].el, rowGroups[0].fields[0])
+          : rowGroups.map(({ el, fields }) => fields.map((f) => cellText(el, f).replace(/[\t\r\n]+/g, " ")).join("\t")).join("\n");
       if (e.key === "c") {
         e.preventDefault();
         navigator.clipboard?.writeText(copyText()).catch(() => {});
       } else if (e.key === "x" && !readOnly) {
         e.preventDefault();
-        navigator.clipboard?.writeText(copyText()).then(() => clearCells(rows, fields)).catch(() => {});
+        navigator.clipboard?.writeText(copyText()).then(() => clearCells(rowGroups)).catch(() => {});
       } else if (e.key === "v" && !readOnly) {
         e.preventDefault();
         navigator.clipboard?.readText().then((raw) => {
           const grid = raw.replace(/\r\n?/g, "\n").replace(/\n$/, "").split("\n").map((line) => line.split("\t"));
           if (!grid.length || !grid[0].length) return;
-          let tRows = rows, tFields = fields;
-          if (rows.length === 1 && fields.length === 1 && (grid.length > 1 || grid[0].length > 1)) {
-            const r0 = rowIndexById[rows[0].id];
-            const c0 = colIndexByKey[fields[0]];
+          let targets = rowGroups;
+          if (single && (grid.length > 1 || grid[0].length > 1)) {
+            const r0 = rowIndexById[rowGroups[0].el.id];
+            const c0 = colIndexByKey[rowGroups[0].fields[0]];
             if (r0 != null && c0 != null) {
-              tRows = sortedElements.slice(r0, r0 + grid.length);
-              tFields = visibleCols.slice(c0, c0 + grid[0].length).map((c) => c.key);
+              const spillFields = visibleCols.slice(c0, c0 + grid[0].length).map((c) => c.key);
+              targets = sortedElements.slice(r0, r0 + grid.length).map((el) => ({ el, fields: spillFields }));
             }
           }
-          tRows.forEach((orig, ri) => {
+          targets.forEach(({ el: orig, fields }, ri) => {
             let el = orig;
             let changed = false;
-            tFields.forEach((field, ci) => {
-              const val = grid[ri % grid.length]?.[ci % grid[0].length];
+            const gridRow = grid[ri % grid.length];
+            fields.forEach((field, ci) => {
+              const val = gridRow[ci % gridRow.length];
               if (val === undefined) return;
               if (field === "sources") {
                 try {
@@ -459,7 +510,7 @@ export default function SpreadsheetView({
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [selectedCell, selRect, editCell, elements, sortedElements, visibleCols, rowIndexById, colIndexByKey, getCellDisplayValue, computeFieldUpdate, onUpdate, readOnly]);
+  }, [selectedCell, selectedCells, groupByRow, editCell, sortedElements, visibleCols, rowIndexById, colIndexByKey, getCellDisplayValue, computeFieldUpdate, onUpdate, readOnly]);
 
   // Keep thead top in sync with sticky wrapper height
   useLayoutEffect(() => {
@@ -565,7 +616,7 @@ export default function SpreadsheetView({
 
   const toggleHideYear = (e, el) => {
     e.stopPropagation();
-    if (e.shiftKey) return;
+    if (isModClick(e)) return;
     const updated = { ...el };
     if (el.hideYears) delete updated.hideYears; else updated.hideYears = true;
     onUpdate(updated);
@@ -573,7 +624,7 @@ export default function SpreadsheetView({
 
   const toggleApprox = (e, el, col) => {
     e.stopPropagation();
-    if (e.shiftKey) return;
+    if (isModClick(e)) return;
     const field = approxField(el, col);
     const updated = { ...el };
     if (el[field]) delete updated[field]; else updated[field] = true;
@@ -862,6 +913,8 @@ export default function SpreadsheetView({
 
   const selectCell = (e, id, field) => {
     e.stopPropagation();
+    // the table's mousedown already handled Ctrl/Cmd+click
+    if (isAddClick(e) && selectedCell) return;
     if (e.shiftKey && selectedCell) {
       setSelEnd({ id, field });
       return;
@@ -869,6 +922,7 @@ export default function SpreadsheetView({
     onSelect(id);
     setSelectedCell({ id, field });
     setSelEnd(null);
+    setExtraCells([]);
     if (editCell && (editCell.id !== id || editCell.field !== field)) {
       clearAllMenus();
     }
@@ -890,15 +944,34 @@ export default function SpreadsheetView({
     if (e.target.closest?.("input, select, button, textarea")) return;
     const cell = cellFromEvent(e);
     if (!cell) return;
+    if (isAddClick(e) && selectedCell) {
+      e.preventDefault();
+      const key = `${cell.id}|${cell.field}`;
+      const rest = selectedCells.filter((c) => `${c.id}|${c.field}` !== key);
+      if (rest.length && rest.length < selectedCells.length) {
+        setSelectedCell(rest[rest.length - 1]);
+        setExtraCells(rest);
+      } else {
+        onSelect(cell.id);
+        setSelectedCell(cell);
+        setExtraCells(selectedCells);
+      }
+      setSelEnd(null);
+      return;
+    }
     didDragRef.current = false;
     dragSelRef.current = true;
     if (e.shiftKey && selectedCell) {
+      // stop the browser from selecting text between the two clicks
+      e.preventDefault();
+      window.getSelection()?.removeAllRanges();
       setSelEnd(cell);
       return;
     }
     onSelect(cell.id);
     setSelectedCell(cell);
     setSelEnd(null);
+    setExtraCells([]);
   };
 
   const handleTableMouseOver = (e) => {
@@ -992,7 +1065,7 @@ export default function SpreadsheetView({
       const isExtend = !!el.extendFrom;
       const toggleParentType = (e) => {
         e.stopPropagation();
-        if (e.shiftKey) return;
+        if (isModClick(e)) return;
         const updated = { ...el };
         if (isExtend) {
           updated.parent = el.extendFrom;
@@ -1247,7 +1320,7 @@ export default function SpreadsheetView({
       }
       const toggleHideDetails = (e) => {
         e.stopPropagation();
-        if (e.shiftKey) return;
+        if (isModClick(e)) return;
         const updated = { ...el };
         if (el.hideDetails) delete updated.hideDetails; else updated.hideDetails = true;
         onUpdate(updated);
@@ -1347,7 +1420,7 @@ export default function SpreadsheetView({
       const timelineId = file.id?.replace(/-timeline$/, "");
       const openPanel = (e) => {
         selectCell(e, el.id, field);
-        if (readOnly || e.shiftKey) return;
+        if (readOnly || isModClick(e)) return;
         if (!isPanelOpen) {
           const isRemote = el.thumbnail?.startsWith("http://") || el.thumbnail?.startsWith("https://");
           setThumbPanelCellId(el.id);
@@ -1653,6 +1726,7 @@ export default function SpreadsheetView({
 
   return (
     <div
+      ref={rootRef}
       className={`sheet-container${readOnly ? " sheet-readonly" : ""}`}
       style={{
         paddingLeft: leftPanelWidth,
@@ -1853,11 +1927,9 @@ export default function SpreadsheetView({
                   if (readOnly) return;
                   e.preventDefault();
                   let ids = [el.id];
-                  const r = rowIndexById[el.id];
-                  if (selRect && r != null && r >= selRect.top && r <= selRect.bottom) {
-                    ids = sortedElements.slice(selRect.top, selRect.bottom + 1).map((x) => x.id);
-                  }
-                  setCtxMenu({ x: e.clientX, y: e.clientY, id: el.id, ids });
+                  const cells = selectedCells.length > 1 ? selectedCells : [];
+                  if (cells.some((c) => c.id === el.id)) ids = [...new Set(cells.map((c) => c.id))];
+                  setCtxMenu({ x: e.clientX, y: e.clientY, id: el.id, ids, cells });
                 }}
               >
                 {visibleCols.map((col) => renderCell(el, col))}
@@ -1879,6 +1951,11 @@ export default function SpreadsheetView({
           {onDuplicate && (
             <button className="context-menu-item" onClick={() => { onDuplicate(ctxMenu.id); setCtxMenu(null); }}>
               Duplicate
+            </button>
+          )}
+          {ctxMenu.cells?.length > 1 && (
+            <button className="context-menu-item" onClick={() => { applyAnchorToSelection(ctxMenu.cells); setCtxMenu(null); }}>
+              Apply to selected
             </button>
           )}
           {onDelete && (
