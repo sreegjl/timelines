@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "dropReadFailed": "Het neergezette bestand kon niet worden gelezen.",
+    "githubFailed": "Laden vanaf GitHub is mislukt: {{message}}",
+    "linkNotTimeline": "De link moet naar een .timeline-bestand verwijzen.",
+    "notGithubLink": "Dit lijkt geen GitHub-bestandslink.",
+    "readFailed": "Tijdlijn kon niet worden gelezen: {{message}}",
+    "unsupportedFile": "Niet-ondersteund bestandstype — sleep een .timeline-bestand hierheen."
+  },
+  "landing": {
+    "browse": "Bestand zoeken…",
+    "githubPlaceholder": "Plak een GitHub-link naar een .timeline-bestand",
+    "load": "Laden",
+    "or": "of",
+    "subtitle": "Sleep een <1>.timeline</1>-bestand ergens op deze pagina om het te bekijken. Er wordt niets geüpload — het bestand blijft in je browser.",
+    "title": "Timelines Viewer"
+  }
+}

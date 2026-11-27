@@ -4,6 +4,7 @@ export const FALLBACK_LOCALE = "en";
 export const SUPPORTED_LOCALES = [
   { code: "en", nativeName: "English" },
   { code: "pt-BR", nativeName: "Português (Brasil)" },
+  { code: "nl", nativeName: "Nederlands" },
 ];
 
 // The viewer shares components with the app, so their strings live in common/timeline.

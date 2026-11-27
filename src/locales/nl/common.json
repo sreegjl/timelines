@@ -1,0 +1,51 @@
+{
+  "actions": {
+    "add": "Toevoegen",
+    "cancel": "Annuleren",
+    "change": "Wijzigen",
+    "clear": "Wissen",
+    "close": "Sluiten",
+    "create": "Aanmaken",
+    "delete": "Verwijderen",
+    "dismiss": "Negeren",
+    "duplicate": "Dupliceren",
+    "edit": "Bewerken",
+    "exit": "Afsluiten",
+    "expand": "Uitvouwen",
+    "moreOptions": "Meer opties",
+    "ok": "OK",
+    "open": "Openen",
+    "reload": "Opnieuw laden",
+    "remove": "Verwijderen",
+    "rename": "Hernoemen",
+    "replace": "Vervangen",
+    "resetToDefault": "Standaardwaarde herstellen",
+    "save": "Opslaan"
+  },
+  "errorBoundary": {
+    "crashed": "{{name}} is gecrasht",
+    "reload": "Paneel opnieuw laden"
+  },
+  "loading": "Laden…",
+  "panels": {
+    "calendar": "Kalender",
+    "map": "Kaart",
+    "rightPanel": "Rechterpaneel",
+    "sidebar": "Zijbalk",
+    "spreadsheet": "Spreadsheet",
+    "timeline": "Tijdlijn"
+  },
+  "validation": {
+    "eventDateInvalid": "De datum van de gebeurtenis moet een getal of MM/DD/YYYY zijn.",
+    "eventOutOfBounds": "De datum van de gebeurtenis moet binnen de grenzen van de tijdlijn vallen.",
+    "extendFromMismatch": "Uitbreiden vanaf werkt alleen als de geselecteerde periode precies eindigt waar deze periode begint.",
+    "scaleBothRequired": "Zowel begin als einde zijn vereist",
+    "scaleInvalidEnd": "Ongeldige einddatum",
+    "scaleInvalidStart": "Ongeldige startdatum",
+    "scaleMustDiffer": "Begin en einde moeten verschillen",
+    "scaleOutOfRange": "Schaal moet tussen 0 en 2 liggen",
+    "spanOutOfRange": "Periode/tijdperk moet overlappen met het bereik van de tijdlijn.",
+    "startAfterEnd": "Begin moet voor het einde liggen.",
+    "startEndInvalid": "Begin en einde moeten getallen of MM/DD/YYYY zijn."
+  }
+}

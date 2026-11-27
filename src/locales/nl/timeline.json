@@ -1,0 +1,470 @@
+{
+  "calendar": {
+    "addHint": "Dubbelklik om een gebeurtenis toe te voegen, sleep over dagen om een periode toe te voegen",
+    "backToMonth": "Terug naar de maand",
+    "empty": "Nog niets met een datum. Dubbelklik op een dag om een gebeurtenis toe te voegen.",
+    "month": "Maand",
+    "more": "+{{n}} meer",
+    "nextMonth": "Volgende maand",
+    "nextYear": "Volgend jaar",
+    "previousMonth": "Vorige maand",
+    "previousYear": "Vorig jaar",
+    "range": "Kalenderbereik",
+    "showYear": "Toon het hele jaar",
+    "today": "Vandaag",
+    "year": "Jaar"
+  },
+  "colorPicker": {
+    "addFavorite": "Toevoegen aan favorieten",
+    "favorites": "Favorieten",
+    "favoritesFull": "Favorieten zijn vol",
+    "hex": "Hex-kleur",
+    "hue": "Tint",
+    "inTimeline": "In deze tijdlijn",
+    "removeFromFavorites": "Verwijderen uit favorieten",
+    "saturationBrightness": "Verzadiging en helderheid",
+    "theme": "Thema"
+  },
+  "colorStatus": {
+    "custom": "Aangepast",
+    "default": "Standaard",
+    "inherited": "Overgenomen"
+  },
+  "columns": {
+    "approxEnd": "Geschat einde",
+    "approxStart": "Geschat begin",
+    "borderStyle": "Randstijl",
+    "color": "Kleur",
+    "coords": "Coördinaten",
+    "date": "Datum / Begin",
+    "description": "Beschrijving",
+    "end": "Einde",
+    "group": "Groep",
+    "hideDetails": "Details verbergen",
+    "hideYear": "Datum verbergen",
+    "icon": "Pictogram",
+    "lineStyle": "Lijnstijl",
+    "mergeInto": "Samenvoegen met",
+    "note": "Notitie",
+    "parent": "Bovenliggend",
+    "parentType": "Type bovenliggend",
+    "size": "Grootte",
+    "sources": "Bronnen",
+    "tags": "Tags",
+    "thumbnail": "Miniatuur",
+    "thumbnailStyle": "Miniatuurstijl",
+    "title": "Titel",
+    "type": "Type",
+    "wiki": "Wiki"
+  },
+  "contextMenu": {
+    "addEra": "Tijdperk toevoegen",
+    "addEvent": "Gebeurtenis toevoegen",
+    "addSpan": "Periode toevoegen",
+    "clearFocus": "Focus wissen",
+    "convertToEvent": "Omzetten naar gebeurtenis",
+    "convertToSpan": "Omzetten naar periode",
+    "delete": "{{type}} verwijderen",
+    "downloadJson": "Download .json",
+    "duplicate": "{{type}} dupliceren",
+    "edit": "{{type}} bewerken",
+    "focusHint": "Shift-klik op een periode om dit zonder menu te doen",
+    "focusSpan": "Focus op periode en onderliggende elementen"
+  },
+  "elementTypes": {
+    "era": "Tijdperk",
+    "event": "Gebeurtenis",
+    "span": "Periode"
+  },
+  "exportProgress": {
+    "compositing": "Afbeelding samenstellen...",
+    "encoding": "PNG coderen...",
+    "preparing": "Export voorbereiden...",
+    "rendering": "Tijdlijn renderen...",
+    "saved": "Opgeslagen"
+  },
+  "fields": {
+    "addTag": "tag toevoegen...",
+    "approximate": "Bij benadering",
+    "approximateEnd": "Einde bij benadering",
+    "approximateStart": "Begin bij benadering",
+    "borderStyle": "Randstijl",
+    "color": "Kleur",
+    "colorLower": "kleur",
+    "coordinates": "Coördinaten",
+    "date": "Datum",
+    "dateLower": "datum",
+    "description": "Beschrijving",
+    "descriptionPlaceholder": "Korte beschrijving...",
+    "duration": "Duur",
+    "endDate": "Einddatum",
+    "extendFrom": "Uitbreiden vanaf",
+    "fontSize": "Lettergrootte",
+    "fuzzyEnd": "Vaag einde",
+    "fuzzyStart": "Vaag begin",
+    "group": "Groep",
+    "hideDate": "Datum verbergen",
+    "hideDetails": "Details verbergen",
+    "icon": "Pictogram",
+    "labelLower": "label",
+    "lat": "breedtegraad",
+    "lineStyle": "Lijnstijl",
+    "lng": "lengtegraad",
+    "mergeInto": "Samenvoegen met",
+    "name": "Naam",
+    "parent": "Bovenliggend",
+    "pickCoordinates": "Kies coördinaten op de kaart",
+    "size": "Grootte",
+    "sizeLower": "grootte",
+    "startDate": "Startdatum",
+    "tags": "Tags",
+    "thumbnail": "Miniatuur",
+    "time": "Tijd",
+    "timeSince": ""
+  },
+  "filters": {
+    "addDateFilter": "Datumfilter toevoegen",
+    "close": "Filters sluiten",
+    "datePlaceholder": "jaar / datum",
+    "exclude": "Uitsluiten (~)",
+    "expand": "Filters in een groter paneel openen",
+    "hideTag": "Tag verbergen",
+    "include": "Insluiten (~ verwijderen)",
+    "labels": {
+      "date": "DATUM",
+      "query": "ZOEKOPDRACHT",
+      "tags": "TAGS",
+      "tagsHint": "KLIK OM TE FILTEREN · SHIFT+KLIK VOOR ZOEKOPDRACHT",
+      "type": "TYPE"
+    },
+    "noActiveFilter": "Geen actief filter",
+    "placeholder": "Elementen filteren…",
+    "placeholderShort": "Filteren…",
+    "remove": "Filter verwijderen",
+    "removeFromHistory": "Verwijderen uit geschiedenis",
+    "removeLabel": "Label verwijderen",
+    "shownCount_one": "<0>{{count}}</0> weergegeven",
+    "shownCount_other": "<0>{{count}}</0> weergegeven",
+    "showTag": "Tag tonen",
+    "syntax": "syntaxis",
+    "syntaxHelp": "Hulp bij filtersyntaxis",
+    "tagCount_one": "{{count}} tag",
+    "tagCount_other": "{{count}} tags",
+    "tagHint": "{{action}} · Shift-klik om {{queryAction}} in de zoekopdracht",
+    "toggleAndOr": "Wisselen tussen EN / OF",
+    "useAsLabel": "Gebruiken als label"
+  },
+  "iconCategories": {
+    "arts": "Kunst, media en games",
+    "events": "Gebeurtenissen en mijlpalen",
+    "food": "Eten, gezondheid en handel",
+    "military": "Leger en politiek",
+    "nature": "Natuur en dieren",
+    "people": "Mensen en emoties",
+    "places": "Plaatsen",
+    "religion": "Religie en cultuur",
+    "science": "Wetenschap, techniek en onderwijs",
+    "symbols": "Symbolen",
+    "time": "Tijd",
+    "tools": "Gereedschap en communicatie",
+    "transport": "Vervoer"
+  },
+  "iconPicker": {
+    "add": "Pictogram toevoegen",
+    "current": "Pictogram: {{name}}",
+    "noMatches": "Geen pictogrammen gevonden",
+    "none": "Geen pictogram",
+    "search": "Pictogrammen zoeken..."
+  },
+  "lineStyles": {
+    "dashed": "Gestreept",
+    "dotted": "Gestippeld",
+    "none": "Geen",
+    "solid": "Ononderbroken"
+  },
+  "links": {
+    "add": "Verbinding toevoegen",
+    "elementField": "Element",
+    "goTo": "Ga naar {{label}}",
+    "label": "Verbindingen",
+    "loading": "Laden…",
+    "missingHint": "Die tijdlijn staat niet meer in je bibliotheek",
+    "missingTimeline": "Ontbrekende tijdlijn",
+    "pickElement": "Kies een element…",
+    "pickTimeline": "Kies een tijdlijn…",
+    "remove": "Verbinding met {{label}} verwijderen",
+    "thisTimeline": "Deze tijdlijn",
+    "timelineField": "Tijdlijn",
+    "wholeTimeline": "Hele tijdlijn"
+  },
+  "map": {
+    "autoRotate": "Automatisch draaien",
+    "mode": "Kaartstijl",
+    "routeDone": "",
+    "routeEditor": "",
+    "routeEditorHint": "",
+    "routeGhostHint": "",
+    "routeHandleHint": "",
+    "routeStraighten": "",
+    "unavailable": "De kaart heeft WebGL nodig, dat hier niet beschikbaar is"
+  },
+  "mapPick": {
+    "escToCancel": "Esc om te annuleren"
+  },
+  "noteEditor": {
+    "bold": "Vet",
+    "confirmDelete": "Deze notitie verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "delete": "Notitie verwijderen",
+    "embed": "Afbeelding of video insluiten",
+    "heading1": "Kop 1",
+    "heading2": "Kop 2",
+    "heading3": "Kop 3",
+    "highlight": "Markeren",
+    "insertLocalImage": "Lokale afbeelding invoegen",
+    "italic": "Cursief",
+    "label": "Notitie",
+    "link": "Link",
+    "loading": "Notitie laden...",
+    "mode": {
+      "label": "Editormodus",
+      "live": "Live",
+      "liveHint": "Opmaak wordt getoond zoals die wordt weergegeven; markdown verschijnt waar je aan het bewerken bent",
+      "source": "Bron",
+      "sourceHint": "Gewone markdown"
+    },
+    "placeholder": "Schrijf je notitie...",
+    "strikethrough": "Doorhalen",
+    "underline": "Onderstrepen",
+    "unlink": "Notitie ontkoppelen",
+    "wordCount_one": "{{count}} woord",
+    "wordCount_other": "{{count}} woorden"
+  },
+  "noteFile": {
+    "errors": {
+      "exists": "Er bestaat al een notitie met die naam.",
+      "failed": "Hernoemen mislukt.",
+      "invalidName": "Die naam werkt niet als bestandsnaam.",
+      "locked": "Deze notitie kan hier niet worden hernoemd.",
+      "noTimeline": "Geen tijdlijn geopend."
+    },
+    "newName": "Nieuwe bestandsnaam van de notitie",
+    "rename": "Notitiebestand hernoemen",
+    "save": "Naam opslaan"
+  },
+  "openSource": "Bron openen",
+  "options": {
+    "inherit": "Overnemen"
+  },
+  "playback": {
+    "direction": "Richting",
+    "faster": "Sneller",
+    "forward": "Vooruit",
+    "loop": "Herhalen",
+    "options": "Afspeelopties",
+    "playReverse": "Achteruit afspelen",
+    "reverse": "Achteruit",
+    "slower": "Langzamer",
+    "speed": "Snelheid",
+    "switchDirection": "Richting wisselen"
+  },
+  "rightPanel": {
+    "addProperty": "Eigenschap toevoegen",
+    "approxToggleHint": "zet \"{{marker}}\" voor de weergegeven datum",
+    "attach": {
+      "note": "Notitie",
+      "noteHint": "Schrijf een markdown-notitie of koppel een bestaande",
+      "sourceHint": "Citeer een boek, artikel of link",
+      "sources": "Bronnen",
+      "wiki": "Wiki"
+    },
+    "branchFrom": "Aftakken van",
+    "closePanel": "Paneel sluiten",
+    "dateOptions": {
+      "aria": "Datumopties openen",
+      "title": "Kies een datum of voeg een dynamische datum in"
+    },
+    "dropImage": "Zet een afbeelding neer of klik om te uploaden",
+    "dropToSetThumbnail": "Neerzetten om miniatuur in te stellen",
+    "dynamicDates": {
+      "thisMonth": "Deze maand",
+      "thisYear": "Dit jaar",
+      "today": "Vandaag"
+    },
+    "extendFrom": "Uitbreiden vanaf",
+    "fontSizeHint": "In pixels",
+    "fontSizeLarger": "Groter",
+    "fontSizeSmaller": "Kleiner",
+    "maximizePanel": "Paneel maximaliseren",
+    "noContiguousSpans": "Geen aansluitende perioden",
+    "noMatchingSpans": "Geen overeenkomende perioden",
+    "noMatchingTimes": "Geen overeenkomende tijden",
+    "noSelection": "Geen selectie",
+    "pasteImageUrl": "Plak afbeeldings-URL",
+    "propertyGroups": {
+      "appearance": "Uiterlijk",
+      "connections": "Gerelateerd",
+      "date": "Datum",
+      "location": "Locatie",
+      "visibility": "Zichtbaarheid"
+    },
+    "removeBreak": "Onderbreking verwijderen",
+    "removeProperty": "Eigenschap verwijderen",
+    "restorePanel": "Paneel herstellen",
+    "revertInherited": "Terugzetten naar overgenomen waarde",
+    "searchSpan": "Periode zoeken...",
+    "switchToOverview": "Overschakelen naar overzicht",
+    "timePlaceholder": "bijv. 15:30",
+    "uploadImage": "Afbeelding uploaden"
+  },
+  "search": {
+    "hitCount": "{{n}} treffers",
+    "inNotes": "In notities",
+    "noResults": "Geen resultaten voor “{{query}}”",
+    "placeholderWithNotes": "Zoek perioden, gebeurtenissen, tijdperken, notities…"
+  },
+  "sidebar": {
+    "applyColor": "Kleur toepassen op elementen",
+    "collapse": "Samenvouwen",
+    "collapseSidebar": "Zijbalk samenvouwen",
+    "downloadJson": "Download .json (alleen gegevens)",
+    "downloadJsonHint": "Alleen tijdlijngegevens; afbeeldingen en notities blijven op deze computer",
+    "downloadPng": "Download .png",
+    "expandSidebar": "Zijbalk uitvouwen",
+    "exportPackage": "Exporteer .timeline (afbeeldingen en notities)",
+    "exportPackageHint": "Eén deelbaar bestand met de tijdlijn en bijbehorende afbeeldingen en notities",
+    "exportVideo": "Video exporteren",
+    "groups": {
+      "add": "Groep toevoegen",
+      "all": "Alle groepen",
+      "color": "Groepskleur",
+      "noMatches": "Geen overeenkomende groepen",
+      "none": "Geen groepen gevonden"
+    },
+    "newTimeline": "Nieuwe tijdlijn",
+    "noTimelines": "Geen tijdlijnen gevonden",
+    "openTimeline": "Tijdlijn openen",
+    "other": "OVERIGE",
+    "search": {
+      "elements": "Zoek perioden, gebeurtenissen, tijdperken...",
+      "groups": "Groepen zoeken...",
+      "tags": "Tags zoeken..."
+    },
+    "sections": {
+      "eras": "Tijdperken",
+      "events": "Gebeurtenissen",
+      "spans": "Perioden"
+    },
+    "sort": {
+      "ascending": "Oplopend",
+      "date": "Datum",
+      "descending": "Aflopend",
+      "elements": "Elementen",
+      "groupBy": "Groeperen op",
+      "groupDefault": "Standaard",
+      "groupEras": "Tijdperken",
+      "groupSpans": "Perioden",
+      "label": "Sorteren",
+      "name": "Naam",
+      "nestSubEras": "Subtijdperken nesten",
+      "sortBy": "Sorteren op"
+    },
+    "tabs": {
+      "groups": "Groepen",
+      "groupsAria": "Tabblad Groepen",
+      "tags": "Tags",
+      "tagsAria": "Tabblad Tags",
+      "timeline": "Tijdlijn",
+      "timelineAria": "Tabblad Tijdlijn"
+    },
+    "tags": {
+      "all": "Alle",
+      "allTags": "Alle tags",
+      "noMatches": "Geen overeenkomende tags",
+      "none": "Geen tags gevonden",
+      "setColor": "Tagkleur instellen",
+      "showAll": "Alles tonen"
+    },
+    "timelineDivider": "Tijdlijn"
+  },
+  "sizes": {
+    "extraThick": "Extra dik",
+    "normal": "Normaal",
+    "thick": "Dik",
+    "thin": "Dun"
+  },
+  "sources": {
+    "add": "Bron toevoegen",
+    "feature": "Instellen als uitgelichte link",
+    "fields": {
+      "description": "Beschrijving (optioneel)",
+      "descriptionPlaceholder": "Auteur, jaar, opmerkingen…",
+      "title": "Titel",
+      "titlePlaceholder": "Brontitel",
+      "url": "URL (optioneel)"
+    },
+    "heading": "Bronnen",
+    "unfeature": "Uitgelichte link verwijderen"
+  },
+  "spreadsheet": {
+    "exportCsv": "Door komma's gescheiden",
+    "exportJson": "Gestructureerde gegevens",
+    "fields": "Velden",
+    "groupName": "Groepsnaam",
+    "iconKey": "pictogramsleutel",
+    "imageUrl": "Plak afbeeldings-URL of pad",
+    "noteFilename": "bestandsnaam.md",
+    "searchExisting": "Bestaande zoeken…"
+  },
+  "thumbnailFit": {
+    "fill": "Vullen",
+    "fit": "Passend",
+    "label": "Miniatuurpassing"
+  },
+  "thumbnailStyles": {
+    "banner": "Banner bovenaan",
+    "circleFill": "Cirkelvulling",
+    "squareFill": "Vierkante vulling",
+    "strip": "Strook links"
+  },
+  "timeSince": {
+    "ago": "",
+    "future": "",
+    "today": ""
+  },
+  "toolbar": {
+    "backToFiles": "Terug naar bestanden",
+    "calendarView": "Kalenderweergave",
+    "export": "Exporteren",
+    "filter": "Filter",
+    "flatMap": "Platte kaart",
+    "globe": "Wereldbol",
+    "mapView": "Kaartweergave",
+    "new": "Nieuw",
+    "searchPlaceholder": "Zoeken…",
+    "settings": "Instellingen",
+    "spreadsheetView": "Spreadsheetweergave",
+    "timelineSettings": "Tijdlijninstellingen",
+    "timelineView": "Tijdlijnweergave",
+    "zoomIn": "Inzoomen",
+    "zoomInTooltip": "Inzoomen (+)",
+    "zoomOut": "Uitzoomen",
+    "zoomOutTooltip": "Uitzoomen (-)"
+  },
+  "untitledElement": "(zonder titel)",
+  "wiki": {
+    "add": {
+      "subtitle": "Koppel een MediaWiki-artikel of -sectie"
+    },
+    "errors": {
+      "enterValidUrl": "Voer een geldige MediaWiki-URL in (bijv. https://en.wikipedia.org/wiki/Ancient_Greece)",
+      "invalidUrl": "Ongeldige wiki-URL"
+    },
+    "heading": "Wiki",
+    "loading": "Wikiartikel laden...",
+    "openArticle": "Artikel openen",
+    "openInBrowser": "Openen in browser",
+    "reload": "Artikel opnieuw laden",
+    "urlLabel": "URL",
+    "urlPlaceholder": "https://nl.wikipedia.org/wiki/… of …/wiki/Pagina#Sectie"
+  }
+}

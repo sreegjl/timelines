@@ -1,0 +1,432 @@
+{
+  "advanced": {
+    "autoHideEmptyGroups": {
+      "description": "Verberg groepen zonder gebeurtenissen of perioden op de tijdlijn, zodat ze geen ruimte innemen in plaats van een lege band te tonen.",
+      "label": "Lege groepen automatisch verbergen"
+    },
+    "branchOrdering": {
+      "description": "Kies of vertakkingen met een latere start dichter bij de bovenliggende periode blijven.",
+      "label": "Volgorde van vertakkingen",
+      "laterFirst": "Latere start dichterbij",
+      "original": "Volgorde van de vertakkingenlijst aanhouden"
+    },
+    "dateFormat": {
+      "description": "Hoe datums met maand en dag worden getoond en ingevoerd in alle panelen, wanneer de kalenderweergave aan staat.",
+      "label": "Datumnotatie"
+    },
+    "disableGroups": {
+      "description": "Voeg alle elementen samen in één groep en verberg groepsbanden.",
+      "label": "Groepen uitschakelen"
+    },
+    "eventLinesToGroup": {
+      "description": "Verankeer gebeurtenislijnen zonder bovenliggend element aan hun groepsband in plaats van aan de hoofdtijdlijn.",
+      "label": "Gebeurtenislijnen met groep verbinden"
+    },
+    "hideDecimals": {
+      "description": "Rond weergegeven jaren af op hele getallen.",
+      "label": "Decimalen verbergen"
+    },
+    "hideSpanConnectors": {
+      "description": "Verberg vertakkings- en samenvoegverbindingen tussen perioden. Gegevens blijven behouden — als je dit weer inschakelt, komen ze terug.",
+      "label": "Periodeverbindingen verbergen"
+    },
+    "keepSelection": {
+      "description": "Houd het laatst geselecteerde element geselecteerd wanneer je op de achtergrond van de tijdlijn klikt.",
+      "label": "Selectie behouden"
+    },
+    "leftPanel": "Linkerpaneel",
+    "maps": {
+      "description": "Maak het mogelijk coördinaten toe te voegen aan gebeurtenissen, tijdperken en perioden om ze op een kaart te bekijken.",
+      "label": "Kaartweergave"
+    },
+    "showPopularTags": {
+      "description": "Toon een rij met de meest gebruikte tags bovenaan het linkerpaneel om snel te filteren.",
+      "label": "Populaire tags tonen"
+    },
+    "spreadsheet": {
+      "description": "Schakel een spreadsheetweergave in om elementen in bulk te bewerken.",
+      "label": "Spreadsheetweergave"
+    },
+    "timeFormat": {
+      "description": "Hoe een tijdstip wordt getoond en ingevoerd, wanneer er een is ingesteld voor een gebeurtenis, periode of tijdperk.",
+      "label": "Tijdnotatie"
+    },
+    "timelineView": "Tijdlijnweergave",
+    "useCalendar": {
+      "description": "Schakel datums met maand en dag in op streepjes en elementen, en bekijk ze in een kalender.",
+      "label": "Kalenderweergave"
+    },
+    "views": "Weergaven",
+    "wiki": {
+      "description": "Maak het mogelijk MediaWiki-artikelen aan tijdlijnelementen te koppelen.",
+      "label": "Wiki-integratie"
+    }
+  },
+  "appearance": {
+    "eventFontSize": {
+      "description": "Bepaal de tekstgrootte in gebeurtenisvakken ({{size}}px{{suffix}}).",
+      "label": "Lettergrootte van gebeurtenissen"
+    },
+    "eventSize": {
+      "description": "Bepaal de grootte van gebeurtenisvakken ({{size}}px{{suffix}}).",
+      "label": "Grootte van gebeurtenissen"
+    },
+    "fixedEventHeight": {
+      "description": "Zet alle gebeurtenissen op de hoogte van één regel en kort lange titels af met een weglatingsteken.",
+      "label": "Vaste hoogte van gebeurtenissen"
+    },
+    "font": {
+      "default": "Standaard (app-lettertype)",
+      "description": "Kies een lettertype voor deze tijdlijn.",
+      "label": "Lettertype"
+    },
+    "secondaryBg": {
+      "description": "Gebruik dezelfde achtergrondkleur als de zijpanelen voor het tijdlijngebied.",
+      "label": "Secundaire tijdlijnachtergrond"
+    },
+    "showDurations": {
+      "description": "Toon hoe lang elke periode en elk tijdperk duurt naast het datumbereik.",
+      "label": "Duur tonen"
+    },
+    "showElapsed": {
+      "description": "",
+      "label": ""
+    },
+    "showGrid": {
+      "description": "Toon subtiele verticale rasterlijnen die op de streepjes aansluiten.",
+      "label": "Raster tonen"
+    },
+    "spanColorEvents": {
+      "description": "Kleur de achtergrond van gebeurtenissen in de kleur van hun bovenliggende periode.",
+      "label": "Gebeurtenissen kleuren op bovenliggende periode"
+    },
+    "theme": {
+      "default": "Standaard (app-thema)",
+      "description": "Kies een kleurthema voor de tijdlijn.",
+      "label": "Thema"
+    },
+    "themeMigration": {
+      "pending_one": "{{count}} thema gebruikt een ouder formaat. Alles bijwerken?",
+      "pending_other": "{{count}} thema's gebruiken een ouder formaat. Alles bijwerken?",
+      "updateAll": "Alles bijwerken",
+      "updated_one": "{{count}} thema bijgewerkt.",
+      "updated_other": "{{count}} thema's bijgewerkt.",
+      "updating": "Bijwerken..."
+    },
+    "thinConnectors": {
+      "description": "Gebruik dunne periodeverbindingen met afgeronde uiteinden.",
+      "label": "Dunne verbindingen"
+    },
+    "todayMarker": {
+      "description": "Toon een verticale lijn op de huidige datum.",
+      "label": "Markering voor vandaag"
+    }
+  },
+  "appSettings": {
+    "description": "Open de algemene instellingen voor thema's en bestanden.",
+    "label": "App-instellingen",
+    "open": "App-instellingen openen"
+  },
+  "appSettingsTitle": "APP-INSTELLINGEN",
+  "close": "Instellingen sluiten",
+  "errors": {
+    "endInvalid": "Eindpunt moet een getal of MM/DD/YYYY zijn.",
+    "nameAlphanumeric": "De tijdlijnnaam moet minstens één letter of cijfer bevatten.",
+    "nameRequired": "Tijdlijnnaam is vereist.",
+    "startAfterEnd": "Beginpunt moet kleiner zijn dan het eindpunt.",
+    "startInvalid": "Beginpunt moet een getal of MM/DD/YYYY zijn."
+  },
+  "files": {
+    "assetsFolder": "Map voor media",
+    "choose": "Kiezen...",
+    "notesFolder": "Map voor notities",
+    "timelineFolder": "Map voor tijdlijnen",
+    "useDefault": "Standaard gebruiken"
+  },
+  "folderTree": {
+    "collapse": "Samenvouwen",
+    "expand": "Uitvouwen",
+    "home": "Start"
+  },
+  "general": {
+    "appFont": {
+      "default": "Standaard (thema)",
+      "description": "Stelt het lettertype van de interface in. Voeg eigen lettertypen toe in de lettertypemap.",
+      "label": "App-lettertype",
+      "missing": "{{font}} (ontbreekt)",
+      "openFolder": "Lettertypemap openen"
+    },
+    "appFontSize": {
+      "aria": "Lettergrootte van de app",
+      "description": "Bepaalt de basislettergrootte van de interface.",
+      "label": "Lettergrootte van de app"
+    },
+    "approxDate": {
+      "description": "Voorvoegsel voor elementen die als bij benadering zijn gemarkeerd (bijv. c., ca., circa).",
+      "label": "Datum bij benadering"
+    },
+    "appTheme": {
+      "description": "Wordt gebruikt als standaardthema voor tijdlijnen.",
+      "label": "App-thema",
+      "openFolder": "Themamap openen"
+    },
+    "disableThumbnails": {
+      "description": "Verberg tijdlijnvoorbeelden op kaarten en sla het vastleggen ervan over bij het verlaten van een tijdlijn.",
+      "label": "Miniaturen uitschakelen"
+    },
+    "documentation": {
+      "description": "Handleidingen, tips en functieverwijzingen.",
+      "label": "Documentatie",
+      "open": "Documentatie openen"
+    },
+    "durationUnit": {
+      "description": "Hoe één eenheid op de tijdlijn wordt genoemd in duur (bijv. Ma op een MYA-tijdlijn). Wordt gebruikt zoals getypt, dus er wordt geen meervoud toegevoegd.",
+      "label": "Duureenheid",
+      "placeholder": "jr"
+    },
+    "end": {
+      "description": "Het laatste jaar/de laatste datum die op de tijdlijn wordt getoond.",
+      "label": "Eindpunt"
+    },
+    "hardwareAcceleration": {
+      "description": "Schakel uit als je visuele storingen ervaart. Vereist herstart.",
+      "label": "Hardwareversnelling"
+    },
+    "language": {
+      "description": "Taal van de app-interface. Datum- en tijdnotaties worden per tijdlijn ingesteld en worden hierdoor niet beïnvloed.",
+      "label": "Taal",
+      "systemDefault": "Systeemstandaard"
+    },
+    "length": {
+      "description": "Hogere waarden bieden ruimte voor meer gebeurtenissen met minder overlap.",
+      "label": "Tijdlijnlengte"
+    },
+    "logScale": {
+      "description": "Bepaalt de sterkte van de logaritmische curve. Hogere waarden comprimeren recente tijd meer.",
+      "label": "Logaritmische schaalfactor"
+    },
+    "name": {
+      "description": "Je bestand wordt opgeslagen als: {{filename}}.timeline",
+      "label": "Tijdlijnnaam",
+      "placeholder": "Voer tijdlijnnaam in"
+    },
+    "negativeEra": {
+      "description": "Optioneel label voor negatieve jaren (bijv. v.Chr.).",
+      "label": "Negatieve jaartelling",
+      "placeholder": "bijv. v.Chr."
+    },
+    "noYearZero": {
+      "description": "Tel jaren historisch, waarbij 1 v.Chr. direct gevolgd wordt door 1 n.Chr., zodat duren over de grens heen kloppen. Bestaande datums behouden hun labels; alles op jaar 0 verschuift naar 1 v.Chr.",
+      "label": "Geen jaar nul"
+    },
+    "positiveEra": {
+      "description": "Optioneel label voor positieve jaren (bijv. n.Chr.).",
+      "label": "Positieve jaartelling",
+      "placeholder": "bijv. n.Chr."
+    },
+    "scaleSections": {
+      "add": "Sectie toevoegen",
+      "description": "Comprimeer of rek tijdsperioden.",
+      "end": "Einde",
+      "label": "Schaalsecties",
+      "remove": "Schaalsectie verwijderen",
+      "scale": "Schaal",
+      "showBreak": "Asonderbrekingsmarkering tonen",
+      "start": "Begin",
+      "toggleBreak": "Asonderbrekingsmarkering aan-/uitzetten"
+    },
+    "scaleType": {
+      "default": "Standaard",
+      "description": "Hoe tijd over de as van de tijdlijn wordt verdeeld.",
+      "label": "Schaaltype",
+      "logarithmic": "Logaritmische schaal"
+    },
+    "start": {
+      "description": "Het eerste jaar/de eerste datum die op de tijdlijn wordt getoond.",
+      "label": "Beginpunt"
+    },
+    "startMaximized": {
+      "description": "Start de app in een gemaximaliseerd venster.",
+      "label": "App gemaximaliseerd starten"
+    },
+    "tickDensity": {
+      "description": "Bepaal hoeveel streepjes er op de as van de tijdlijn verschijnen.",
+      "label": "Streepjesdichtheid"
+    },
+    "version": {
+      "available": "Er is een nieuwe update beschikbaar. Wil je die downloaden?",
+      "checkFailed": "Controle op updates mislukt",
+      "downloadLatest": "Nieuwste versie downloaden",
+      "downloadUpdate": "Update downloaden",
+      "label": "Versie {{version}}",
+      "notNow": "Niet nu",
+      "readyToInstall": "Klaar om te installeren",
+      "upToDate": "Je hebt de nieuwste versie geïnstalleerd.",
+      "whatsNew": "Bekijk wat er nieuw is in <1>v{{version}}</1>."
+    }
+  },
+  "hotkeys": {
+    "delete": "Verwijderen",
+    "newEra": "Nieuw tijdperk",
+    "newEvent": "Nieuwe gebeurtenis",
+    "newSpan": "Nieuwe periode",
+    "play": "Afspelen / Pauzeren",
+    "playFaster": "Sneller afspelen",
+    "playLoop": "Herhaald afspelen",
+    "playReverse": "Achteruit afspelen",
+    "playSlower": "Langzamer afspelen",
+    "pressKey": "Druk op een toets…",
+    "redo": "Opnieuw",
+    "search": "Zoeken",
+    "selectNext": "Volgende selecteren",
+    "selectPrevious": "Vorige selecteren",
+    "selectTypeDown": "Type omlaag selecteren",
+    "selectTypeUp": "Type omhoog selecteren",
+    "undo": "Ongedaan maken",
+    "viewCalendar": "Kalenderweergave",
+    "viewMap": "Kaartweergave",
+    "viewSpreadsheet": "Spreadsheetweergave",
+    "viewTimeline": "Tijdlijnweergave"
+  },
+  "maps": {
+    "dateFilter": {
+      "active": "Actief op de datum",
+      "all": "Alle elementen",
+      "description": "Welke kaartmarkeringen worden getoond voor de datum in de schuifbalk.",
+      "label": "Datum van schuifbalk",
+      "upTo": "Tot en met de datum"
+    },
+    "eraMarker": {
+      "description": "Kies de markeringsstijl voor tijdperken in de kaartweergave.",
+      "label": "Tijdperkmarkering"
+    },
+    "eventMarker": {
+      "description": "Kies de markeringsstijl voor gebeurtenissen in de kaartweergave.",
+      "label": "Gebeurtenismarkering"
+    },
+    "globe": {
+      "label": "Wereldbol"
+    },
+    "globeFarSide": {
+      "description": "Toon markeringen aan de andere kant van de wereldbol vaag erdoorheen. Schakel uit om ze te verbergen.",
+      "label": "Markeringen aan de achterkant tonen"
+    },
+    "globeGlow": {
+      "description": "Toon een gloed in de linkkleur van het thema rond de wereldbol.",
+      "label": "Atmosfeergloed"
+    },
+    "globeStars": {
+      "description": "Toon een donker sterrenveld achter de wereldbol in plaats van de themaachtergrond.",
+      "label": "Sterrenachtergrond"
+    },
+    "markers": {
+      "circle": "Cirkel",
+      "diamond": "Ruit",
+      "pin": "Speld",
+      "square": "Vierkant",
+      "triangle": "Driehoek"
+    },
+    "routeArrows": {
+      "description": "Toon pijlen langs routes die de richting aangeven.",
+      "label": "Routepijlen"
+    },
+    "routes": {
+      "all": "Alles, op volgorde",
+      "description": "Verbind elementen met een locatie met lijnen in datumvolgorde. Ideaal voor reizen, veldtochten en zeer lange wandelingen.",
+      "group": "Per groep",
+      "label": "Routes",
+      "lineage": "Per afstamming (uitbreidingen, vertakkingen, samenvoegingen)",
+      "off": "Uit",
+      "span": "Per bovenliggende periode",
+      "tag": "Per tag"
+    },
+    "spanMarker": {
+      "description": "Kies de markeringsstijl voor perioden in de kaartweergave.",
+      "label": "Periodemarkering"
+    },
+    "tileUrl": "Tegel-URL",
+    "tileUrlDescription": "Aangepaste URL voor kaarttegels. Gebruik {z}, {x}, {y} als plaatshouders. Laat leeg om OpenStreetMap te gebruiken."
+  },
+  "sections": {
+    "advanced": "Geavanceerd",
+    "appearance": "Uiterlijk",
+    "dates": "Datums",
+    "files": "Bestanden",
+    "general": "Algemeen",
+    "hotkeys": "Sneltoetsen",
+    "maps": "Kaarten",
+    "sync": "Synchronisatie (experimenteel)"
+  },
+  "sync": {
+    "autoSync": {
+      "description": "Synchroniseer wijzigingen automatisch na het geselecteerde inactiviteitsinterval.",
+      "label": "Automatisch synchroniseren"
+    },
+    "badges": {
+      "conflict": "Conflict",
+      "neverSync": "Nooit synchroniseren"
+    },
+    "behavior": "Synchronisatiegedrag",
+    "branch": "Branch",
+    "branchPlaceholder": "main",
+    "confirmDeleteMirror": "Ook de lokale spiegelkloon verwijderen? Druk op OK om te verwijderen, of op Annuleren om te behouden.",
+    "confirmDisconnect": "Git-synchronisatie van dit apparaat loskoppelen?",
+    "confirmRebuildMirror": "De lokale spiegel opnieuw opbouwen? Hierdoor wordt de spiegelkloon verwijderd en je bibliotheek opnieuw geëxporteerd. Je tijdlijnen blijven ongewijzigd.",
+    "confirmRestoreVersion": "Deze versie herstellen als kopie in je bibliotheek?",
+    "desktopOnly": "Git-synchronisatie is alleen beschikbaar in de desktop-app.",
+    "detail": {
+      "authExpired": "Het opgeslagen token werkt niet meer. Plak hieronder een nieuw token om het synchroniseren te hervatten.",
+      "dirty": "Lokale wijzigingen staan in de wachtrij voor de volgende synchronisatie.",
+      "disconnected": "Koppel een Git-repository om deze bibliotheek op al je apparaten gesynchroniseerd te houden.",
+      "error": "De laatste synchronisatiepoging is mislukt. Bekijk de onderstaande fout en probeer het opnieuw.",
+      "offline": "De externe server is momenteel onbereikbaar. Wijzigingen blijven lokaal totdat de verbinding terugkomt.",
+      "syncing": "Er wordt momenteel gesynchroniseerd. Lokale en externe wijzigingen worden automatisch samengevoegd."
+    },
+    "disconnect": "Loskoppelen",
+    "generateReadme": {
+      "description": "Schrijf een README met je tijdlijnen en viewerlinks in de repository. Schakel uit om de repository alleen bestanden te laten bevatten. Een README die je zelf hebt geschreven wordt nooit aangepast.",
+      "label": "README genereren"
+    },
+    "label": "Git-synchronisatie",
+    "machineLabel": {
+      "description": "Identificeert dit apparaat in commitberichten en conflictkopieën.",
+      "label": "Apparaatlabel",
+      "placeholder": "apparaatlabel"
+    },
+    "mirror": "Spiegel",
+    "noHistory": "Nog geen gesynchroniseerde geschiedenis gevonden voor deze tijdlijn.",
+    "noLocalTimelines": "Geen lokale tijdlijnen gevonden.",
+    "openRemote": "Externe server openen",
+    "repository": "Repository",
+    "repositoryOptions": "Repository-opties",
+    "repositoryUrl": "Repository-URL",
+    "share": {
+      "copied": "Gekopieerd",
+      "copyLink": "Link kopiëren",
+      "exactLink": "Link naar laatst gesynchroniseerde exacte versie",
+      "githubOnly": "Viewerlinks werken momenteel voor GitHub-remotes en vereisen dat de repository openbaar is.",
+      "latestLink": "Link naar nieuwste branch",
+      "noViewerLink": "Deze externe server is nog niet te koppelen aan een GitHub-viewerlink.",
+      "pending": "Deze tijdlijn heeft lokale wijzigingen of niet-gepushte commits. Synchroniseer vóór het delen als je de nieuwste versie online wilt hebben.",
+      "syncAndCopy": "Synchroniseren en kopiëren"
+    },
+    "status": "Status",
+    "steps": {
+      "connect": {
+        "text": "Voer de HTTPS-kloon-URL, branch en het token van de repository in. Koppel elk apparaat aan dezelfde externe server om bibliotheken gelijk te houden.",
+        "title": "Verbind de externe server"
+      },
+      "create": {
+        "text": "Maak een lege repository aan op GitHub. Hier komt je gesynchroniseerde bibliotheek te staan.",
+        "title": "Maak een repository aan"
+      },
+      "token": {
+        "text": "Maak een persoonlijk toegangstoken aan dat die repository kan lezen en schrijven. Fijnmazige tokens die tot die ene repository beperkt zijn, worden aanbevolen; het wordt lokaal opgeslagen met OS-versleuteling wanneer beschikbaar.",
+        "title": "Genereer een toegangstoken"
+      }
+    },
+    "syncedTimelines": "Gesynchroniseerde tijdlijnen",
+    "token": "Persoonlijk toegangstoken"
+  },
+  "title": "INSTELLINGEN"
+}

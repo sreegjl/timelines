@@ -1,0 +1,468 @@
+{
+  "alreadyInLibrary": {
+    "importCopy": "Importeren als kopie",
+    "message": "Dit bestand lijkt op \"{{title}}\", een tijdlijn die al in je bibliotheek staat. Je kunt je bestaande tijdlijn openen, of dit bestand als aparte kopie ernaast importeren.",
+    "openExisting": "Bestaande openen",
+    "title": "AL IN BIBLIOTHEEK"
+  },
+  "brand": "Timelines",
+  "clearSearch": "Zoekopdracht wissen",
+  "confirmRestart": "Een herstart is nodig om de wijziging van de hardwareversnelling toe te passen. Nu herstarten?",
+  "counts": {
+    "empty": "Leeg",
+    "eras_one": "{{count}} tijdperk",
+    "eras_other": "{{count}} tijdperken",
+    "events_one": "{{count}} gebeurtenis",
+    "events_other": "{{count}} gebeurtenissen",
+    "spans_one": "{{count}} periode",
+    "spans_other": "{{count}} perioden"
+  },
+  "deleteDialog": {
+    "alsoDeleteImages": "Ook de afbeeldingen van deze tijdlijn verwijderen",
+    "alsoDeleteNotes": "Ook de notities van deze tijdlijn verwijderen",
+    "closeAria": "Verwijderdialoog sluiten",
+    "title": "TIJDLIJN VERWIJDEREN"
+  },
+  "deleteElement": {
+    "alsoDeleteImages_one": "Ook het afbeeldingsbestand verwijderen",
+    "alsoDeleteImages_other": "Ook de afbeeldingsbestanden verwijderen",
+    "alsoDeleteNotes_one": "Ook het gekoppelde notitiebestand verwijderen",
+    "alsoDeleteNotes_other": "Ook de gekoppelde notitiebestanden verwijderen",
+    "closeAria": "Verwijderdialoog sluiten",
+    "confirmPlural_one": "Weet je zeker dat je dit element ({{count}}) wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "confirmPlural_other": "Weet je zeker dat je deze {{count}} elementen wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "confirmSingular": "Weet je zeker dat je \"{{title}}\" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "titlePlural_one": "{{count}} ELEMENT VERWIJDEREN",
+    "titlePlural_other": "{{count}} ELEMENTEN VERWIJDEREN",
+    "titleSingular": "{{type}} VERWIJDEREN"
+  },
+  "deleteFolder": {
+    "empty": " wordt permanent verwijderd.",
+    "withTimelines_one": " bevat {{count}} tijdlijn. Dit kan niet ongedaan worden gemaakt.",
+    "withTimelines_other": " bevat {{count}} tijdlijnen. Dit kan niet ongedaan worden gemaakt."
+  },
+  "diskReload": {
+    "message": "Tijdlijn is gewijzigd op schijf."
+  },
+  "dropToImport": "Sleep een .timeline- of .csv-bestand hierheen om het te importeren",
+  "editedAgo": "Bewerkt {{when}}",
+  "exportPng": {
+    "background": {
+      "default": "Standaard",
+      "description": "Kies de achtergrondkleur voor de export.",
+      "label": "Achtergrond",
+      "secondary": "Secundair",
+      "tertiary": "Tertiair",
+      "transparent": "Transparant"
+    },
+    "export": "Exporteren",
+    "exporting": "Exporteren...",
+    "exportingPercent": "Exporteren {{percent}}%",
+    "generatingPreview": "Voorbeeld genereren...",
+    "height": "Hoogte",
+    "preparing": "Export voorbereiden...",
+    "previewAlt": "Voorbeeld van export",
+    "previewPlaceholder": "Het voorbeeld verschijnt hier",
+    "range": {
+      "description": "{{start}} tot {{end}} (van {{min}} tot {{max}})",
+      "endAria": "Eindjaar van export",
+      "label": "Tijdlijnbereik",
+      "startAria": "Beginjaar van export"
+    },
+    "resolution": {
+      "description": "Hogere resoluties zijn beter om af te drukken.",
+      "label": "Resolutie"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "a4": "A4 300 DPI (3508 × 2480)",
+      "current": "Tijdlijn",
+      "custom": "Aangepast",
+      "hd": "1080p (1920 × 1080)",
+      "letter": "Letter 300 DPI (3300 × 2550)",
+      "poster": "Poster 36×24\" (10800 × 7200)"
+    },
+    "scale": {
+      "description": "Afstand tussen jaren voor deze export ({{level}}x). Je tijdlijn wordt niet gewijzigd.",
+      "label": "Tijdlijnschaal"
+    },
+    "title": "PNG EXPORTEREN",
+    "titlePosition": {
+      "bottomCenter": "Onder midden",
+      "bottomLeft": "Linksonder",
+      "bottomRight": "Rechtsonder",
+      "description": "Waar de titel op de export wordt geplaatst.",
+      "label": "Titelpositie",
+      "topCenter": "Boven midden",
+      "topLeft": "Linksboven",
+      "topRight": "Rechtsboven"
+    },
+    "titleStyle": {
+      "description": "Kies wat er in het watermerk verschijnt.",
+      "label": "Titelstijl",
+      "logoOnly": "Alleen logo",
+      "titleLogo": "Titel en logo",
+      "titleOnly": "Alleen titel"
+    },
+    "titleText": {
+      "description": "Aangepaste tekst die alleen voor deze export wordt gebruikt.",
+      "label": "Titeltekst",
+      "placeholder": "Voer exporttitel in"
+    },
+    "watermark": {
+      "description": "Plaats de tijdlijntitel over de export heen.",
+      "label": "Titelwatermerk",
+      "unavailable": "Beschikbaar voor vaste exportresoluties."
+    },
+    "width": "Breedte"
+  },
+  "exportVideo": {
+    "background": {
+      "default": "Standaard",
+      "description": "Kies de achtergrondkleur voor de export.",
+      "label": "Achtergrond",
+      "secondary": "Secundair",
+      "tertiary": "Tertiair"
+    },
+    "duration": {
+      "description": "Hoe lang de pananimatie duurt.",
+      "label": "Duur",
+      "placeholder": "Seconden"
+    },
+    "durations": {
+      "5": "5 seconden",
+      "10": "10 seconden",
+      "15": "15 seconden",
+      "30": "30 seconden",
+      "custom": "Aangepast"
+    },
+    "errors": {
+      "unsupported": "{{width}} × {{height}} bij {{fps}} fps wordt niet ondersteund door de video-encoder van dit apparaat. Probeer een kleiner formaat of een lagere framerate."
+    },
+    "export": "Exporteren",
+    "exporting": "Exporteren...",
+    "exportingPercent": "Exporteren {{percent}}%",
+    "fps": {
+      "24": "24 fps",
+      "30": "30 fps",
+      "60": "60 fps"
+    },
+    "frameRate": {
+      "description": "Hogere waarden geven een vloeiendere video.",
+      "label": "Framerate"
+    },
+    "generatingPreview": "Voorbeeld genereren...",
+    "height": "Hoogte",
+    "previewAlt": "Voorbeeld van export",
+    "previewPlaceholder": "Het voorbeeld verschijnt hier",
+    "range": {
+      "description": "{{start}} tot {{end}} (van {{min}} tot {{max}})",
+      "endAria": "Eindjaar van export",
+      "label": "Tijdlijnbereik",
+      "startAria": "Beginjaar van export"
+    },
+    "resolution": {
+      "description": "Afmetingen van de uitvoervideo.",
+      "label": "Resolutie"
+    },
+    "resolutions": {
+      "4k": "4K (3840 × 2160)",
+      "custom": "Aangepast",
+      "hd": "1080p (1920 × 1080)"
+    },
+    "title": "VIDEO EXPORTEREN",
+    "titlePosition": {
+      "bottomCenter": "Onder midden",
+      "bottomLeft": "Linksonder",
+      "bottomRight": "Rechtsonder",
+      "description": "Waar de titel op de export wordt geplaatst.",
+      "label": "Titelpositie",
+      "topCenter": "Boven midden",
+      "topLeft": "Linksboven",
+      "topRight": "Rechtsboven"
+    },
+    "titleStyle": {
+      "description": "Kies wat er in het watermerk verschijnt.",
+      "label": "Titelstijl",
+      "logoOnly": "Alleen logo",
+      "titleLogo": "Titel en logo",
+      "titleOnly": "Alleen titel"
+    },
+    "titleText": {
+      "description": "Aangepaste tekst die alleen voor deze export wordt gebruikt.",
+      "label": "Titeltekst",
+      "placeholder": "Voer exporttitel in"
+    },
+    "watermark": {
+      "description": "Plaats de tijdlijntitel over de video heen.",
+      "label": "Titelwatermerk"
+    },
+    "width": "Breedte",
+    "zoom": {
+      "fit": "Hele hoogte van de tijdlijn passend maken.",
+      "label": "Zoom",
+      "zoomedOut": "{{zoom}}x — uitgezoomd, meer context zichtbaar."
+    }
+  },
+  "folderNamePlaceholder": "Mapnaam",
+  "home": {
+    "empty": {
+      "description": "Maak een nieuwe tijdlijn aan, of importeer een .timeline- of .csv-bestand via de zijbalk.",
+      "folder": "Deze map bevat nog geen tijdlijnen.",
+      "guide": "Nieuw hier? Lees de handleiding",
+      "noSearchMatches": "Geen tijdlijnen komen overeen met deze zoekopdracht.",
+      "recent": "De afgelopen 7 dagen is niets bewerkt.",
+      "root": "Nog geen tijdlijnen op hoofdniveau gevonden.",
+      "title": "Nog geen tijdlijnen"
+    },
+    "searchResults": "Zoekresultaten",
+    "total": "{{total}} totaal"
+  },
+  "import": "Importeren",
+  "importCsv": {
+    "columns": {
+      "csvColumn": "CSV-kolom",
+      "description": "Kies wat elke kolom wordt. Een titel en een datum zijn vereist. Rijen met een einddatum worden perioden, de rest wordt gebeurtenissen.",
+      "example": "Voorbeeld",
+      "ignore": "Niet importeren",
+      "importAs": "Importeren als",
+      "label": "Kolommen",
+      "unnamed": "(zonder naam)"
+    },
+    "create": "Tijdlijn aanmaken",
+    "dateFormat": {
+      "description": "Hoe datums zoals 03/04/2024 worden gelezen. Gewone jaren en datums in YYYY-MM-DD worden altijd begrepen.",
+      "dmy": "Dag / Maand / Jaar",
+      "label": "Datumvolgorde",
+      "mdy": "Maand / Dag / Jaar"
+    },
+    "empty": "Dit bestand bevat geen rijen om te importeren.",
+    "errors": {
+      "nothingToImport": "Er kunnen geen rijen worden geïmporteerd. Wijs een titel- en een datumkolom toe."
+    },
+    "missingDate": "Kies welke kolom de datum of startdatum bevat.",
+    "missingTitle": "Kies welke kolom de titel bevat.",
+    "preview": {
+      "label": "Voorbeeld",
+      "skipped_one": "{{count}} rij wordt overgeslagen:",
+      "skipped_other": "{{count}} rijen worden overgeslagen:",
+      "skippedRow": "rij {{row}} ({{reason}})",
+      "summary_one": "{{count}} element ({{events}} gebeurtenissen, {{spans}} perioden, {{eras}} tijdperken)",
+      "summary_other": "{{count}} elementen ({{events}} gebeurtenissen, {{spans}} perioden, {{eras}} tijdperken)"
+    },
+    "skipReason": {
+      "noDate": "geen leesbare datum",
+      "noTitle": "geen titel"
+    },
+    "title": "CSV IMPORTEREN"
+  },
+  "importHint": "Importeer een .timeline-, .json- of .csv-bestand in je bibliotheek",
+  "library": "Bibliotheek",
+  "links": {
+    "elementMissing": "Dat element is er niet meer",
+    "timelineMissing": "Gekoppelde tijdlijn niet gevonden in je bibliotheek"
+  },
+  "loadingTimelines": "Tijdlijnen laden...",
+  "marketplace": {
+    "bulkActions": "Bulkacties voor thema's",
+    "close": "Marktplaats sluiten",
+    "deleteTheme": "Thema verwijderen",
+    "disable": "Uitschakelen",
+    "download": "Downloaden",
+    "downloadAll": "Alles downloaden",
+    "downloading": "Downloaden...",
+    "enable": "Inschakelen",
+    "enabled": "Ingeschakeld",
+    "errors": {
+      "delete": "Thema verwijderen mislukt.",
+      "download": "Thema downloaden mislukt.",
+      "load": "Marktplaatsthema's laden mislukt."
+    },
+    "import": {
+      "subtitle": "Sleep of klik om .json toe te voegen",
+      "title": "Thema importeren"
+    },
+    "loading": "Thema's laden...",
+    "noMatches": "Geen thema's gevonden",
+    "openFolder": "Themamap openen",
+    "origins": {
+      "all": "Alle",
+      "builtIn": "Ingebouwd",
+      "local": "Lokaal",
+      "marketplace": "Marktplaats"
+    },
+    "removeAll": "Alles verwijderen",
+    "searchAria": "Marktplaatsthema's zoeken",
+    "searchPlaceholder": "Thema's zoeken...",
+    "tabs": {
+      "installed": "Geïnstalleerd",
+      "local": "Lokaal",
+      "marketplace": "Marktplaats"
+    },
+    "title": "Marktplaats",
+    "types": {
+      "all": "Alle",
+      "dark": "Donker",
+      "light": "Licht"
+    }
+  },
+  "menu": {
+    "moveToFolder": "Verplaatsen naar map",
+    "openRepoSettings": "Repository-instellingen openen",
+    "shareViewerLink": "Viewerlink delen",
+    "versionHistory": "Versiegeschiedenis"
+  },
+  "moveTimelines": {
+    "changeTitle": "MAP VOOR TIJDLIJNEN WIJZIGEN?",
+    "cloudWarning": "Deze map lijkt te worden gesynchroniseerd door een andere dienst, zoals Dropbox of iCloud. Als je die gebruikt met Git-synchronisatie kunnen er conflicterende of dubbele tijdlijnen op verschillende apparaten ontstaan, dus gebruik bij voorkeur het een of het ander.",
+    "failed": "Tijdlijnen verplaatsen mislukt: {{error}}",
+    "from": "Van: {{path}}",
+    "gitSyncHint": "Git-synchronisatie: tijdlijnen die in de oude map blijven staan, worden niet meer vanaf deze computer gesynchroniseerd. Ze blijven in je repository en op je andere apparaten.",
+    "message_one": "Je huidige map bevat {{count}} tijdlijn. Deze, met bijbehorende notities en afbeeldingen, naar de nieuwe map verplaatsen?",
+    "message_other": "Je huidige map bevat {{count}} tijdlijnen. Deze, met bijbehorende notities en afbeeldingen, naar de nieuwe map verplaatsen?",
+    "move": "Tijdlijnen verplaatsen",
+    "moved_one": "{{count}} tijdlijn verplaatst",
+    "moved_other": "{{count}} tijdlijnen verplaatst",
+    "moving": "Verplaatsen...",
+    "nested": "De nieuwe map staat in de huidige map (of bevat deze), dus tijdlijnen kunnen er niet naartoe worden verplaatst. Je kunt wel nog steeds overschakelen zonder te verplaatsen.",
+    "skippedMessage_one": "{{count}} bestand bestond al in de nieuwe map en is daarom in de oude map gelaten:",
+    "skippedMessage_other": "{{count}} bestanden bestonden al in de nieuwe map en zijn daarom in de oude map gelaten:",
+    "skippedTitle": "VERPLAATSEN VOLTOOID",
+    "stayHint": "Als je ze niet verplaatst, blijven ze in de oude map staan en verschijnen ze niet in je bibliotheek totdat je teruggaat. Er wordt niets overschreven in de nieuwe map.",
+    "switchFailed": "Overschakelen naar andere map mislukt: {{error}}",
+    "switchOnly": "Overschakelen zonder verplaatsen",
+    "title": "TIJDLIJNEN VERPLAATSEN?",
+    "to": "Naar: {{path}}",
+    "useFolder": "Deze map gebruiken"
+  },
+  "nav": {
+    "backup": "Back-up",
+    "createFolder": "Map aanmaken",
+    "folders": "Mappen",
+    "home": "Start",
+    "marketplace": "Marktplaats",
+    "noFolders": "Nog geen mappen",
+    "recent": "Recent",
+    "settings": "Instellingen"
+  },
+  "newTimeline": {
+    "end": {
+      "description": "Het laatste jaar/de laatste datum die op de tijdlijn wordt getoond.",
+      "label": "Eindpunt"
+    },
+    "errors": {
+      "endInvalid": "Eindpunt moet een getal of MM/DD/YYYY zijn.",
+      "nameAlphanumeric": "De tijdlijnnaam moet minstens één letter of cijfer bevatten.",
+      "nameRequired": "Voer een tijdlijnnaam in.",
+      "startAfterEnd": "Beginpunt moet kleiner zijn dan het eindpunt.",
+      "startInvalid": "Beginpunt moet een getal of MM/DD/YYYY zijn."
+    },
+    "length": {
+      "description": "Hogere waarden bieden ruimte voor meer gebeurtenissen tussen jaren.",
+      "label": "Tijdlijnlengte"
+    },
+    "maps": {
+      "description": "Maak het mogelijk coördinaten toe te voegen aan gebeurtenissen, tijdperken en perioden om ze op een kaart te bekijken.",
+      "label": "Kaartweergave"
+    },
+    "name": {
+      "description": "Je bestand wordt opgeslagen als: {{filename}}.timeline",
+      "label": "Tijdlijnnaam",
+      "placeholder": "Voer tijdlijnnaam in"
+    },
+    "note": "Deze opties kunnen later worden gewijzigd in de tijdlijninstellingen.",
+    "spreadsheet": {
+      "description": "Schakel een spreadsheetweergave in om elementen in bulk te bewerken.",
+      "label": "Spreadsheetweergave"
+    },
+    "start": {
+      "description": "Het eerste jaar/de eerste datum die op de tijdlijn wordt getoond.",
+      "label": "Beginpunt"
+    },
+    "title": "NIEUWE TIJDLIJN",
+    "wiki": {
+      "description": "Maak het mogelijk MediaWiki-artikelen aan tijdlijnelementen te koppelen.",
+      "label": "Wiki-integratie"
+    }
+  },
+  "newTimelineButton": "Nieuwe tijdlijn",
+  "noEditsYet": "Nog geen bewerkingen",
+  "noEditsYetLower": "nog geen bewerkingen",
+  "searchAria": "Tijdlijnen zoeken",
+  "searchPlaceholder": "Tijdlijnen zoeken...",
+  "skipped": {
+    "exportMessage_one": "Pakket geëxporteerd, maar {{count}} verwezen bestand kon niet worden gevonden en is overgeslagen:",
+    "exportMessage_other": "Pakket geëxporteerd, maar {{count}} verwezen bestanden konden niet worden gevonden en zijn overgeslagen:",
+    "exportTitle": "EXPORT VOLTOOID",
+    "importMessage_one": "Geïmporteerd, maar {{count}} meegeleverd bestand kon niet worden geschreven:",
+    "importMessage_other": "Geïmporteerd, maar {{count}} meegeleverde bestanden konden niet worden geschreven:",
+    "importTitle": "IMPORT VOLTOOID"
+  },
+  "sortBy": "Sorteren op",
+  "sortHeaders": {
+    "eras": "Tijdperken",
+    "events": "Gebeurtenissen",
+    "folder": "Locatie",
+    "modified": "Gewijzigd",
+    "name": "Naam",
+    "spans": "Perioden"
+  },
+  "sortSummary": "Sorteren: {{field}}, {{direction}}",
+  "storagePrompt": {
+    "changeLater": "Je kunt dit altijd wijzigen via Instellingen → Bestanden.",
+    "choose": "Kiezen...",
+    "chooseDescription": "Kies een map in Documenten, of een map waarvan je al een back-up maakt.",
+    "chooseTitle": "Kies een map",
+    "defaultDescription": "Bewaard in de gegevensmap van de app. Een goede keuze als je het gewoon even wilt uitproberen.",
+    "defaultTitle": "Gebruik de standaardmap",
+    "learnMore": "Meer informatie",
+    "subtitle": "Je tijdlijnen worden automatisch als bestanden op je computer opgeslagen. Kies waar ze terechtkomen.",
+    "useDefault": "Standaard gebruiken",
+    "welcome": "Welkom bij Timelines Studio"
+  },
+  "sync": {
+    "lastSynced": "laatst gesynchroniseerd {{when}}",
+    "notSyncedYet": "Nog niet gesynchroniseerd",
+    "syncedAgo": "Gesynchroniseerd {{when}}"
+  },
+  "time": {
+    "daysAgo_one": "{{count}} dag geleden",
+    "daysAgo_other": "{{count}} dagen geleden",
+    "today": "vandaag",
+    "weeksAgo_one": "{{count}} week geleden",
+    "weeksAgo_other": "{{count}} weken geleden",
+    "yesterday": "gisteren"
+  },
+  "titleBar": {
+    "back": "Terug",
+    "backHint": "Ga terug naar waar je de link vandaan volgde",
+    "backTo": "Terug naar {{title}}",
+    "hidePanel": "Paneel verbergen",
+    "hideSidebar": "Zijbalk verbergen",
+    "lockPanel": "Paneel vergrendelen",
+    "maximize": "Maximaliseren",
+    "minimize": "Minimaliseren",
+    "showPanel": "Paneel tonen",
+    "showSidebar": "Zijbalk tonen",
+    "unlockPanel": "Paneel ontgrendelen"
+  },
+  "toasts": {
+    "colorApplied_one": "Kleur toegepast op {{count}} element",
+    "colorApplied_other": "Kleur toegepast op {{count}} elementen",
+    "exportingPackage": "Pakket exporteren...",
+    "jsonSaved": "JSON-export opgeslagen",
+    "packageFailed": "Pakketexport mislukt: {{error}}",
+    "packageSaved": "Pakketexport opgeslagen",
+    "pngFailed": "PNG-export mislukt: {{error}}",
+    "pngSaved": "PNG-export opgeslagen",
+    "screenshotSaved": "Schermafbeelding opgeslagen",
+    "videoFailed": "Video-export mislukt: {{error}}",
+    "videoSaved": "Video-export opgeslagen"
+  },
+  "view": {
+    "grid": "Raster",
+    "gridAria": "Rasterweergave",
+    "list": "Lijst",
+    "listAria": "Lijstweergave"
+  }
+}
